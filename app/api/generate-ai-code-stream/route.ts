@@ -1637,7 +1637,7 @@ Provide the complete file content without any truncation. Include all necessary 
                 }
                 
                 const completionResult = await streamText({
-                  model: completionClient(modelMapping[model] || model),
+                  model: completionClient(model),
                   messages: [
                     { 
                       role: 'system', 
