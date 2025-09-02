@@ -2005,11 +2005,19 @@ TECHNICAL REQUIREMENTS:
 Focus on creating a beautiful, functional website that matches the user's vision.`;
 
     setGenerationProgress(prev => ({
+      ...prev,
       isGenerating: true,
       isStreaming: true,
       status: 'Generating React application...',
       components: [],
       currentComponent: 0,
+      streamedCode: '',
+      isThinking: false,
+      thinkingText: undefined,
+      thinkingDuration: undefined,
+      files: prev.files || [],
+      currentFile: undefined,
+      lastProcessedPosition: 0,
       isEdit: false
     }));
 
