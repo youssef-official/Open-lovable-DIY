@@ -2025,7 +2025,10 @@ Focus on creating a beautiful, functional website that matches the user's vision
       const response = await makeRequestWithBody('/api/generate-ai-code-stream', {
         prompt: generatePrompt,
         model: aiModel,
-        context: JSON.stringify(conversationContext),
+        context: {
+          sandboxId: sandboxData?.sandboxId,
+          conversationContext: conversationContext
+        },
         isEdit: false
       });
 
@@ -2054,17 +2057,29 @@ Focus on creating a beautiful, functional website that matches the user's vision
               try {
                 const data = JSON.parse(line.slice(6));
 
-                if (data.type === 'progress') {
+                if (data.type === 'status') {
                   setGenerationProgress(prev => ({
                     ...prev,
-                    status: data.status,
-                    components: data.components || prev.components,
-                    currentComponent: data.currentComponent || prev.currentComponent
+                    status: data.message
                   }));
-                } else if (data.type === 'content') {
-                  generatedCode += data.content;
-                  setResponseArea(prev => [...prev, data.content]);
+                } else if (data.type === 'stream') {
+                  generatedCode += data.text;
+                  setResponseArea(prev => [...prev, data.text]);
+                } else if (data.type === 'component') {
+                  setGenerationProgress(prev => ({
+                    ...prev,
+                    status: `Generated ${data.name}`,
+                    components: [...prev.components, {
+                      name: data.name,
+                      path: data.path,
+                      completed: true
+                    }],
+                    currentComponent: prev.currentComponent + 1
+                  }));
                 } else if (data.type === 'complete') {
+                  if (data.generatedCode) {
+                    generatedCode = data.generatedCode;
+                  }
                   setGenerationProgress(prev => ({
                     ...prev,
                     isGenerating: false,
