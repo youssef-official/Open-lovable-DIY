@@ -1635,12 +1635,15 @@ Provide the complete file content without any truncation. Include all necessary 
                   }
                   completionClient = groq;
                 }
-                
+
+                // Check if this is a GPT-5 model (reasoning models don't use temperature)
+                const isGPT5 = model.includes('gpt-5') || model.includes('openai/gpt-5');
+
                 const completionResult = await streamText({
                   model: completionClient(model),
                   messages: [
-                    { 
-                      role: 'system', 
+                    {
+                      role: 'system',
                       content: 'You are completing a truncated file. Provide the complete, working file content.'
                     },
                     { role: 'user', content: completionPrompt }
