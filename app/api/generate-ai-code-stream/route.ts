@@ -1648,8 +1648,7 @@ Provide the complete file content without any truncation. Include all necessary 
                     },
                     { role: 'user', content: completionPrompt }
                   ],
-                  temperature: isGPT5 ? undefined : appConfig.ai.defaultTemperature,
-                  maxTokens: appConfig.ai.truncationRecoveryMaxTokens
+                  temperature: isGPT5 ? undefined : appConfig.ai.defaultTemperature
                 });
                 
                 // Get the full text from the stream
