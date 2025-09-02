@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getApiKey } from '@/lib/api-key-utils';
+import { getApiKey, getAllApiKeysFromHeaders, getAllApiKeysFromBody } from '@/lib/api-key-utils';
 
 // Function to sanitize smart quotes and other problematic characters
 function sanitizeQuotes(text: string): string {
@@ -19,18 +19,23 @@ function sanitizeQuotes(text: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { url } = await request.json();
-    
+    const body = await request.json();
+    const { url } = body;
+
     if (!url) {
       return NextResponse.json({
         success: false,
         error: 'URL is required'
       }, { status: 400 });
     }
-    
+
     console.log('[scrape-url-enhanced] Scraping with Firecrawl:', url);
-    
-    const FIRECRAWL_API_KEY = getApiKey(request, 'firecrawl');
+
+    // Get Firecrawl API key from headers, body, or environment
+    const apiKeysFromHeaders = getAllApiKeysFromHeaders(request);
+    const apiKeysFromBody = getAllApiKeysFromBody(body);
+    const FIRECRAWL_API_KEY = apiKeysFromHeaders.firecrawl || apiKeysFromBody.firecrawl;
+
     if (!FIRECRAWL_API_KEY) {
       return NextResponse.json({
         success: false,

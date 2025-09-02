@@ -1,18 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAllApiKeysFromHeaders, getAllApiKeysFromBody } from '@/lib/api-key-utils';
 
 export async function POST(req: NextRequest) {
   try {
-    const { url } = await req.json();
-    
+    const body = await req.json();
+    const { url } = body;
+
     if (!url) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+    }
+
+    // Get Firecrawl API key from headers, body, or environment
+    const apiKeysFromHeaders = getAllApiKeysFromHeaders(req);
+    const apiKeysFromBody = getAllApiKeysFromBody(body);
+    const FIRECRAWL_API_KEY = apiKeysFromHeaders.firecrawl || apiKeysFromBody.firecrawl;
+
+    if (!FIRECRAWL_API_KEY) {
+      return NextResponse.json({
+        error: 'Firecrawl API key is required. Please provide it in the request headers or configure it in your environment.'
+      }, { status: 400 });
     }
 
     // Use Firecrawl API to capture screenshot
     const firecrawlResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
+        'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({

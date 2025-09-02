@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Sandbox } from '@e2b/code-interpreter';
 import type { SandboxState } from '@/types/sandbox';
 import { appConfig } from '@/config/app.config';
-import { getApiKey } from '@/lib/api-key-utils';
+import { getApiKey, getAllApiKeysFromHeaders, getAllApiKeysFromBody } from '@/lib/api-key-utils';
 
 // Store active sandbox globally
 declare global {
@@ -18,8 +18,14 @@ export async function POST(request: NextRequest) {
   try {
     console.log('[create-ai-sandbox] Creating base sandbox...');
 
-    // Get E2B API key from request or environment
-    const E2B_API_KEY = getApiKey(request, 'e2b');
+    // Get request body to check for API keys
+    const body = await request.json().catch(() => ({}));
+
+    // Get E2B API key from headers, body, or environment
+    const apiKeysFromHeaders = getAllApiKeysFromHeaders(request);
+    const apiKeysFromBody = getAllApiKeysFromBody(body);
+    const E2B_API_KEY = apiKeysFromHeaders.e2b || apiKeysFromBody.e2b;
+
     if (!E2B_API_KEY) {
       return NextResponse.json({
         success: false,
