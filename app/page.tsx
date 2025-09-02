@@ -2151,25 +2151,19 @@ Focus on creating a beautiful, functional website that matches the user's vision
       {/* Home Screen Overlay */}
       {showHomeScreen && (
         <div className={`fixed inset-0 z-50 transition-opacity duration-500 ${homeScreenFading ? 'opacity-0' : 'opacity-100'}`}>
-          {/* Simple Sun Gradient Background */}
-          <div className="absolute inset-0 bg-white overflow-hidden">
-            {/* Main Sun - Pulsing */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-orange-400/50 via-orange-300/30 to-transparent rounded-full blur-[80px] animate-[sunPulse_4s_ease-in-out_infinite]" />
-            
-            {/* Inner Sun Core - Brighter */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-gradient-radial from-yellow-300/40 via-orange-400/30 to-transparent rounded-full blur-[40px] animate-[sunPulse_4s_ease-in-out_infinite_0.5s]" />
-            
-            {/* Outer Glow - Subtle */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-gradient-radial from-orange-200/20 to-transparent rounded-full blur-[120px]" />
-            
-            {/* Giant Glowing Orb - Center Bottom */}
-            <div className="absolute bottom-0 left-1/2 w-[800px] h-[800px] animate-[orbShrink_3s_ease-out_forwards]" style={{ transform: 'translateX(-50%) translateY(45%)' }}>
-              <div className="relative w-full h-full">
-                <div className="absolute inset-0 bg-orange-600 rounded-full blur-[100px] opacity-30 animate-pulse"></div>
-                <div className="absolute inset-16 bg-orange-500 rounded-full blur-[80px] opacity-40 animate-pulse" style={{ animationDelay: '0.3s' }}></div>
-                <div className="absolute inset-32 bg-orange-400 rounded-full blur-[60px] opacity-50 animate-pulse" style={{ animationDelay: '0.6s' }}></div>
-                <div className="absolute inset-48 bg-yellow-300 rounded-full blur-[40px] opacity-60"></div>
-              </div>
+          {/* Lovable-style Gradient Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-pink-800 overflow-hidden">
+            {/* Animated gradient orbs */}
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/30 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+            <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+
+            {/* Subtle grid pattern overlay */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute inset-0" style={{
+                backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)`,
+                backgroundSize: '50px 50px'
+              }} />
             </div>
           </div>
           
@@ -2183,33 +2177,34 @@ Focus on creating a beautiful, functional website that matches the user's vision
                 setHomeScreenFading(false);
               }, 500);
             }}
-            className="absolute top-8 right-8 text-gray-500 hover:text-gray-700 transition-all duration-300 opacity-0 hover:opacity-100 bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-sm"
+            className="absolute top-8 right-8 text-white/60 hover:text-white transition-all duration-300 opacity-0 hover:opacity-100 bg-white/10 backdrop-blur-sm p-2 rounded-lg border border-white/20"
             style={{ opacity: 0 }}
             onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
             onMouseLeave={(e) => e.currentTarget.style.opacity = '0'}
           >
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
           
           {/* Header */}
           <div className="absolute top-0 left-0 right-0 z-20 px-6 py-4 flex items-center justify-between animate-[fadeIn_0.8s_ease-out]">
-            <img
-              src="/firecrawl-logo-with-fire.webp"
-              alt="Firecrawl"
-              className="h-8 w-auto"
-            />
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">❤️</span>
+              </div>
+              <span className="text-white font-semibold text-lg">Open-Lovable</span>
+            </div>
             <div className="flex items-center gap-3">
               <ApiKeysButton />
               <a
-                href="https://github.com/mendableai/open-lovable"
+                href="https://github.com/zainulabedeen123/Open-lovable-DIY.git"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-[#36322F] text-white px-3 py-2 rounded-[10px] text-sm font-medium [box-shadow:inset_0px_-2px_0px_0px_#171310,_0px_1px_6px_0px_rgba(58,_33,_8,_58%)] hover:translate-y-[1px] hover:scale-[0.98] hover:[box-shadow:inset_0px_-1px_0px_0px_#171310,_0px_1px_3px_0px_rgba(58,_33,_8,_40%)] active:translate-y-[2px] active:scale-[0.97] active:[box-shadow:inset_0px_1px_1px_0px_#171310,_0px_1px_2px_0px_rgba(58,_33,_8,_30%)] transition-all duration-200"
+                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white px-3 py-2 rounded-lg text-sm font-medium border border-white/20 hover:bg-white/20 transition-all duration-200"
               >
                 <FiGithub className="w-4 h-4" />
-                <span>Use this template</span>
+                <span>GitHub</span>
               </a>
             </div>
           </div>
@@ -2217,65 +2212,52 @@ Focus on creating a beautiful, functional website that matches the user's vision
           {/* Main content */}
           <div className="relative z-10 h-full flex items-center justify-center px-4">
             <div className="text-center max-w-4xl min-w-[600px] mx-auto">
-              {/* Firecrawl-style Header */}
+              {/* Lovable-style Header */}
               <div className="text-center">
-                <h1 className="text-[2.5rem] lg:text-[3.8rem] text-center text-[#36322F] font-semibold tracking-tight leading-[0.9] animate-[fadeIn_0.8s_ease-out]">
-                  <span className="hidden md:inline">Open Lovable</span>
-                  <span className="md:hidden">Open Lovable</span>
+                <h1 className="text-[3rem] lg:text-[4.5rem] text-center text-white font-bold tracking-tight leading-[0.9] animate-[fadeIn_0.8s_ease-out]">
+                  Build something{' '}
+                  <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+                    ❤️ Open-Lovable
+                  </span>
                 </h1>
                 <motion.p
-                  className="text-base lg:text-lg max-w-lg mx-auto mt-2.5 text-zinc-500 text-center text-balance"
+                  className="text-lg lg:text-xl max-w-2xl mx-auto mt-6 text-white/80 text-center text-balance"
                   transition={{ duration: 0.3, ease: "easeOut" }}
                 >
-                  Create beautiful websites with just a description.
+                  Create apps and websites by chatting with AI
                 </motion.p>
               </div>
               
-              <form onSubmit={handleHomeScreenSubmit} className="mt-5 max-w-3xl mx-auto">
+              <form onSubmit={handleHomeScreenSubmit} className="mt-8 max-w-2xl mx-auto">
                 <div className="w-full relative group">
-                  <input
-                    type="text"
-                    value={homeDescriptionInput}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setHomeDescriptionInput(value);
-                    }}
-                    placeholder=" "
-                    aria-placeholder="A modern portfolio website with dark theme"
-                    className="h-[3.25rem] w-full resize-none focus-visible:outline-none focus-visible:ring-orange-500 focus-visible:ring-2 rounded-[18px] text-sm text-[#36322F] px-4 pr-12 border-[.75px] border-border bg-white"
-                    style={{
-                      boxShadow: '0 0 0 1px #e3e1de66, 0 1px 2px #5f4a2e14, 0 4px 6px #5f4a2e0a, 0 40px 40px -24px #684b2514',
-                      filter: 'drop-shadow(rgba(249, 224, 184, 0.3) -0.731317px -0.731317px 35.6517px)'
-                    }}
-                    autoFocus
-                  />
-                  <div
-                    aria-hidden="true"
-                    className={`absolute top-1/2 -translate-y-1/2 left-4 pointer-events-none text-sm text-opacity-50 text-start transition-opacity ${
-                      homeDescriptionInput ? 'opacity-0' : 'opacity-100'
-                    }`}
-                  >
-                    <span className="text-[#605A57]/50">
-                      A modern portfolio website with dark theme
-                    </span>
+                  <div className="relative bg-black/20 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden">
+                    <input
+                      type="text"
+                      value={homeDescriptionInput}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setHomeDescriptionInput(value);
+                      }}
+                      placeholder="Ask Lovable to create an internal..."
+                      className="h-14 w-full bg-transparent text-white placeholder-white/60 px-6 pr-16 focus:outline-none text-base"
+                      autoFocus
+                    />
+                    <button
+                      type="submit"
+                      disabled={!homeDescriptionInput.trim()}
+                      className="absolute top-1/2 transform -translate-y-1/2 right-3 w-8 h-8 bg-white/20 hover:bg-white/30 disabled:bg-white/10 rounded-lg flex items-center justify-center transition-all duration-200 disabled:cursor-not-allowed"
+                      title="Create Website"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                        <path d="M5 12h14M12 5l7 7-7 7"></path>
+                      </svg>
+                    </button>
                   </div>
-                  <button
-                    type="submit"
-                    disabled={!homeDescriptionInput.trim()}
-                    className="absolute top-1/2 transform -translate-y-1/2 right-2 flex h-10 items-center justify-center rounded-md px-3 text-sm font-medium text-zinc-500 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    title="Create Website"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                      <path d="M12 4v16m8-8H4"></path>
-                    </svg>
-                  </button>
                 </div>
-                  
-
               </form>
               
               {/* Model Selector */}
-              <div className="mt-6 flex items-center justify-center animate-[fadeIn_1s_ease-out]">
+              <div className="mt-8 flex items-center justify-center animate-[fadeIn_1s_ease-out]">
                 <select
                   value={aiModel}
                   onChange={(e) => {
@@ -2288,13 +2270,10 @@ Focus on creating a beautiful, functional website that matches the user's vision
                     }
                     router.push(`/?${params.toString()}`);
                   }}
-                  className="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-[#36322F] focus:border-transparent"
-                  style={{
-                    boxShadow: '0 0 0 1px #e3e1de66, 0 1px 2px #5f4a2e14'
-                  }}
+                  className="px-4 py-2 text-sm bg-white/10 backdrop-blur-sm text-white border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white/40"
                 >
                   {appConfig.ai.availableModels.map(model => (
-                    <option key={model} value={model}>
+                    <option key={model} value={model} className="bg-gray-800 text-white">
                       {(appConfig.ai.modelDisplayNames as any)[model] || model}
                     </option>
                   ))}
@@ -2307,11 +2286,12 @@ Focus on creating a beautiful, functional website that matches the user's vision
       
       <div className="bg-card px-4 py-4 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <img
-            src="/firecrawl-logo-with-fire.webp"
-            alt="Firecrawl"
-            className="h-8 w-auto"
-          />
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-lg">❤️</span>
+            </div>
+            <span className="text-foreground font-semibold text-lg">Open-Lovable</span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <ApiKeysButton />
