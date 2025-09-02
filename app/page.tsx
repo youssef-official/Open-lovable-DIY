@@ -2305,328 +2305,170 @@ Focus on the key sections and content, making it clean and modern while preservi
     }
 
     addChatMessage(`Creating website: ${description}`, 'system');
-        }
-        
-        setUrlStatus(['Website scraped successfully!', 'Generating React app...']);
-        
-        // Clear preparing design state and switch to generation tab
-        setIsPreparingDesign(false);
-        setUrlScreenshot(null); // Clear screenshot when starting generation
-        setTargetUrl(''); // Clear target URL
-        
-        // Update loading stage to planning
-        setLoadingStage('planning');
-        
-        // Brief pause before switching to generation tab
-        setTimeout(() => {
-          setLoadingStage('generating');
-          setActiveTab('generation');
-        }, 1500);
-        
-        // Store scraped data in conversation context
-        setConversationContext(prev => ({
-          ...prev,
-          scrapedWebsites: [...prev.scrapedWebsites, {
-            url: url,
-            content: scrapeData,
-            timestamp: new Date()
-          }],
-          currentProject: `${url} Clone`
-        }));
-        
-        const prompt = `I want to recreate the ${url} website as a complete React application based on the scraped content below.
 
-${JSON.stringify(scrapeData, null, 2)}
+    setConversationContext(prev => ({
+      ...prev,
+      currentProject: `Website: ${description}`
+    }));
 
-${homeContextInput ? `ADDITIONAL CONTEXT/REQUIREMENTS FROM USER:
-${homeContextInput}
+    // Start sandbox creation in parallel with code generation
+    let sandboxPromise: Promise<void> | null = null;
+    if (!sandboxData) {
+      addChatMessage('Creating sandbox while generating your React app...', 'system');
+      sandboxPromise = createSandbox(true);
+    }
 
-Please incorporate these requirements into the design and implementation.` : ''}
+    addChatMessage('Generating your custom React application...', 'system');
 
-IMPORTANT INSTRUCTIONS:
-- Create a COMPLETE, working React application
-- Implement ALL sections and features from the original site
-- Use Tailwind CSS for all styling (no custom CSS files)
-- Make it responsive and modern
-- Ensure all text content matches the original
-- Create proper component structure
+    const generatePrompt = `Create a complete, modern React application based on this description:
+
+"${description}"
+
+REQUIREMENTS:
+1. Create a COMPLETE React application with App.jsx as the main component
+2. App.jsx MUST import and render all other components
+3. Build all sections and features described by the user
+4. Use a modern, professional design with excellent UX
+5. Use semantic HTML elements (header, nav, main, section, footer)
+6. Implement responsive design with mobile-first approach
+7. Include hover effects and smooth transitions
+8. Use modern CSS Grid and Flexbox for layouts
+9. Ensure excellent accessibility (ARIA labels, semantic markup)
+10. Create reusable components for repeated elements
+
+DESIGN GUIDELINES:
+- Use a modern color scheme with excellent contrast
+- Choose appropriate fonts and typography
+- Include proper spacing and visual hierarchy
+- Add subtle animations and micro-interactions
+- Ensure the design feels professional and polished
+
+TECHNICAL REQUIREMENTS:
+- Use Tailwind CSS for ALL styling (no custom CSS files)
 - Make sure the app actually renders visible content
 - Create ALL components that you reference in imports
-${homeContextInput ? '- Apply the user\'s context/theme requirements throughout the application' : ''}
+- Use placeholder images from Unsplash or similar services when needed
+- Include realistic content that matches the description
 
-Focus on the key sections and content, making it clean and modern.`;
-        
-        setGenerationProgress(prev => ({
-          isGenerating: true,
-          status: 'Initializing AI...',
-          components: [],
-          currentComponent: 0,
-          streamedCode: '',
-          isStreaming: true,
-          isThinking: false,
-          thinkingText: undefined,
-          thinkingDuration: undefined,
-          // Keep previous files until new ones are generated
-          files: prev.files || [],
-          currentFile: undefined,
-          lastProcessedPosition: 0
-        }));
-        
-        const aiResponse = await fetch('/api/generate-ai-code-stream', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            prompt,
-            model: aiModel,
-            context: {
-              sandboxId: sandboxData?.sandboxId,
-              structure: structureContent,
-              conversationContext: conversationContext
-            }
-          })
-        });
-        
-        if (!aiResponse.ok || !aiResponse.body) {
-          throw new Error('Failed to generate code');
-        }
-        
-        const reader = aiResponse.body.getReader();
-        const decoder = new TextDecoder();
-        let generatedCode = '';
-        let explanation = '';
-        
+Focus on creating a beautiful, functional website that matches the user's vision.`;
+
+    setGenerationProgress(prev => ({
+      isGenerating: true,
+      isStreaming: true,
+      status: 'Generating React application...',
+      components: [],
+      currentComponent: 0,
+      isEdit: false
+    }));
+
+    try {
+      const response = await makeRequestWithBody('/api/generate-ai-code-stream', {
+        prompt: generatePrompt,
+        model: aiModel,
+        context: JSON.stringify(conversationContext),
+        isEdit: false
+      });
+
+      if (!response.ok) {
+        throw new Error(`Generation failed: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body');
+      }
+
+      let generatedCode = '';
+      const decoder = new TextDecoder();
+
+      try {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          
+
           const chunk = decoder.decode(value);
           const lines = chunk.split('\n');
-          
+
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               try {
                 const data = JSON.parse(line.slice(6));
-                
-                if (data.type === 'status') {
-                  setGenerationProgress(prev => ({ ...prev, status: data.message }));
-                } else if (data.type === 'thinking') {
-                  setGenerationProgress(prev => ({ 
-                    ...prev, 
-                    isThinking: true,
-                    thinkingText: (prev.thinkingText || '') + data.text
-                  }));
-                } else if (data.type === 'thinking_complete') {
-                  setGenerationProgress(prev => ({ 
-                    ...prev, 
-                    isThinking: false,
-                    thinkingDuration: data.duration
-                  }));
-                } else if (data.type === 'conversation') {
-                  // Add conversational text to chat only if it's not code
-                  let text = data.text || '';
-                  
-                  // Remove package tags from the text
-                  text = text.replace(/<package>[^<]*<\/package>/g, '');
-                  text = text.replace(/<packages>[^<]*<\/packages>/g, '');
-                  
-                  // Filter out any XML tags and file content that slipped through
-                  if (!text.includes('<file') && !text.includes('import React') && 
-                      !text.includes('export default') && !text.includes('className=') &&
-                      text.trim().length > 0) {
-                    addChatMessage(text.trim(), 'ai');
-                  }
-                } else if (data.type === 'stream' && data.raw) {
-                  setGenerationProgress(prev => {
-                    const newStreamedCode = prev.streamedCode + data.text;
-                    
-                    // Tab is already switched after scraping
-                    
-                    const updatedState = { 
-                      ...prev, 
-                      streamedCode: newStreamedCode,
-                      isStreaming: true,
-                      isThinking: false,
-                      status: 'Generating code...'
-                    };
-                    
-                    // Process complete files from the accumulated stream
-                    const fileRegex = /<file path="([^"]+)">([^]*?)<\/file>/g;
-                    let match;
-                    const processedFiles = new Set(prev.files.map(f => f.path));
-                    
-                    while ((match = fileRegex.exec(newStreamedCode)) !== null) {
-                      const filePath = match[1];
-                      const fileContent = match[2];
-                      
-                      // Only add if we haven't processed this file yet
-                      if (!processedFiles.has(filePath)) {
-                        const fileExt = filePath.split('.').pop() || '';
-                        const fileType = fileExt === 'jsx' || fileExt === 'js' ? 'javascript' :
-                                        fileExt === 'css' ? 'css' :
-                                        fileExt === 'json' ? 'json' :
-                                        fileExt === 'html' ? 'html' : 'text';
-                        
-                        // Check if file already exists
-                        const existingFileIndex = updatedState.files.findIndex(f => f.path === filePath);
-                        
-                        if (existingFileIndex >= 0) {
-                          // Update existing file and mark as edited
-                          updatedState.files = [
-                            ...updatedState.files.slice(0, existingFileIndex),
-                            {
-                              ...updatedState.files[existingFileIndex],
-                              content: fileContent.trim(),
-                              type: fileType,
-                              completed: true,
-                              edited: true
-                            } as any,
-                            ...updatedState.files.slice(existingFileIndex + 1)
-                          ];
-                        } else {
-                          // Add new file
-                          updatedState.files = [...updatedState.files, {
-                            path: filePath,
-                            content: fileContent.trim(),
-                            type: fileType,
-                            completed: true,
-                            edited: false
-                          } as any];
-                        }
-                        
-                        // Only show file status if not in edit mode
-                        if (!prev.isEdit) {
-                          updatedState.status = `Completed ${filePath}`;
-                        }
-                        processedFiles.add(filePath);
-                      }
-                    }
-                    
-                    // Check for current file being generated (incomplete file at the end)
-                    const lastFileMatch = newStreamedCode.match(/<file path="([^"]+)">([^]*?)$/);
-                    if (lastFileMatch && !lastFileMatch[0].includes('</file>')) {
-                      const filePath = lastFileMatch[1];
-                      const partialContent = lastFileMatch[2];
-                      
-                      if (!processedFiles.has(filePath)) {
-                        const fileExt = filePath.split('.').pop() || '';
-                        const fileType = fileExt === 'jsx' || fileExt === 'js' ? 'javascript' :
-                                        fileExt === 'css' ? 'css' :
-                                        fileExt === 'json' ? 'json' :
-                                        fileExt === 'html' ? 'html' : 'text';
-                        
-                        updatedState.currentFile = { 
-                          path: filePath, 
-                          content: partialContent, 
-                          type: fileType 
-                        };
-                        // Only show file status if not in edit mode
-                        if (!prev.isEdit) {
-                          updatedState.status = `Generating ${filePath}`;
-                        }
-                      }
-                    } else {
-                      updatedState.currentFile = undefined;
-                    }
-                    
-                    return updatedState;
-                  });
-                } else if (data.type === 'complete') {
-                  generatedCode = data.generatedCode;
-                  explanation = data.explanation;
-                  
-                  // Save the last generated code
-                  setConversationContext(prev => ({
+
+                if (data.type === 'progress') {
+                  setGenerationProgress(prev => ({
                     ...prev,
-                    lastGeneratedCode: generatedCode
+                    status: data.status,
+                    components: data.components || prev.components,
+                    currentComponent: data.currentComponent || prev.currentComponent
                   }));
+                } else if (data.type === 'content') {
+                  generatedCode += data.content;
+                  setResponseArea(prev => [...prev, data.content]);
+                } else if (data.type === 'complete') {
+                  setGenerationProgress(prev => ({
+                    ...prev,
+                    isGenerating: false,
+                    isStreaming: false,
+                    status: 'Generation complete!'
+                  }));
+                  break;
+                } else if (data.type === 'error') {
+                  throw new Error(data.error);
                 }
               } catch (e) {
-                console.error('Failed to parse SSE data:', e);
+                console.error('Error parsing SSE data:', e);
               }
             }
           }
         }
-        
-        setGenerationProgress(prev => ({
-          ...prev,
-          isGenerating: false,
-          isStreaming: false,
-          status: 'Generation complete!'
-        }));
-        
-        if (generatedCode) {
-          addChatMessage('AI recreation generated!', 'system');
-          
-          // Add the explanation to chat if available
-          if (explanation && explanation.trim()) {
-            addChatMessage(explanation, 'ai');
-          }
-          
-          setPromptInput(generatedCode);
-          
-          // First application for cloned site should not be in edit mode
-          await applyGeneratedCode(generatedCode, false);
-          
-          addChatMessage(
-            `Successfully recreated ${url} as a modern React app${homeContextInput ? ` with your requested context: "${homeContextInput}"` : ''}! The scraped content is now in my context, so you can ask me to modify specific sections or add features based on the original site.`, 
-            'ai',
-            {
-              scrapedUrl: url,
-              scrapedContent: scrapeData,
-              generatedCode: generatedCode
-            }
-          );
-          
-          setConversationContext(prev => ({
-            ...prev,
-            generatedComponents: [],
-            appliedCode: [...prev.appliedCode, {
-              files: [],
-              timestamp: new Date()
-            }]
-          }));
-        } else {
-          throw new Error('Failed to generate recreation');
-        }
-        
-        setUrlInput('');
-        setUrlStatus([]);
-        setHomeContextInput('');
-        
-        // Clear generation progress and all screenshot/design states
-        setGenerationProgress(prev => ({
-          ...prev,
-          isGenerating: false,
-          isStreaming: false,
-          status: 'Generation complete!'
-        }));
-        
-        // Clear screenshot and preparing design states to prevent them from showing on next run
-        setUrlScreenshot(null);
-        setIsPreparingDesign(false);
-        setTargetUrl('');
-        setScreenshotError(null);
-        setLoadingStage(null); // Clear loading stage
-        
-        setTimeout(() => {
-          // Switch back to preview tab but keep files
-          setActiveTab('preview');
-        }, 1000); // Show completion briefly then switch
-      } catch (error: any) {
-        addChatMessage(`Failed to clone website: ${error.message}`, 'system');
-        setUrlStatus([]);
-        setIsPreparingDesign(false);
-        // Also clear generation progress on error
-        setGenerationProgress(prev => ({
-          ...prev,
-          isGenerating: false,
-          isStreaming: false,
-          status: '',
-          // Keep files to display in sidebar
-          files: prev.files
-        }));
+      } finally {
+        reader.releaseLock();
       }
-    }, 500);
+
+      if (generatedCode.trim()) {
+        // Wait for sandbox to be ready if it was being created
+        if (sandboxPromise) {
+          await sandboxPromise;
+        }
+
+        await applyGeneratedCode(generatedCode, false);
+
+        addChatMessage(
+          `Successfully created your website! I've built a modern React application based on your description: "${description}". You can now ask me to modify specific sections, add features, or make any other changes.`,
+          'ai',
+          {
+            websiteDescription: description,
+            generatedCode: generatedCode
+          }
+        );
+
+        // Clear generation progress
+        setGenerationProgress(prev => ({
+          ...prev,
+          isGenerating: false,
+          isStreaming: false,
+          status: 'Generation complete!'
+        }));
+
+        setLoadingStage(null);
+
+        setTimeout(() => {
+          setActiveTab('preview');
+        }, 100);
+      } else {
+        throw new Error('No code was generated');
+      }
+    } catch (error: any) {
+      addChatMessage(`Failed to generate website: ${error.message}`, 'system');
+      setLoadingStage(null);
+      setGenerationProgress(prev => ({
+        ...prev,
+        isGenerating: false,
+        isStreaming: false,
+        status: 'Generation failed'
+      }));
+      setActiveTab('preview');
+    }
   };
 
   return (
