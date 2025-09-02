@@ -2578,7 +2578,7 @@ Focus on the key sections and content, making it clean and modern.`;
                               type: fileType,
                               completed: true,
                               edited: true
-                            },
+                            } as any,
                             ...updatedState.files.slice(existingFileIndex + 1)
                           ];
                         } else {
@@ -2589,7 +2589,7 @@ Focus on the key sections and content, making it clean and modern.`;
                             type: fileType,
                             completed: true,
                             edited: false
-                          }];
+                          } as any];
                         }
                         
                         // Only show file status if not in edit mode
