@@ -1010,7 +1010,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                       // Create a map of edited files
                       const editedFiles = new Set(
                         generationProgress.files
-                          .filter(f => f.edited)
+                          .filter(f => (f as any).edited)
                           .map(f => f.path)
                       );
                       
@@ -1023,7 +1023,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                         if (!fileTree[dir]) fileTree[dir] = [];
                         fileTree[dir].push({
                           name: fileName,
-                          edited: file.edited || false
+                          edited: (file as any).edited || false
                         });
                       });
                       
