@@ -2275,7 +2275,7 @@ Focus on the key sections and content, making it clean and modern while preservi
 
   const handleHomeScreenSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!homeUrlInput.trim()) return;
+    if (!homeDescriptionInput.trim()) return;
     
     setHomeScreenFading(true);
     
@@ -2739,14 +2739,11 @@ Focus on the key sections and content, making it clean and modern.`;
                   <span className="hidden md:inline">Open Lovable</span>
                   <span className="md:hidden">Open Lovable</span>
                 </h1>
-                <motion.p 
+                <motion.p
                   className="text-base lg:text-lg max-w-lg mx-auto mt-2.5 text-zinc-500 text-center text-balance"
-                  animate={{
-                    opacity: showStyleSelector ? 0.7 : 1
-                  }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
                 >
-                  Re-imagine any website, in seconds.
+                  Create beautiful websites with just a description.
                 </motion.p>
               </div>
               
@@ -2754,23 +2751,13 @@ Focus on the key sections and content, making it clean and modern.`;
                 <div className="w-full relative group">
                   <input
                     type="text"
-                    value={homeUrlInput}
+                    value={homeDescriptionInput}
                     onChange={(e) => {
                       const value = e.target.value;
-                      setHomeUrlInput(value);
-                      
-                      // Check if it's a valid domain
-                      const domainRegex = /^(https?:\/\/)?(([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,})(\/?.*)?$/;
-                      if (domainRegex.test(value) && value.length > 5) {
-                        // Small delay to make the animation feel smoother
-                        setTimeout(() => setShowStyleSelector(true), 100);
-                      } else {
-                        setShowStyleSelector(false);
-                        setSelectedStyle(null);
-                      }
+                      setHomeDescriptionInput(value);
                     }}
                     placeholder=" "
-                    aria-placeholder="https://firecrawl.dev"
+                    aria-placeholder="A modern portfolio website with dark theme"
                     className="h-[3.25rem] w-full resize-none focus-visible:outline-none focus-visible:ring-orange-500 focus-visible:ring-2 rounded-[18px] text-sm text-[#36322F] px-4 pr-12 border-[.75px] border-border bg-white"
                     style={{
                       boxShadow: '0 0 0 1px #e3e1de66, 0 1px 2px #5f4a2e14, 0 4px 6px #5f4a2e0a, 0 40px 40px -24px #684b2514',
@@ -2778,31 +2765,30 @@ Focus on the key sections and content, making it clean and modern.`;
                     }}
                     autoFocus
                   />
-                  <div 
-                    aria-hidden="true" 
+                  <div
+                    aria-hidden="true"
                     className={`absolute top-1/2 -translate-y-1/2 left-4 pointer-events-none text-sm text-opacity-50 text-start transition-opacity ${
-                      homeUrlInput ? 'opacity-0' : 'opacity-100'
+                      homeDescriptionInput ? 'opacity-0' : 'opacity-100'
                     }`}
                   >
-                    <span className="text-[#605A57]/50" style={{ fontFamily: 'monospace' }}>
-                      https://firecrawl.dev
+                    <span className="text-[#605A57]/50">
+                      A modern portfolio website with dark theme
                     </span>
                   </div>
                   <button
                     type="submit"
-                    disabled={!homeUrlInput.trim()}
+                    disabled={!homeDescriptionInput.trim()}
                     className="absolute top-1/2 transform -translate-y-1/2 right-2 flex h-10 items-center justify-center rounded-md px-3 text-sm font-medium text-zinc-500 hover:text-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    title={selectedStyle ? `Clone with ${selectedStyle} Style` : 'Clone Website'}
+                    title="Create Website"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-                      <polyline points="9 10 4 15 9 20"></polyline>
-                      <path d="M20 4v7a4 4 0 0 1-4 4H4"></path>
+                      <path d="M12 4v16m8-8H4"></path>
                     </svg>
                   </button>
                 </div>
                   
                   {/* Style Selector - Slides out when valid domain is entered */}
-                  {showStyleSelector && (
+                  {false && (
                     <div className="overflow-hidden mt-4">
                       <div className={`transition-all duration-500 ease-out transform ${
                         showStyleSelector ? 'translate-y-0 opacity-100' : '-translate-y-4 opacity-0'
