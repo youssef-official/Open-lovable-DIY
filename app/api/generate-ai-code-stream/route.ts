@@ -341,7 +341,7 @@ User request: "${prompt}"`;
                         
                         // For now, fall back to keyword search since we don't have file contents for search execution
                         // This path happens when no manifest was initially available
-                        let targetFiles = [];
+                        let targetFiles: string[] = [];
                         if (!searchPlan || searchPlan.searchTerms.length === 0) {
                           console.warn('[generate-ai-code-stream] No target files after fetch, searching for relevant files');
                           
@@ -910,7 +910,7 @@ CRITICAL: When files are provided in the context:
         // Build full prompt with context
         let fullPrompt = prompt;
         if (context) {
-          const contextParts = [];
+          const contextParts: string[] = [];
           
           if (context.sandboxId) {
             contextParts.push(`Current sandbox ID: ${context.sandboxId}`);
@@ -1455,7 +1455,7 @@ It's better to have 3 complete files than 10 incomplete files.`
         
         // Parse files and send progress for each
         const fileRegex = /<file path="([^"]+)">([\s\S]*?)<\/file>/g;
-        const files = [];
+        const files: Array<{path: string, content: string}> = [];
         let match;
         
         while ((match = fileRegex.exec(generatedCode)) !== null) {
