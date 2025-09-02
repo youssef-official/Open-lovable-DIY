@@ -2151,20 +2151,37 @@ Focus on creating a beautiful, functional website that matches the user's vision
       {/* Home Screen Overlay */}
       {showHomeScreen && (
         <div className={`fixed inset-0 z-50 transition-opacity duration-500 ${homeScreenFading ? 'opacity-0' : 'opacity-100'}`}>
-          {/* Lovable-style Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-pink-800 overflow-hidden">
+          {/* Enhanced Lovable-style Gradient Background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 overflow-hidden">
+            {/* Primary gradient layer */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-blue-800/50 via-purple-800/50 to-pink-800/50" />
+
             {/* Animated gradient orbs */}
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/30 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-            <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/40 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-purple-500/40 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+            <div className="absolute bottom-1/4 left-1/2 w-96 h-96 bg-pink-500/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+
+            {/* Floating geometric shapes */}
+            <div className="absolute top-20 left-20 w-4 h-4 bg-white/20 rounded-full animate-bounce" style={{ animationDelay: '0.5s', animationDuration: '3s' }} />
+            <div className="absolute top-40 right-32 w-6 h-6 bg-pink-400/30 rounded-full animate-bounce" style={{ animationDelay: '1.5s', animationDuration: '4s' }} />
+            <div className="absolute bottom-32 left-16 w-3 h-3 bg-blue-400/40 rounded-full animate-bounce" style={{ animationDelay: '2.5s', animationDuration: '3.5s' }} />
+            <div className="absolute top-1/3 right-20 w-2 h-2 bg-purple-400/50 rounded-full animate-bounce" style={{ animationDelay: '3s', animationDuration: '2.5s' }} />
 
             {/* Subtle grid pattern overlay */}
-            <div className="absolute inset-0 opacity-10">
+            <div className="absolute inset-0 opacity-5">
               <div className="absolute inset-0" style={{
-                backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)`,
-                backgroundSize: '50px 50px'
+                backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.4) 1px, transparent 0)`,
+                backgroundSize: '60px 60px'
               }} />
             </div>
+
+            {/* Additional depth layer */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+
+            {/* Floating decorative elements */}
+            <div className="absolute top-1/4 left-1/3 w-32 h-32 border border-white/10 rounded-full animate-spin" style={{ animationDuration: '20s' }} />
+            <div className="absolute bottom-1/3 right-1/4 w-24 h-24 border border-pink-400/20 rounded-full animate-spin" style={{ animationDuration: '15s', animationDirection: 'reverse' }} />
+            <div className="absolute top-1/2 left-1/6 w-16 h-16 border border-blue-400/20 rounded-full animate-spin" style={{ animationDuration: '25s' }} />
           </div>
           
           
@@ -2212,25 +2229,31 @@ Focus on creating a beautiful, functional website that matches the user's vision
           {/* Main content */}
           <div className="relative z-10 h-full flex items-center justify-center px-4">
             <div className="text-center max-w-4xl min-w-[600px] mx-auto">
-              {/* Lovable-style Header */}
+              {/* Enhanced Lovable-style Header */}
               <div className="text-center">
-                <h1 className="text-[3rem] lg:text-[4.5rem] text-center text-white font-bold tracking-tight leading-[0.9] animate-[fadeIn_0.8s_ease-out]">
-                  Build something{' '}
-                  <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent">
+                <h1 className="text-[2.5rem] sm:text-[3.5rem] lg:text-[4.2rem] text-center text-white font-bold tracking-tight leading-[1.1] animate-[fadeIn_0.8s_ease-out] px-4">
+                  <span className="block sm:inline">Build something </span>
+                  <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-blue-400 bg-clip-text text-transparent whitespace-nowrap">
                     ❤️ Open-Lovable
                   </span>
                 </h1>
                 <motion.p
-                  className="text-lg lg:text-xl max-w-2xl mx-auto mt-6 text-white/80 text-center text-balance"
+                  className="text-lg lg:text-xl max-w-2xl mx-auto mt-8 text-white/90 text-center text-balance px-4"
                   transition={{ duration: 0.3, ease: "easeOut" }}
                 >
-                  Create apps and websites by chatting with AI
+                  Create beautiful apps and websites by chatting with AI
+                </motion.p>
+                <motion.p
+                  className="text-sm lg:text-base max-w-xl mx-auto mt-4 text-white/60 text-center px-4"
+                  transition={{ duration: 0.3, ease: "easeOut", delay: 0.2 }}
+                >
+                  No coding required • Powered by AI • Open source
                 </motion.p>
               </div>
               
-              <form onSubmit={handleHomeScreenSubmit} className="mt-8 max-w-2xl mx-auto">
+              <form onSubmit={handleHomeScreenSubmit} className="mt-12 max-w-2xl mx-auto px-4">
                 <div className="w-full relative group">
-                  <div className="relative bg-black/20 backdrop-blur-sm rounded-2xl border border-white/20 overflow-hidden">
+                  <div className="relative bg-black/30 backdrop-blur-md rounded-2xl border border-white/30 overflow-hidden shadow-2xl transition-all duration-300 group-hover:border-white/40 group-focus-within:border-white/50 group-focus-within:shadow-[0_0_30px_rgba(255,255,255,0.1)]">
                     <input
                       type="text"
                       value={homeDescriptionInput}
@@ -2238,26 +2261,49 @@ Focus on creating a beautiful, functional website that matches the user's vision
                         const value = e.target.value;
                         setHomeDescriptionInput(value);
                       }}
-                      placeholder="Ask Lovable to create an internal..."
-                      className="h-14 w-full bg-transparent text-white placeholder-white/60 px-6 pr-16 focus:outline-none text-base"
+                      placeholder="Describe your dream app or website..."
+                      className="h-16 w-full bg-transparent text-white placeholder-white/50 px-6 pr-16 focus:outline-none text-base transition-all duration-200 focus:placeholder-white/70"
                       autoFocus
                     />
                     <button
                       type="submit"
                       disabled={!homeDescriptionInput.trim()}
-                      className="absolute top-1/2 transform -translate-y-1/2 right-3 w-8 h-8 bg-white/20 hover:bg-white/30 disabled:bg-white/10 rounded-lg flex items-center justify-center transition-all duration-200 disabled:cursor-not-allowed"
-                      title="Create Website"
+                      className="absolute top-1/2 transform -translate-y-1/2 right-4 w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 disabled:from-gray-500 disabled:to-gray-600 rounded-xl flex items-center justify-center transition-all duration-200 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:opacity-50"
+                      title="Create with AI"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
                         <path d="M5 12h14M12 5l7 7-7 7"></path>
                       </svg>
                     </button>
                   </div>
+
+                  {/* Subtle glow effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-purple-500/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 -z-10" />
+                </div>
+
+                {/* Example prompts */}
+                <div className="mt-6 flex flex-wrap justify-center gap-2 px-4">
+                  {[
+                    "A modern portfolio website",
+                    "E-commerce store with cart",
+                    "Social media dashboard",
+                    "Task management app"
+                  ].map((example, index) => (
+                    <button
+                      key={example}
+                      onClick={() => setHomeDescriptionInput(example)}
+                      className="px-4 py-2 text-sm text-white/70 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:text-white/90 transition-all duration-200 hover:scale-105"
+                      style={{ animationDelay: `${index * 0.1}s` }}
+                    >
+                      {example}
+                    </button>
+                  ))}
                 </div>
               </form>
               
-              {/* Model Selector */}
-              <div className="mt-8 flex items-center justify-center animate-[fadeIn_1s_ease-out]">
+              {/* Enhanced Model Selector */}
+              <div className="mt-10 flex flex-col items-center justify-center animate-[fadeIn_1s_ease-out] px-4">
+                <div className="text-white/60 text-sm mb-3">Powered by</div>
                 <select
                   value={aiModel}
                   onChange={(e) => {
@@ -2270,10 +2316,10 @@ Focus on creating a beautiful, functional website that matches the user's vision
                     }
                     router.push(`/?${params.toString()}`);
                   }}
-                  className="px-4 py-2 text-sm bg-white/10 backdrop-blur-sm text-white border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-white/40"
+                  className="px-6 py-3 text-sm bg-white/10 backdrop-blur-md text-white border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-200 hover:bg-white/15 cursor-pointer"
                 >
                   {appConfig.ai.availableModels.map(model => (
-                    <option key={model} value={model} className="bg-gray-800 text-white">
+                    <option key={model} value={model} className="bg-gray-900 text-white">
                       {(appConfig.ai.modelDisplayNames as any)[model] || model}
                     </option>
                   ))}
