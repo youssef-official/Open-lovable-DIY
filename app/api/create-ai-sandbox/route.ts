@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { Sandbox } from '@e2b/code-interpreter';
 import type { SandboxState } from '@/types/sandbox';
 import { appConfig } from '@/config/app.config';
+import { getApiKey } from '@/lib/api-key-utils';
 
 // Store active sandbox globally
 declare global {
@@ -11,11 +12,20 @@ declare global {
   var sandboxState: SandboxState;
 }
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   let sandbox: any = null;
 
   try {
     console.log('[create-ai-sandbox] Creating base sandbox...');
+
+    // Get E2B API key from request or environment
+    const E2B_API_KEY = getApiKey(request, 'e2b');
+    if (!E2B_API_KEY) {
+      return NextResponse.json({
+        success: false,
+        error: 'E2B API key is required. Please provide it in the request headers or configure it in your environment.'
+      }, { status: 400 });
+    }
     
     // Kill existing sandbox if any
     if (global.activeSandbox) {
@@ -37,8 +47,8 @@ export async function POST() {
 
     // Create base sandbox - we'll set up Vite ourselves for full control
     console.log(`[create-ai-sandbox] Creating base E2B sandbox with ${appConfig.e2b.timeoutMinutes} minute timeout...`);
-    sandbox = await Sandbox.create({ 
-      apiKey: process.env.E2B_API_KEY,
+    sandbox = await Sandbox.create({
+      apiKey: E2B_API_KEY,
       timeoutMs: appConfig.e2b.timeoutMs
     });
     

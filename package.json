@@ -1,7 +1,29 @@
 {
-  "name": "open-lovable",
-  "version": "0.1.0",
-  "private": true,
+  "name": "open-lovable-diy",
+  "version": "1.0.0",
+  "description": "The open-source website cloning platform. Transform any website into a modern, responsive web application with AI.",
+  "author": "Open Source Community",
+  "license": "MIT",
+  "homepage": "https://openlovable.diy",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zainulabedeen123/Open-lovable-DIY.git"
+  },
+  "bugs": {
+    "url": "https://github.com/zainulabedeen123/Open-lovable-DIY/issues"
+  },
+  "keywords": [
+    "website-cloning",
+    "ai",
+    "react",
+    "nextjs",
+    "typescript",
+    "tailwindcss",
+    "web-scraping",
+    "code-generation",
+    "open-source"
+  ],
+  "private": false,
   "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",

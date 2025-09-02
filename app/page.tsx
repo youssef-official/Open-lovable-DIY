@@ -8,18 +8,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 // Import icons from centralized module to avoid Turbopack chunk issues
-import { 
-  FiFile, 
-  FiChevronRight, 
+import {
+  FiFile,
+  FiChevronRight,
   FiChevronDown,
   FiGithub,
-  BsFolderFill, 
+  BsFolderFill,
   BsFolder2Open,
-  SiJavascript, 
-  SiReact, 
-  SiCss3, 
-  SiJson 
+  SiJavascript,
+  SiReact,
+  SiCss3,
+  SiJson
 } from '@/lib/icons';
+import { ApiKeysButton } from '@/components/ApiKeysModal';
+import { useApiRequest } from '@/hooks/useApiRequest';
 import { motion, AnimatePresence } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
 
@@ -43,6 +45,7 @@ interface ChatMessage {
 }
 
 export default function AISandboxPage() {
+  const { makeRequest, makeRequestWithBody, hasRequiredKeys } = useApiRequest();
   const [sandboxData, setSandboxData] = useState<SandboxData | null>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ text: 'Not connected', active: false });
@@ -378,11 +381,7 @@ export default function AISandboxPage() {
     setScreenshotError(null);
     
     try {
-      const response = await fetch('/api/create-ai-sandbox', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      });
+      const response = await makeRequestWithBody('/api/create-ai-sandbox', {});
       
       const data = await response.json();
       console.log('[createSandbox] Response data:', data);
@@ -1545,15 +1544,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       console.log('[chat] - sandboxId:', fullContext.sandboxId);
       console.log('[chat] - isEdit:', conversationContext.appliedCode.length > 0);
       
-      const response = await fetch('/api/generate-ai-code-stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: message,
-          model: aiModel,
-          context: fullContext,
-          isEdit: conversationContext.appliedCode.length > 0
-        })
+      const response = await makeRequestWithBody('/api/generate-ai-code-stream', {
+        prompt: message,
+        model: aiModel,
+        context: fullContext,
+        isEdit: conversationContext.appliedCode.length > 0
       });
       
       if (!response.ok) {
@@ -2015,11 +2010,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     
     try {
       addChatMessage('Scraping website content...', 'system');
-      const scrapeResponse = await fetch('/api/scrape-url-enhanced', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      });
+      const scrapeResponse = await makeRequestWithBody('/api/scrape-url-enhanced', { url });
       
       if (!scrapeResponse.ok) {
         throw new Error(`Scraping failed: ${scrapeResponse.status}`);
@@ -2791,15 +2782,18 @@ Focus on the key sections and content, making it clean and modern.`;
               alt="Firecrawl"
               className="h-8 w-auto"
             />
-            <a 
-              href="https://github.com/mendableai/open-lovable" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-[#36322F] text-white px-3 py-2 rounded-[10px] text-sm font-medium [box-shadow:inset_0px_-2px_0px_0px_#171310,_0px_1px_6px_0px_rgba(58,_33,_8,_58%)] hover:translate-y-[1px] hover:scale-[0.98] hover:[box-shadow:inset_0px_-1px_0px_0px_#171310,_0px_1px_3px_0px_rgba(58,_33,_8,_40%)] active:translate-y-[2px] active:scale-[0.97] active:[box-shadow:inset_0px_1px_1px_0px_#171310,_0px_1px_2px_0px_rgba(58,_33,_8,_30%)] transition-all duration-200"
-            >
-              <FiGithub className="w-4 h-4" />
-              <span>Use this template</span>
-            </a>
+            <div className="flex items-center gap-3">
+              <ApiKeysButton />
+              <a
+                href="https://github.com/mendableai/open-lovable"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-[#36322F] text-white px-3 py-2 rounded-[10px] text-sm font-medium [box-shadow:inset_0px_-2px_0px_0px_#171310,_0px_1px_6px_0px_rgba(58,_33,_8,_58%)] hover:translate-y-[1px] hover:scale-[0.98] hover:[box-shadow:inset_0px_-1px_0px_0px_#171310,_0px_1px_3px_0px_rgba(58,_33,_8,_40%)] active:translate-y-[2px] active:scale-[0.97] active:[box-shadow:inset_0px_1px_1px_0px_#171310,_0px_1px_2px_0px_rgba(58,_33,_8,_30%)] transition-all duration-200"
+              >
+                <FiGithub className="w-4 h-4" />
+                <span>Use this template</span>
+              </a>
+            </div>
           </div>
           
           {/* Main content */}
@@ -3010,6 +3004,7 @@ Focus on the key sections and content, making it clean and modern.`;
           />
         </div>
         <div className="flex items-center gap-2">
+          <ApiKeysButton />
           {/* Model Selector - Left side */}
           <select
             value={aiModel}

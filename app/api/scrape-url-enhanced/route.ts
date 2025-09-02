@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getApiKey } from '@/lib/api-key-utils';
 
 // Function to sanitize smart quotes and other problematic characters
 function sanitizeQuotes(text: string): string {
@@ -29,12 +30,15 @@ export async function POST(request: NextRequest) {
     
     console.log('[scrape-url-enhanced] Scraping with Firecrawl:', url);
     
-    const FIRECRAWL_API_KEY = process.env.FIRECRAWL_API_KEY;
+    const FIRECRAWL_API_KEY = getApiKey(request, 'firecrawl');
     if (!FIRECRAWL_API_KEY) {
-      throw new Error('FIRECRAWL_API_KEY environment variable is not set');
+      return NextResponse.json({
+        success: false,
+        error: 'Firecrawl API key is required. Please provide it in the request headers or configure it in your environment.'
+      }, { status: 400 });
     }
     
-    // Make request to Firecrawl API with maxAge for 500% faster scraping
+    // Make request to Firecrawl API with optimized settings
     const firecrawlResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
       method: 'POST',
       headers: {
@@ -43,29 +47,63 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         url,
-        formats: ['markdown', 'html'],
-        waitFor: 3000,
-        timeout: 30000,
+        formats: ['markdown'],
+        waitFor: 1000, // Reduced wait time
+        timeout: 60000, // Increased timeout to 60 seconds
         blockAds: true,
         maxAge: 3600000, // Use cached data if less than 1 hour old (500% faster!)
         actions: [
           {
             type: 'wait',
-            milliseconds: 2000
+            milliseconds: 1000 // Reduced wait time
           }
         ]
       })
     });
     
+    let data;
+
     if (!firecrawlResponse.ok) {
       const error = await firecrawlResponse.text();
-      throw new Error(`Firecrawl API error: ${error}`);
-    }
-    
-    const data = await firecrawlResponse.json();
-    
-    if (!data.success || !data.data) {
-      throw new Error('Failed to scrape content');
+      console.error('[scrape-url-enhanced] Firecrawl API error:', error);
+
+      // Check if it's a timeout error and try with simpler settings
+      if (error.includes('SCRAPE_TIMEOUT') || error.includes('timeout')) {
+        console.log('[scrape-url-enhanced] Timeout detected, retrying with simpler settings...');
+
+        const retryResponse = await fetch('https://api.firecrawl.dev/v1/scrape', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${FIRECRAWL_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            url,
+            formats: ['markdown'],
+            timeout: 90000, // Extended timeout
+            blockAds: false, // Disable ad blocking for faster loading
+            maxAge: 3600000
+          })
+        });
+
+        if (retryResponse.ok) {
+          data = await retryResponse.json();
+          if (!data.success || !data.data) {
+            throw new Error('Failed to scrape content after retry');
+          }
+          console.log('[scrape-url-enhanced] Retry successful');
+        } else {
+          throw new Error(`Firecrawl API error after retry: ${await retryResponse.text()}`);
+        }
+      } else {
+        throw new Error(`Firecrawl API error: ${error}`);
+      }
+    } else {
+      data = await firecrawlResponse.json();
+
+      if (!data.success || !data.data) {
+        throw new Error('Failed to scrape content');
+      }
     }
     
     const { markdown, html, metadata } = data.data;

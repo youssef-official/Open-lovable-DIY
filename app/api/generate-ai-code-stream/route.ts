@@ -10,23 +10,29 @@ import { executeSearchPlan, formatSearchResultsForAI, selectTargetFile } from '@
 import { FileManifest } from '@/types/file-manifest';
 import type { ConversationState, ConversationMessage, ConversationEdit } from '@/types/conversation';
 import { appConfig } from '@/config/app.config';
+import { getAllApiKeysFromHeaders, getAllApiKeysFromBody } from '@/lib/api-key-utils';
 
-const groq = createGroq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+// Helper function to create AI clients with dynamic API keys
+function createAIClients(apiKeys: {
+  groq?: string;
+  anthropic?: string;
+  openai?: string;
+  gemini?: string;
+}) {
+  const groq = apiKeys.groq ? createGroq({ apiKey: apiKeys.groq }) : null;
+  const anthropic = apiKeys.anthropic ? createAnthropic({
+    apiKey: apiKeys.anthropic,
+    baseURL: process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1',
+  }) : null;
+  const googleGenerativeAI = apiKeys.gemini ? createGoogleGenerativeAI({
+    apiKey: apiKeys.gemini,
+  }) : null;
+  const openai = apiKeys.openai ? createOpenAI({
+    apiKey: apiKeys.openai,
+  }) : null;
 
-const anthropic = createAnthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-  baseURL: process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1',
-});
-
-const googleGenerativeAI = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
-
-const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+  return { groq, anthropic, googleGenerativeAI, openai };
+}
 
 // Helper function to analyze user preferences from conversation history
 function analyzeUserPreferences(messages: ConversationMessage[]): {
@@ -74,7 +80,16 @@ declare global {
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, model = 'openai/gpt-oss-20b', context, isEdit = false } = await request.json();
+    const body = await request.json();
+    const { prompt, model = 'openai/gpt-oss-20b', context, isEdit = false } = body;
+
+    // Get API keys from headers or body, with fallback to environment variables
+    const apiKeysFromHeaders = getAllApiKeysFromHeaders(request);
+    const apiKeysFromBody = getAllApiKeysFromBody(body);
+    const apiKeys = { ...apiKeysFromHeaders, ...apiKeysFromBody };
+
+    // Create AI clients with dynamic API keys
+    const { groq, anthropic, googleGenerativeAI, openai } = createAIClients(apiKeys);
     
     console.log('[generate-ai-code-stream] Received request:');
     console.log('[generate-ai-code-stream] - prompt:', prompt);
@@ -1155,8 +1170,31 @@ CRITICAL: When files are provided in the context:
         const isAnthropic = model.startsWith('anthropic/');
         const isGoogle = model.startsWith('google/');
         const isOpenAI = model.startsWith('openai/gpt-5');
-        const modelProvider = isAnthropic ? anthropic : (isOpenAI ? openai : (isGoogle ? googleGenerativeAI : groq));
-        const actualModel = isAnthropic ? model.replace('anthropic/', '') : 
+
+        let modelProvider;
+        if (isAnthropic) {
+          if (!anthropic) {
+            return NextResponse.json({ error: 'Anthropic API key is required for this model' }, { status: 400 });
+          }
+          modelProvider = anthropic;
+        } else if (isOpenAI) {
+          if (!openai) {
+            return NextResponse.json({ error: 'OpenAI API key is required for this model' }, { status: 400 });
+          }
+          modelProvider = openai;
+        } else if (isGoogle) {
+          if (!googleGenerativeAI) {
+            return NextResponse.json({ error: 'Google Gemini API key is required for this model' }, { status: 400 });
+          }
+          modelProvider = googleGenerativeAI;
+        } else {
+          if (!groq) {
+            return NextResponse.json({ error: 'Groq API key is required for this model' }, { status: 400 });
+          }
+          modelProvider = groq;
+        }
+
+        const actualModel = isAnthropic ? model.replace('anthropic/', '') :
                            (model === 'openai/gpt-5') ? 'gpt-5' :
                            (isGoogle ? model.replace('google/', '') : model);
 
@@ -1587,10 +1625,22 @@ Provide the complete file content without any truncation. Include all necessary 
                 // Create a new client for the completion based on the provider
                 let completionClient;
                 if (model.includes('gpt') || model.includes('openai')) {
+                  if (!openai) {
+                    console.error('[generate-ai-code-stream] OpenAI client not available for completion');
+                    continue;
+                  }
                   completionClient = openai;
                 } else if (model.includes('claude')) {
+                  if (!anthropic) {
+                    console.error('[generate-ai-code-stream] Anthropic client not available for completion');
+                    continue;
+                  }
                   completionClient = anthropic;
                 } else {
+                  if (!groq) {
+                    console.error('[generate-ai-code-stream] Groq client not available for completion');
+                    continue;
+                  }
                   completionClient = groq;
                 }
                 

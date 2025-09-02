@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://openlovable.diy/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
+# Disallow API routes from being indexed
+Disallow: /api/
+
+# Allow important pages
+Allow: /
+Allow: /about
+Allow: /docs
+Allow: /examples
