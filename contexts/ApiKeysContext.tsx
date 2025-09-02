@@ -1,16 +1,15 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { 
-  ApiKeys, 
-  getStoredApiKeys, 
-  storeApiKeys, 
+import {
+  ApiKeys,
+  getStoredApiKeys,
+  storeApiKeys,
   clearStoredApiKeys,
   hasRequiredApiKeys,
   getMissingRequiredApiKeys,
   validateGroqApiKey,
   validateE2bApiKey,
-  validateFirecrawlApiKey,
   ApiKeyValidationResult
 } from '@/lib/api-keys';
 
@@ -53,9 +52,9 @@ export function ApiKeysProvider({ children }: ApiKeysProviderProps) {
   }, []);
 
   const updateRequiredKeysStatus = (keys: ApiKeys) => {
-    const hasRequired = !!(keys.groq && keys.e2b && keys.firecrawl);
+    const hasRequired = !!(keys.groq && keys.e2b);
     const missing = getMissingRequiredApiKeys();
-    
+
     setHasRequiredKeys(hasRequired);
     setMissingKeys(missing);
   };
@@ -93,9 +92,6 @@ export function ApiKeysProvider({ children }: ApiKeysProviderProps) {
           break;
         case 'e2b':
           result = await validateE2bApiKey(key);
-          break;
-        case 'firecrawl':
-          result = await validateFirecrawlApiKey(key);
           break;
         default:
           result = { isValid: true }; // For optional keys, assume valid if provided

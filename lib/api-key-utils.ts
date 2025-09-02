@@ -18,7 +18,7 @@ export interface ApiKeyHeaders {
  */
 export function getApiKey(
   request: NextRequest,
-  provider: 'groq' | 'e2b' | 'firecrawl' | 'anthropic' | 'openai' | 'gemini'
+  provider: 'groq' | 'e2b' | 'anthropic' | 'openai' | 'gemini'
 ): string | undefined {
   // First try to get from headers
   const headerKey = `x-${provider}-api-key`;
@@ -38,7 +38,7 @@ export function getApiKey(
  */
 export function getApiKeyFromBody(
   body: any,
-  provider: 'groq' | 'e2b' | 'firecrawl' | 'anthropic' | 'openai' | 'gemini'
+  provider: 'groq' | 'e2b' | 'anthropic' | 'openai' | 'gemini'
 ): string | undefined {
   // First try to get from body
   const bodyKey = `${provider}ApiKey`;
@@ -57,7 +57,6 @@ export function getApiKeyFromBody(
 export function getAllApiKeysFromHeaders(request: NextRequest): {
   groq?: string;
   e2b?: string;
-  firecrawl?: string;
   anthropic?: string;
   openai?: string;
   gemini?: string;
@@ -65,7 +64,6 @@ export function getAllApiKeysFromHeaders(request: NextRequest): {
   return {
     groq: getApiKey(request, 'groq'),
     e2b: getApiKey(request, 'e2b'),
-    firecrawl: getApiKey(request, 'firecrawl'),
     anthropic: getApiKey(request, 'anthropic'),
     openai: getApiKey(request, 'openai'),
     gemini: getApiKey(request, 'gemini'),
@@ -78,7 +76,6 @@ export function getAllApiKeysFromHeaders(request: NextRequest): {
 export function getAllApiKeysFromBody(body: any): {
   groq?: string;
   e2b?: string;
-  firecrawl?: string;
   anthropic?: string;
   openai?: string;
   gemini?: string;
@@ -86,7 +83,6 @@ export function getAllApiKeysFromBody(body: any): {
   return {
     groq: getApiKeyFromBody(body, 'groq'),
     e2b: getApiKeyFromBody(body, 'e2b'),
-    firecrawl: getApiKeyFromBody(body, 'firecrawl'),
     anthropic: getApiKeyFromBody(body, 'anthropic'),
     openai: getApiKeyFromBody(body, 'openai'),
     gemini: getApiKeyFromBody(body, 'gemini'),
@@ -99,14 +95,12 @@ export function getAllApiKeysFromBody(body: any): {
 export function validateRequiredApiKeys(keys: {
   groq?: string;
   e2b?: string;
-  firecrawl?: string;
 }): { isValid: boolean; missing: string[] } {
   const missing: string[] = [];
-  
+
   if (!keys.groq) missing.push('Groq');
   if (!keys.e2b) missing.push('E2B');
-  if (!keys.firecrawl) missing.push('Firecrawl');
-  
+
   return {
     isValid: missing.length === 0,
     missing

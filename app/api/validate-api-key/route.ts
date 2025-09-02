@@ -122,51 +122,7 @@ export async function POST(request: NextRequest) {
         }
         break;
 
-      case 'firecrawl':
-        try {
-          console.log(`[validate-api-key] Testing Firecrawl API key...`);
 
-          // Test Firecrawl API key by making a simple request
-          const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${apiKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              url: 'https://example.com',
-              formats: ['markdown']
-            })
-          });
-
-          console.log(`[validate-api-key] Firecrawl response status: ${response.status}`);
-
-          if (response.ok) {
-            isValid = true;
-          } else if (response.status === 401 || response.status === 403) {
-            error = 'Invalid Firecrawl API key';
-          } else {
-            // For other errors, check the response text
-            try {
-              const errorText = await response.text();
-              console.log(`[validate-api-key] Firecrawl error text:`, errorText);
-
-              if (errorText.toLowerCase().includes('unauthorized') ||
-                  errorText.toLowerCase().includes('invalid') ||
-                  errorText.toLowerCase().includes('forbidden')) {
-                error = 'Invalid Firecrawl API key';
-              } else {
-                isValid = true; // Assume valid if not an auth error
-              }
-            } catch (textErr) {
-              isValid = true; // If we can't read the error, assume valid
-            }
-          }
-        } catch (err: any) {
-          console.error('[validate-api-key] Firecrawl error:', err);
-          error = err.message || 'Failed to validate Firecrawl API key';
-        }
-        break;
 
       case 'anthropic':
         try {

@@ -6,7 +6,6 @@
 export interface ApiKeys {
   groq?: string;
   e2b?: string;
-  firecrawl?: string;
   anthropic?: string;
   openai?: string;
   gemini?: string;
@@ -120,27 +119,7 @@ export async function validateE2bApiKey(apiKey: string): Promise<ApiKeyValidatio
   }
 }
 
-/**
- * Validate Firecrawl API key
- */
-export async function validateFirecrawlApiKey(apiKey: string): Promise<ApiKeyValidationResult> {
-  if (!apiKey || !apiKey.startsWith('fc-')) {
-    return { isValid: false, error: 'Firecrawl API key should start with "fc-"' };
-  }
 
-  try {
-    const response = await fetch('/api/validate-api-key', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider: 'firecrawl', apiKey })
-    });
-
-    const result = await response.json();
-    return { isValid: result.valid, error: result.error };
-  } catch (error) {
-    return { isValid: false, error: 'Failed to validate API key' };
-  }
-}
 
 /**
  * Get API key for a specific provider (from storage or environment)
@@ -155,7 +134,7 @@ export function getApiKey(provider: keyof ApiKeys): string | undefined {
  */
 export function hasRequiredApiKeys(): boolean {
   const keys = getStoredApiKeys();
-  return !!(keys.groq && keys.e2b && keys.firecrawl);
+  return !!(keys.groq && keys.e2b);
 }
 
 /**
@@ -164,10 +143,9 @@ export function hasRequiredApiKeys(): boolean {
 export function getMissingRequiredApiKeys(): string[] {
   const keys = getStoredApiKeys();
   const missing: string[] = [];
-  
+
   if (!keys.groq) missing.push('Groq');
   if (!keys.e2b) missing.push('E2B');
-  if (!keys.firecrawl) missing.push('Firecrawl');
-  
+
   return missing;
 }

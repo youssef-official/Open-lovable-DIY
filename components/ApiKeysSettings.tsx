@@ -200,18 +200,7 @@ export function ApiKeysSettings({ onClose }: ApiKeysSettingsProps) {
                 required
               />
 
-              <ApiKeyInput
-                label="Firecrawl API Key"
-                description="For web scraping and website cloning"
-                placeholder="fc-..."
-                value={localKeys.firecrawl || ''}
-                onChange={(value) => handleKeyChange('firecrawl', value)}
-                onValidate={() => handleValidateKey('firecrawl')}
-                isValidating={isValidating}
-                validationResult={validationResults.firecrawl}
-                getApiUrl="https://firecrawl.dev/app/api-keys"
-                required
-              />
+
             </div>
           </div>
 
