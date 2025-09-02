@@ -143,10 +143,10 @@ export function ApiKeysSettings({ onClose }: ApiKeysSettingsProps) {
   };
 
   const handleSaveAll = () => {
-    // Save all valid keys
+    // Save all keys that have values (validation is optional)
     Object.entries(localKeys).forEach(([provider, key]) => {
-      if (key && validationResults[provider]?.isValid) {
-        setApiKey(provider as keyof ApiKeys, key);
+      if (key && key.trim()) {
+        setApiKey(provider as keyof ApiKeys, key.trim());
       }
     });
     onClose?.();
@@ -268,6 +268,9 @@ export function ApiKeysSettings({ onClose }: ApiKeysSettingsProps) {
                 Ready to use
               </Badge>
             )}
+            <p className="text-sm text-gray-600">
+              💡 Tip: Validation is optional. You can save keys and test them by creating a website.
+            </p>
           </div>
           <div className="flex gap-2">
             {onClose && (
@@ -275,8 +278,8 @@ export function ApiKeysSettings({ onClose }: ApiKeysSettingsProps) {
                 Cancel
               </Button>
             )}
-            <Button onClick={handleSaveAll}>
-              Save Configuration
+            <Button onClick={handleSaveAll} className="bg-blue-600 hover:bg-blue-700">
+              Save & Start Building
             </Button>
           </div>
         </div>
