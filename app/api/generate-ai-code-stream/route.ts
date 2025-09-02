@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createGroq } from '@ai-sdk/groq';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createOpenAI } from '@ai-sdk/openai';
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { streamText } from 'ai';
 import type { SandboxState } from '@/types/sandbox';
 import { selectFilesForEdit, getFileContents, formatFilesForAI } from '@/lib/context-selector';
@@ -17,21 +16,17 @@ function createAIClients(apiKeys: {
   groq?: string;
   anthropic?: string;
   openai?: string;
-  gemini?: string;
 }) {
   const groq = apiKeys.groq ? createGroq({ apiKey: apiKeys.groq }) : null;
   const anthropic = apiKeys.anthropic ? createAnthropic({
     apiKey: apiKeys.anthropic,
     baseURL: process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1',
   }) : null;
-  const googleGenerativeAI = apiKeys.gemini ? createGoogleGenerativeAI({
-    apiKey: apiKeys.gemini,
-  }) : null;
   const openai = apiKeys.openai ? createOpenAI({
     apiKey: apiKeys.openai,
   }) : null;
 
-  return { groq, anthropic, googleGenerativeAI, openai };
+  return { groq, anthropic, openai };
 }
 
 // Helper function to analyze user preferences from conversation history
@@ -89,7 +84,7 @@ export async function POST(request: NextRequest) {
     const apiKeys = { ...apiKeysFromHeaders, ...apiKeysFromBody };
 
     // Create AI clients with dynamic API keys
-    const { groq, anthropic, googleGenerativeAI, openai } = createAIClients(apiKeys);
+    const { groq, anthropic, openai } = createAIClients(apiKeys);
     
     console.log('[generate-ai-code-stream] Received request:');
     console.log('[generate-ai-code-stream] - prompt:', prompt);
@@ -1168,7 +1163,6 @@ CRITICAL: When files are provided in the context:
         
         // Determine which provider to use based on model
         const isAnthropic = model.startsWith('anthropic/');
-        const isGoogle = model.startsWith('google/');
         const isOpenAI = model.startsWith('openai/gpt-5');
 
         let modelProvider;
@@ -1182,11 +1176,6 @@ CRITICAL: When files are provided in the context:
             return NextResponse.json({ error: 'OpenAI API key is required for this model' }, { status: 400 });
           }
           modelProvider = openai;
-        } else if (isGoogle) {
-          if (!googleGenerativeAI) {
-            return NextResponse.json({ error: 'Google Gemini API key is required for this model' }, { status: 400 });
-          }
-          modelProvider = googleGenerativeAI;
         } else {
           if (!groq) {
             return NextResponse.json({ error: 'Groq API key is required for this model' }, { status: 400 });
@@ -1195,8 +1184,7 @@ CRITICAL: When files are provided in the context:
         }
 
         const actualModel = isAnthropic ? model.replace('anthropic/', '') :
-                           (model === 'openai/gpt-5') ? 'gpt-5' :
-                           (isGoogle ? model.replace('google/', '') : model);
+                           (model === 'openai/gpt-5') ? 'gpt-5' : model;
 
         // Make streaming API call with appropriate provider
         const streamOptions: any = {
