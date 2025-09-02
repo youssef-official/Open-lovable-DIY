@@ -177,9 +177,9 @@ export async function POST(request: NextRequest) {
           
           const manifest: FileManifest | undefined = global.sandboxState?.fileCache?.manifest;
           
-          if (manifest) {
+          if (manifest && global.sandboxState?.fileCache?.files) {
             await sendProgress({ type: 'status', message: '🔍 Creating search plan...' });
-            
+
             const fileContents = global.sandboxState.fileCache.files;
             console.log('[generate-ai-code-stream] Files available for search:', Object.keys(fileContents).length);
             
@@ -954,24 +954,26 @@ CRITICAL: When files are provided in the context:
                         sandboxId: context?.sandboxId || 'unknown'
                       }
                     } as any;
-                  } else if (!global.sandboxState.fileCache) {
+                  } else if (!global.sandboxState?.fileCache) {
                     global.sandboxState.fileCache = {
                       files: {},
                       lastSync: Date.now(),
                       sandboxId: context?.sandboxId || 'unknown'
                     };
                   }
-                  
+
                   // Store files in cache
                   for (const [path, content] of Object.entries(filesData.files)) {
                     const normalizedPath = path.replace('/home/user/app/', '');
-                    global.sandboxState.fileCache.files[normalizedPath] = {
-                      content: content as string,
-                      lastModified: Date.now()
-                    };
+                    if (global.sandboxState?.fileCache?.files) {
+                      global.sandboxState.fileCache.files[normalizedPath] = {
+                        content: content as string,
+                        lastModified: Date.now()
+                      };
+                    }
                   }
-                  
-                  if (filesData.manifest) {
+
+                  if (filesData.manifest && global.sandboxState?.fileCache) {
                     global.sandboxState.fileCache.manifest = filesData.manifest;
                     
                     // Now try to analyze edit intent with the fetched manifest
@@ -1003,9 +1005,11 @@ CRITICAL: When files are provided in the context:
                   }
                   
                   // Update variables
-                  backendFiles = global.sandboxState.fileCache.files;
-                  hasBackendFiles = Object.keys(backendFiles).length > 0;
-                  console.log('[generate-ai-code-stream] Updated backend cache with fetched files');
+                  if (global.sandboxState?.fileCache?.files) {
+                    backendFiles = global.sandboxState.fileCache.files;
+                    hasBackendFiles = Object.keys(backendFiles).length > 0;
+                    console.log('[generate-ai-code-stream] Updated backend cache with fetched files');
+                  }
                 }
               }
             } catch (error) {
