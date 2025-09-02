@@ -1645,7 +1645,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                               type: fileType,
                               completed: true,
                               edited: true
-                            },
+                            } as any,
                             ...updatedState.files.slice(existingFileIndex + 1)
                           ];
                         } else {
@@ -1656,7 +1656,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                             type: fileType,
                             completed: true,
                             edited: false
-                          }];
+                          } as any];
                         }
                         
                         // Only show file status if not in edit mode
