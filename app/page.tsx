@@ -2279,65 +2279,32 @@ Focus on the key sections and content, making it clean and modern while preservi
     
     setHomeScreenFading(true);
     
-    // Clear messages and immediately show the cloning message
+    // Clear messages and show the generation message
     setChatMessages([]);
-    let displayUrl = homeUrlInput.trim();
-    if (!displayUrl.match(/^https?:\/\//i)) {
-      displayUrl = 'https://' + displayUrl;
-    }
-    // Remove protocol for cleaner display
-    const cleanUrl = displayUrl.replace(/^https?:\/\//i, '');
-    addChatMessage(`Starting to clone ${cleanUrl}...`, 'system');
-    
-    // Start creating sandbox and capturing screenshot immediately in parallel
-    const sandboxPromise = !sandboxData ? createSandbox(true) : Promise.resolve();
-    
-    // Only capture screenshot if we don't already have a sandbox (first generation)
-    // After sandbox is set up, skip the screenshot phase for faster generation
-    if (!sandboxData) {
-      captureUrlScreenshot(displayUrl);
-    }
+    addChatMessage(`Creating website: ${homeDescriptionInput}`, 'system');
     
     // Set loading stage immediately before hiding home screen
-    setLoadingStage('gathering');
+    setLoadingStage('planning');
     // Also ensure we're on preview tab to show the loading overlay
     setActiveTab('preview');
-    
-    setTimeout(async () => {
+
+    setTimeout(() => {
       setShowHomeScreen(false);
       setHomeScreenFading(false);
-      
-      // Wait for sandbox to be ready (if it's still creating)
-      await sandboxPromise;
-      
-      // Now start the clone process which will stream the generation
-      setUrlInput(homeUrlInput);
-      setUrlOverlayVisible(false); // Make sure overlay is closed
-      setUrlStatus(['Scraping website content...']);
-      
-      try {
-        // Scrape the website
-        let url = homeUrlInput.trim();
-        if (!url.match(/^https?:\/\//i)) {
-          url = 'https://' + url;
-        }
-        
-        // Screenshot is already being captured in parallel above
-        
-        const scrapeResponse = await fetch('/api/scrape-url-enhanced', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url })
-        });
-        
-        if (!scrapeResponse.ok) {
-          throw new Error('Failed to scrape website');
-        }
-        
-        const scrapeData = await scrapeResponse.json();
-        
-        if (!scrapeData.success) {
-          throw new Error(scrapeData.error || 'Failed to scrape website');
+
+      // Start the generation process
+      generateWebsiteFromDescription(homeDescriptionInput);
+    }, 800);
+  };
+
+  // Add the generateWebsiteFromDescription function here
+  const generateWebsiteFromDescription = async (description: string) => {
+    if (!description.trim()) {
+      addChatMessage('Please provide a description of the website you want to create.', 'system');
+      return;
+    }
+
+    addChatMessage(`Creating website: ${description}`, 'system');
         }
         
         setUrlStatus(['Website scraped successfully!', 'Generating React app...']);
