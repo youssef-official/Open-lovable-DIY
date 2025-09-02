@@ -2363,41 +2363,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
       <div className="flex-1 flex overflow-hidden">
         {/* Center Panel - AI Chat (1/3 of remaining width) */}
         <div className="flex-1 max-w-[400px] flex flex-col border-r border-border bg-background">
-          {conversationContext.scrapedWebsites.length > 0 && (
-            <div className="p-4 bg-card">
-              <div className="flex flex-col gap-2">
-                {conversationContext.scrapedWebsites.map((site, idx) => {
-                  // Extract favicon and site info from the scraped data
-                  const metadata = site.content?.metadata || {};
-                  const sourceURL = metadata.sourceURL || site.url;
-                  const favicon = metadata.favicon || `https://www.google.com/s2/favicons?domain=${new URL(sourceURL).hostname}&sz=32`;
-                  const siteName = metadata.ogSiteName || metadata.title || new URL(sourceURL).hostname;
-                  
-                  return (
-                    <div key={idx} className="flex items-center gap-2 text-sm">
-                      <img 
-                        src={favicon} 
-                        alt={siteName}
-                        className="w-4 h-4 rounded"
-                        onError={(e) => {
-                          e.currentTarget.src = `https://www.google.com/s2/favicons?domain=${new URL(sourceURL).hostname}&sz=32`;
-                        }}
-                      />
-                      <a 
-                        href={sourceURL} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-black hover:text-gray-700 truncate max-w-[250px]"
-                        title={sourceURL}
-                      >
-                        {siteName}
-                      </a>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+
 
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1 scrollbar-hide" ref={chatMessagesRef}>
             {chatMessages.map((msg, idx) => {
