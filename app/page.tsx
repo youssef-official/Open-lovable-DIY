@@ -21,6 +21,7 @@ import {
   SiJson
 } from '@/lib/icons';
 import { ApiKeysButton } from '@/components/ApiKeysModal';
+import { UserButton } from '@/components/UserButton';
 import { useApiRequest } from '@/hooks/useApiRequest';
 import { motion, AnimatePresence } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
@@ -2213,7 +2214,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
               <span className="text-white font-semibold text-lg">Open-Lovable</span>
             </div>
             <div className="flex items-center gap-3 sm:gap-4">
-              <ApiKeysButton />
+              <UserButton />
               <a
                 href="https://github.com/zainulabedeen123/Open-lovable-DIY.git"
                 target="_blank"
@@ -2340,7 +2341,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <ApiKeysButton />
+          <UserButton />
           {/* Model Selector - Left side */}
           <select
             value={aiModel}
