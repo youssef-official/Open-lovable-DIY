@@ -1,5 +1,10 @@
 import { Pool } from 'pg';
 
+// Check if DATABASE_URL is available
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL environment variable is not set');
+}
+
 // Create a connection pool for better performance
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -137,12 +142,19 @@ export class UserDatabase {
   // Test database connection
   static async testConnection(): Promise<boolean> {
     try {
+      if (!process.env.DATABASE_URL) {
+        console.error('DATABASE_URL environment variable is not set');
+        return false;
+      }
+
       const client = await pool.connect();
       await client.query('SELECT 1');
       client.release();
+      console.log('Database connection test successful');
       return true;
     } catch (error) {
       console.error('Database connection test failed:', error);
+      console.error('DATABASE_URL exists:', !!process.env.DATABASE_URL);
       return false;
     }
   }

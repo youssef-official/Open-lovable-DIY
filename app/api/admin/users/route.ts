@@ -11,9 +11,18 @@ const ADMIN_EMAILS = [
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if DATABASE_URL is configured
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL environment variable is not set');
+      return NextResponse.json(
+        { error: 'Database configuration missing' },
+        { status: 500 }
+      );
+    }
+
     // Check if user is authenticated
     const session = await getServerSession(authOptions);
-    
+
     if (!session || !session.user?.email) {
       return NextResponse.json(
         { error: 'Unauthorized - Please sign in' },
@@ -35,6 +44,16 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
+    // Test database connection first
+    const isConnected = await UserDatabase.testConnection();
+    if (!isConnected) {
+      console.error('Database connection failed');
+      return NextResponse.json(
+        { error: 'Database connection failed' },
+        { status: 500 }
+      );
+    }
+
     // Fetch users from database
     const { users, total } = await UserDatabase.getAllUsers(limit, offset);
     const stats = await UserDatabase.getUserStats();
@@ -52,8 +71,12 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Error fetching users:', error);
+    console.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
