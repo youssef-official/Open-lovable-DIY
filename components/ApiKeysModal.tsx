@@ -57,10 +57,14 @@ export function ApiKeysButton({ className = '' }: ApiKeysButtonProps) {
       <Button
         onClick={() => setIsModalOpen(true)}
         variant={hasRequiredKeys ? "outline" : "default"}
-        size="sm"
-        className={`flex items-center gap-2 ${className}`}
+        size="default"
+        className={`flex items-center gap-3 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold min-w-[120px] sm:min-w-[140px] backdrop-blur-sm border-white/20 ${
+          hasRequiredKeys
+            ? 'bg-white/10 text-white hover:bg-white/20 border-white/30'
+            : 'bg-gradient-to-r from-pink-500 to-purple-600 text-white hover:from-pink-600 hover:to-purple-700 border-transparent shadow-lg'
+        } transition-all duration-300 hover:scale-105 hover:shadow-xl ${className}`}
       >
-        <Settings className="w-4 h-4" />
+        <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
         {hasRequiredKeys ? (
           'API Keys'
         ) : (

@@ -2212,15 +2212,15 @@ Focus on creating a beautiful, functional website that matches the user's vision
               </div>
               <span className="text-white font-semibold text-lg">Open-Lovable</span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 sm:gap-4">
               <ApiKeysButton />
               <a
                 href="https://github.com/zainulabedeen123/Open-lovable-DIY.git"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-white px-3 py-2 rounded-lg text-sm font-medium border border-white/20 hover:bg-white/20 transition-all duration-200"
+                className="inline-flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-semibold border border-white/30 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl min-w-[100px] sm:min-w-[120px] justify-center"
               >
-                <FiGithub className="w-4 h-4" />
+                <FiGithub className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>GitHub</span>
               </a>
             </div>
