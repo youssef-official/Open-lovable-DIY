@@ -17,7 +17,7 @@ export function UserButton({ className = '' }: UserButtonProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
 
   // Check if user is admin
-  const isAdmin = session?.user?.email === 'canadadreamofbillions@gmail.com'
+  const isAdmin = session?.user?.email === 'zainulabedeen0002@gmail.com'
 
   if (status === "loading") {
     return (

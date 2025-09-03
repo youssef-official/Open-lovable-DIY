@@ -5,7 +5,7 @@ import { UserDatabase } from '@/lib/database';
 
 // Admin emails - you can add more admin emails here
 const ADMIN_EMAILS = [
-  'canadadreamofbillions@gmail.com', // Your email
+  'zainulabedeen0002@gmail.com', // Your email
   // Add more admin emails as needed
 ];
 
