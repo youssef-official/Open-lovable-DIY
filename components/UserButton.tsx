@@ -3,8 +3,9 @@
 import { useSession, signIn, signOut } from "next-auth/react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Settings, User, LogOut, LogIn } from "lucide-react"
+import { Settings, User, LogOut, LogIn, Shield } from "lucide-react"
 import { ApiKeysModal } from "@/components/ApiKeysModal"
+import Link from "next/link"
 
 interface UserButtonProps {
   className?: string;
@@ -14,6 +15,9 @@ export function UserButton({ className = '' }: UserButtonProps) {
   const { data: session, status } = useSession()
   const [isApiKeysModalOpen, setIsApiKeysModalOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+
+  // Check if user is admin
+  const isAdmin = session?.user?.email === 'canadadreamofbillions@gmail.com'
 
   if (status === "loading") {
     return (
@@ -99,6 +103,17 @@ export function UserButton({ className = '' }: UserButtonProps) {
 
             {/* Menu items */}
             <div className="py-2">
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100/50 flex items-center gap-3 transition-colors"
+                >
+                  <Shield className="w-4 h-4" />
+                  Admin Dashboard
+                </Link>
+              )}
+
               <button
                 onClick={() => {
                   setIsApiKeysModalOpen(true)
