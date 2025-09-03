@@ -20,10 +20,9 @@ import {
   SiCss3,
   SiJson
 } from '@/lib/icons';
-import { ApiKeysButton } from '@/components/ApiKeysModal';
 import { UserButton } from '@/components/UserButton';
 import { useApiRequest } from '@/hooks/useApiRequest';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
 
 interface SandboxData {
