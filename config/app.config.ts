@@ -50,7 +50,7 @@ export const appConfig = {
     defaultTemperature: 0.7,
     
     // Max tokens for code generation
-    maxTokens: 8000,
+    maxTokens: 10000,
     
     // Max tokens for truncation recovery
     truncationRecoveryMaxTokens: 4000,
@@ -65,7 +65,7 @@ export const appConfig = {
     packageInstallRefreshDelay: 5000,
     
     // Enable/disable automatic truncation recovery
-    enableTruncationRecovery: false, // Disabled - too many false positives
+    enableTruncationRecovery: true, // Enabled with improved detection logic
     
     // Maximum number of truncation recovery attempts per file
     maxTruncationRecoveryAttempts: 1,

@@ -1520,9 +1520,27 @@ It's better to have 3 complete files than 10 incomplete files.`
           const filePath = truncationMatch[1];
           const content = truncationMatch[2];
           
-          // Only check for really obvious HTML truncation - file ends with opening tag
-          if (content.trim().endsWith('<') || content.trim().endsWith('</')) {
+          // Check for various types of truncation
+          const trimmedContent = content.trim();
+
+          // 1. Incomplete HTML tags (original check)
+          if (trimmedContent.endsWith('<') || trimmedContent.endsWith('</')) {
             truncationWarnings.push(`File ${filePath} appears to have incomplete HTML tags`);
+          }
+
+          // 2. Incomplete quoted attributes (main issue with SVG elements)
+          if (trimmedContent.match(/="[^"]*$/) || trimmedContent.match(/='[^']*$/)) {
+            truncationWarnings.push(`File ${filePath} appears to have incomplete quoted attributes`);
+          }
+
+          // 3. Incomplete opening tags with attributes
+          if (trimmedContent.match(/<\w+[^>]*$/)) {
+            truncationWarnings.push(`File ${filePath} appears to have incomplete opening tags`);
+          }
+
+          // 4. Incomplete className attributes (common with Tailwind)
+          if (trimmedContent.match(/className="[\w\s-]*$/)) {
+            truncationWarnings.push(`File ${filePath} appears to have incomplete className attribute`);
           }
           
           // Skip "..." check - too many false positives with loading text, etc.
@@ -1573,21 +1591,32 @@ It's better to have 3 complete files than 10 incomplete files.`
                                  content.trim().endsWith(',') ||
                                  content.trim().endsWith('(');
                                  
-            const hasUnclosedTags = content.includes('</') && 
+            const hasUnclosedTags = content.includes('</') &&
                                     !content.match(/<\/[a-zA-Z0-9]+>/) &&
                                     content.includes('<');
-                                    
+
             const tooShort = content.length < 50 && filePath.match(/\.(jsx?|tsx?)$/);
-            
+
             // Check for unmatched braces specifically
             const openBraceCount = (content.match(/{/g) || []).length;
             const closeBraceCount = (content.match(/}/g) || []).length;
             const hasUnmatchedBraces = Math.abs(openBraceCount - closeBraceCount) > 1;
-            
-            const isTruncated = (hasEllipsis && endsAbruptly) || 
-                               hasUnclosedTags || 
+
+            // Enhanced truncation detection for attributes and elements
+            const trimmedContent = content.trim();
+            const hasIncompleteQuotedAttrs = trimmedContent.match(/="[^"]*$/) || trimmedContent.match(/='[^']*$/);
+            const hasIncompleteOpeningTags = trimmedContent.match(/<\w+[^>]*$/);
+            const hasIncompleteClassName = trimmedContent.match(/className="[\w\s-]*$/);
+            const hasIncompleteElements = trimmedContent.endsWith('<') || trimmedContent.endsWith('</');
+
+            const isTruncated = (hasEllipsis && endsAbruptly) ||
+                               hasUnclosedTags ||
                                (tooShort && !content.includes('export')) ||
-                               hasUnmatchedBraces;
+                               hasUnmatchedBraces ||
+                               hasIncompleteQuotedAttrs ||
+                               hasIncompleteOpeningTags ||
+                               hasIncompleteClassName ||
+                               hasIncompleteElements;
             
             if (isTruncated) {
               truncatedFiles.push(filePath);
