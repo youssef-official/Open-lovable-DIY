@@ -46,7 +46,7 @@ export default function AdminDashboard() {
   const [dbConnected, setDbConnected] = useState<boolean | null>(null);
 
   // Check if user is admin (you can modify this logic)
-  const isAdmin = session?.user?.email === 'zainulabedeen0002@gmail.com';
+  const isAdmin = session?.user?.email === 'youssef.official.2411@gmail.com';
 
   useEffect(() => {
     if (status === 'loading') return;
