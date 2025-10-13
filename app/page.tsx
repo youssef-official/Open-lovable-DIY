@@ -1429,61 +1429,72 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       );
   } else if (activeTab === 'preview') {
       // Check loading stage FIRST to prevent showing old sandbox
-      // Don't show loading overlay for edits
-      if (loadingStage || (generationProgress.isGenerating && !generationProgress.isEdit)) {
-        return (
-          <div className="relative w-full h-full bg-gray-900 flex items-center justify-center">
-            <div className="text-center">
-              <div className="mb-8">
- 
-                <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto"></div>
-              </div>
- <h3 className="text-xl font-semibold text-white mb-2">
-  {loadingStage === 'planning' && 'Planning your design...'}
-  {(loadingStage === 'generating' || generationProgress.isGenerating) && 'Generating your application...'}
-</h3>   {/* ← هنا قفلت الهيدر */}
+      
+        // Don't show loading overlay for edits
+if (loadingStage || (generationProgress.isGenerating && !generationProgress.isEdit)) {
+  return (
+    <div className="relative w-full h-full bg-gray-900 flex items-center justify-center">
+      <div className="text-center">
+        <div className="mb-8">
+          <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto"></div>
+        </div>
 
-<p className="text-gray-400 text-sm">
-  {loadingStage === 'planning' && 'Creating the optimal React component architecture'}
-  {(loadingStage === 'generating' ||
-    generationProgress.isGenerating) && 'Writing clean, modern code for your app'}
-</p>
-      
-      // Show sandbox iframe only when not in any loading state
-      if (sandboxData?.url && !loading) {
-        return (
-          <div className="relative w-full h-full">
-            <iframe
-              ref={iframeRef}
-              src={sandboxData.url}
-      
-              className="w-full h-full border-none"
-              title="Open Lovable Sandbox"
-              allow="clipboard-write"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-            />
-            {/* Refresh button */}
-            <button
-   
-              onClick={() => {
-                if (iframeRef.current && sandboxData?.url) {
-                  console.log('[Manual Refresh] Forcing iframe reload...');
-                  const newSrc = `${sandboxData.url}?t=${Date.now()}&manual=true`;
-                  iframeRef.current.src = newSrc;
-    
-              }
-              }}
-              className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-gray-700 p-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
-              title="Refresh sandbox"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" 
-  stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-          </div>
-        );
-  }
+        <h3 className="text-xl font-semibold text-white mb-2">
+          {loadingStage === 'planning' && 'Planning your design...'}
+          {(loadingStage === 'generating' || generationProgress.isGenerating) && 'Generating your application...'}
+        </h3>
+
+        <p className="text-gray-400 text-sm">
+          {loadingStage === 'planning' && 'Creating the optimal React component architecture'}
+          {(loadingStage === 'generating' ||
+            generationProgress.isGenerating) && 'Writing clean, modern code for your app'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Show sandbox iframe only when not in any loading state
+if (sandboxData?.url && !loading) {
+  return (
+    <div className="relative w-full h-full">
+      <iframe
+        ref={iframeRef}
+        src={sandboxData.url}
+        className="w-full h-full border-none"
+        title="Open Lovable Sandbox"
+        allow="clipboard-write"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+      />
+      {/* Refresh button */}
+      <button
+        onClick={() => {
+          if (iframeRef.current && sandboxData?.url) {
+            console.log('[Manual Refresh] Forcing iframe reload...');
+            const newSrc = `${sandboxData.url}?t=${Date.now()}&manual=true`;
+            iframeRef.current.src = newSrc;
+          }
+        }}
+        className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-gray-700 p-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
+        title="Refresh sandbox"
+      >
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          />
+        </svg>
+      </button>
+    </div>
+  );
+}
       
       // Default state when no sandbox
       return (
