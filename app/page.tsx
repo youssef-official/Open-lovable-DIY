@@ -21,7 +21,7 @@ import {
   SiJson,
   FaSun, // New Import for Day Mode
   FaMoon // New Import for Night Mode
-} from '@/lib/icons'; // Assuming FaSun/FaMoon are available here or from a similar icon library
+} from 'react-icons/fa';/FaMoon are available here or from a similar icon library
 import { UserButton } from '@/components/UserButton';
 import { useApiRequest } from '@/hooks/useApiRequest';
 import { motion } from 'framer-motion';
