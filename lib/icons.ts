@@ -19,3 +19,7 @@ export {
   SiCss3, 
   SiJson 
 } from 'react-icons/si';
+
+
+
+export { FaSun, FaMoon } from 'react-icons/fa';
