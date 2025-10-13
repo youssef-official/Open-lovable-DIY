@@ -1440,8 +1440,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">
                 {loadingStage === 'planning' && 'Planning your design...'}
-                {(loadingStage === 'generating' || generationProgress.isGenerating) && 'Generating 
-  your application...'}
+                {(loadingStage === 'generating' || generationProgress.isGenerating) && (
+  <>
+    Generating <br /> your application...
+  </>
+)}
               </h3>
               <p className="text-gray-400 text-sm">
                 {loadingStage === 'planning' && 'Creating the optimal React component architecture'}
