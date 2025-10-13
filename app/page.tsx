@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-
-// ✅ Import icons from centralized module to avoid Turbopack chunk issues
+// Import icons from centralized module to avoid Turbopack chunk issues
 import {
   FiFile,
   FiChevronRight,
@@ -20,16 +19,13 @@ import {
   SiReact,
   SiCss3,
   SiJson,
-  FaSun,    // Day Mode Icon
-  FaMoon    // Night Mode Icon
-} from '@/lib/icons';
-
+  FaSun, // New Import for Day Mode
+  FaMoon // New Import for Night Mode
+} from '@/lib/icons'; // Assuming FaSun/FaMoon are available here or from a similar icon library
 import { UserButton } from '@/components/UserButton';
 import { useApiRequest } from '@/hooks/useApiRequest';
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
-
-
 
 interface SandboxData {
   sandboxId: string;
@@ -1444,11 +1440,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">
                 {loadingStage === 'planning' && 'Planning your design...'}
-                {(loadingStage === 'generating' || generationProgress.isGenerating) && (
-  <>
-    Generating <br /> your application...
-  </>
-)}
+                {(loadingStage === 'generating' || generationProgress.isGenerating) && 'Generating 
+  your application...'}
               </h3>
               <p className="text-gray-400 text-sm">
                 {loadingStage === 'planning' && 'Creating the optimal React component architecture'}
