@@ -1438,18 +1438,16 @@ Tip: I automatically detect and install npm packages from your code imports (lik
  
                 <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto"></div>
               </div>
-              <h3 className="text-xl font-semibold text-white mb-2">
-                {loadingStage === 'planning' && 'Planning your design...'}
-                {(loadingStage === 'generating' || generationProgress.isGenerating) && 'Generating your application...'}
-              <p className="text-gray-400 text-sm">
-                {loadingStage === 'planning' && 'Creating the optimal React component architecture'}
-                {(loadingStage === 'generating' ||
-  generationProgress.isGenerating) && 'Writing clean, modern code for your app'}
-              </p>
-            </div>
-          </div>
-        );
-  }
+ <h3 className="text-xl font-semibold text-white mb-2">
+  {loadingStage === 'planning' && 'Planning your design...'}
+  {(loadingStage === 'generating' || generationProgress.isGenerating) && 'Generating your application...'}
+</h3>   {/* ← هنا قفلت الهيدر */}
+
+<p className="text-gray-400 text-sm">
+  {loadingStage === 'planning' && 'Creating the optimal React component architecture'}
+  {(loadingStage === 'generating' ||
+    generationProgress.isGenerating) && 'Writing clean, modern code for your app'}
+</p>
       
       // Show sandbox iframe only when not in any loading state
       if (sandboxData?.url && !loading) {
