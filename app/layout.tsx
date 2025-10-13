@@ -1,14 +1,18 @@
+"use client"; // ✅ مهم علشان ThemeProvider يشتغل
+
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ApiKeysProvider } from "@/contexts/ApiKeysContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "next-themes"; // ✅ استيراد المكتبة
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Open Lovable DIY - AI-Powered Website Cloning Platform",
-  description: "Transform any website into a modern, responsive web application with AI. Open-source alternative to Lovable.dev. Clone websites instantly with React, TypeScript, and Tailwind CSS.",
+  description:
+    "Transform any website into a modern, responsive web application with AI. Open-source alternative to Lovable.dev. Clone websites instantly with React, TypeScript, and Tailwind CSS.",
   keywords: [
     "website cloning",
     "AI website builder",
@@ -18,7 +22,7 @@ export const metadata: Metadata = {
     "TypeScript",
     "Tailwind CSS",
     "Next.js",
-    "website recreation"
+    "website recreation",
   ],
   authors: [{ name: "Open Source Community" }],
   creator: "Open Lovable DIY",
@@ -34,7 +38,8 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Open Lovable DIY - AI-Powered Website Cloning Platform",
-    description: "Transform any website into a modern, responsive web application with AI. Open-source alternative to Lovable.dev.",
+    description:
+      "Transform any website into a modern, responsive web application with AI. Open-source alternative to Lovable.dev.",
     url: "https://openlovable.diy",
     siteName: "Open Lovable DIY",
     images: [
@@ -51,7 +56,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Open Lovable DIY - AI-Powered Website Cloning Platform",
-    description: "Transform any website into a modern, responsive web application with AI. Open-source alternative to Lovable.dev.",
+    description:
+      "Transform any website into a modern, responsive web application with AI. Open-source alternative to Lovable.dev.",
     images: ["/og-image.png"],
     creator: "@openlovable",
   },
@@ -74,13 +80,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <AuthProvider>
-          <ApiKeysProvider>
-            {children}
-          </ApiKeysProvider>
-        </AuthProvider>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={true}>
+          <AuthProvider>
+            <ApiKeysProvider>{children}</ApiKeysProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
