@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-// Import icons from centralized module to avoid Turbopack chunk issues
+
+// ✅ Import icons from centralized module to avoid Turbopack chunk issues
 import {
   FiFile,
   FiChevronRight,
@@ -19,13 +20,16 @@ import {
   SiReact,
   SiCss3,
   SiJson,
-  FaSun, // New Import for Day Mode
-  FaMoon // New Import for Night Mode
-} from 'react-icons/fa';
+  FaSun,    // Day Mode Icon
+  FaMoon    // Night Mode Icon
+} from '@/lib/icons';
+
 import { UserButton } from '@/components/UserButton';
 import { useApiRequest } from '@/hooks/useApiRequest';
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
+
+
 
 interface SandboxData {
   sandboxId: string;
