@@ -7,13 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
-// Import icons from centralized module to avoid Turbopack chunk issues
-import {
-  FiGithub,
-} from '@/lib/icons';
 import { UserButton } from '@/components/UserButton';
 import { useApiRequest } from '@/hooks/useApiRequest';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ThemeProvider, useTheme } from 'next-themes';
+import { Moon, Sun } from 'lucide-react';
 
 interface SandboxData {
   sandboxId: string;
@@ -106,6 +104,8 @@ function AISandboxPage() {
     files: [],
     lastProcessedPosition: 0
   });
+
+  const { setTheme, theme } = useTheme();
 
   useEffect(() => {
     let isMounted = true;
@@ -487,7 +487,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       );
     } else {
       return (
-        <div className="h-full overflow-auto p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg shadow-inner">
+        <div className="h-full overflow-auto p-4 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900 dark:to-purple-900 rounded-lg shadow-inner">
           <SyntaxHighlighter language="typescript" style={vscDarkPlus} customStyle={{ borderRadius: '0.75rem' }}>
             {generationProgress.streamedCode || 'No code generated yet'}
           </SyntaxHighlighter>
@@ -497,16 +497,16 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 flex flex-col overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 dark:from-indigo-900 dark:via-purple-900 dark:to-pink-900 flex flex-col overflow-hidden">
       <AnimatePresence>
         {showHomeScreen && (
           <motion.div 
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 relative overflow-hidden flex flex-col px-4 py-6"
+            className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 dark:from-gray-900 dark:via-gray-800 dark:to-gray-700 relative overflow-hidden flex flex-col px-4 py-6 md:px-8 md:py-8"
           >
-            <div className="flex items-center justify-between z-20">
+            <div className="flex flex-col md:flex-row items-center justify-between z-20 gap-4">
               <motion.div 
                 initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
@@ -525,33 +525,24 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 className="flex items-center gap-4"
               >
                 <UserButton />
-                <a
-                  href="https://github.com/zainulabedeen123/Open-lovable-DIY.git"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-md text-white px-6 py-3 rounded-full text-base font-semibold border border-white/20 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-white/30 min-w-[140px] justify-center shadow-md"
-                >
-                  <FiGithub className="w-5 h-5" />
-                  <span>GitHub</span>
-                </a>
               </motion.div>
             </div>
             
-            <div className="relative z-10 h-full flex items-center justify-center px-4">
-              <div className="text-center max-w-4xl mx-auto">
+            <div className="relative z-10 h-full flex items-center justify-center px-4 md:px-8">
+              <div className="text-center max-w-4xl mx-auto w-full">
                 <motion.div 
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.4, duration: 0.6 }}
                   className="text-center"
                 >
-                  <h1 className="text-6xl md:text-8xl text-white font-extrabold tracking-tighter leading-none px-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 animate-gradient-x">
+                  <h1 className="text-4xl sm:text-6xl md:text-8xl text-white font-extrabold tracking-tighter leading-none px-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 animate-gradient-x">
                     Build something lovable
                   </h1>
-                  <p className="text-xl md:text-2xl max-w-3xl mx-auto mt-8 text-white/80 font-medium px-4">
+                  <p className="text-lg sm:text-xl md:text-2xl max-w-3xl mx-auto mt-6 md:mt-8 text-white/80 font-medium px-4">
                     Create stunning apps and websites by chatting with AI - Global Edition
                   </p>
-                  <p className="text-base max-w-xl mx-auto mt-4 text-white/60 px-4">
+                  <p className="text-sm md:text-base max-w-xl mx-auto mt-3 md:mt-4 text-white/60 px-4">
                     Powered by advanced AI • Open source • Available worldwide
                   </p>
                 </motion.div>
@@ -561,7 +552,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.5, duration: 0.6 }}
                   onSubmit={handleHomeScreenSubmit} 
-                  className="mt-12 max-w-3xl mx-auto px-4"
+                  className="mt-8 md:mt-12 max-w-3xl mx-auto px-4"
                 >
                   <div className="w-full relative group">
                     <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 overflow-hidden shadow-2xl transition-all duration-300 group-hover:border-white/40 group-focus-within:border-white/50 group-focus-within:shadow-[0_0_40px_rgba(255,255,255,0.15)]">
@@ -570,16 +561,16 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                         value={homeDescriptionInput}
                         onChange={(e) => setHomeDescriptionInput(e.target.value)}
                         placeholder="Build something lovable"
-                        className="h-16 w-full bg-transparent text-white placeholder-white/50 px-6 pr-16 focus:outline-none text-lg font-medium transition-all duration-200 focus:placeholder-white/30"
+                        className="h-14 md:h-16 w-full bg-transparent text-white placeholder-white/50 px-4 md:px-6 pr-12 md:pr-16 focus:outline-none text-base md:text-lg font-medium transition-all duration-200 focus:placeholder-white/30"
                         autoFocus
                       />
                       <button
                         type="submit"
                         disabled={!homeDescriptionInput.trim()}
-                        className="absolute top-1/2 right-4 -translate-y-1/2 w-12 h-12 bg-gradient-to-br from-indigo-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 disabled:bg-gray-600 rounded-full flex items-center justify-center transition-all duration-300 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl hover:scale-105 disabled:scale-100 disabled:shadow-none disabled:opacity-70"
+                        className="absolute top-1/2 right-3 md:right-4 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-indigo-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 disabled:bg-gray-600 rounded-full flex items-center justify-center transition-all duration-300 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl hover:scale-105 disabled:scale-100 disabled:shadow-none disabled:opacity-70"
                         title="Create with AI"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" md:width="24" md:height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
                           <path d="M5 12h14M12 5l7 7-7 7"></path>
                         </svg>
                       </button>
@@ -588,7 +579,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl blur-3xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 -z-10 animate-pulse-slow" />
                   </div>
 
-                  <div className="mt-8 flex flex-wrap justify-center gap-3 px-4">
+                  <div className="mt-6 md:mt-8 flex flex-wrap justify-center gap-2 md:gap-3 px-4">
                     {[
                       "A sleek portfolio website",
                       "E-commerce store with AI recommendations",
@@ -601,7 +592,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.6 + index * 0.1 }}
                         onClick={() => setHomeDescriptionInput(example)}
-                        className="px-5 py-2.5 text-sm text-white/80 bg-white/5 backdrop-blur-md border border-white/10 rounded-full hover:bg-white/10 hover:text-white transition-all duration-300 hover:scale-105 hover:shadow-md"
+                        className="px-4 md:px-5 py-2 text-sm md:text-sm text-white/80 bg-white/5 backdrop-blur-md border border-white/10 rounded-full hover:bg-white/10 hover:text-white transition-all duration-300 hover:scale-105 hover:shadow-md"
                       >
                         {example}
                       </motion.button>
@@ -613,7 +604,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.8, duration: 0.6 }}
-                  className="mt-12 flex flex-col items-center justify-center px-4"
+                  className="mt-8 md:mt-12 flex flex-col items-center justify-center px-4"
                 >
                   <div className="text-white/60 text-sm mb-3 font-medium">Powered by</div>
                   <select
@@ -628,7 +619,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                       }
                       router.push(`/?${params.toString()}`);
                     }}
-                    className="px-8 py-3 text-base bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300 hover:bg-white/15 cursor-pointer shadow-md hover:shadow-lg"
+                    className="px-6 md:px-8 py-2 md:py-3 text-base bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300 hover:bg-white/15 cursor-pointer shadow-md hover:shadow-lg w-full md:w-auto"
                   >
                     {appConfig.ai.availableModels.map(model => (
                       <option key={model} value={model} className="bg-indigo-900 text-white">
@@ -650,16 +641,16 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           transition={{ duration: 0.5 }}
           className="flex flex-col h-screen"
         >
-          <div className="bg-gradient-to-r from-indigo-800 to-pink-800 px-6 py-4 flex items-center justify-between shadow-2xl">
+          <div className="bg-gradient-to-r from-indigo-800 to-pink-800 dark:from-gray-900 dark:to-gray-700 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between shadow-2xl">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-pink-600 rounded-full flex items-center justify-center shadow-md">
                   <span className="text-white font-bold text-xl">❤️</span>
                 </div>
-                <span className="text-white font-bold text-2xl tracking-tight">Lovable Global</span>
+                <span className="text-white font-bold text-xl md:text-2xl tracking-tight">Lovable Global</span>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
               <UserButton />
               <select
                 value={aiModel}
@@ -673,7 +664,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   }
                   router.push(`/?${params.toString()}`);
                 }}
-                className="px-4 py-2 text-sm bg-white/10 border border-white/20 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300 hover:bg-white/20"
+                className="px-3 md:px-4 py-1.5 md:py-2 text-sm bg-white/10 border border-white/20 text-white rounded-full focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300 hover:bg-white/20"
               >
                 {appConfig.ai.availableModels.map(model => (
                   <option key={model} value={model}>
@@ -685,9 +676,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 onClick={() => createSandbox()}
                 size="sm"
                 title="Create new sandbox"
-                className="bg-indigo-600 text-white hover:bg-indigo-500 rounded-full px-4"
+                className="bg-indigo-600 text-white hover:bg-indigo-500 rounded-full px-3 md:px-4"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </Button>
@@ -696,9 +687,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 size="sm"
                 title="Re-apply last generation"
                 disabled={!conversationContext.lastGeneratedCode || !sandboxData}
-                className="bg-purple-600 text-white hover:bg-purple-500 rounded-full px-4"
+                className="bg-purple-600 text-white hover:bg-purple-500 rounded-full px-3 md:px-4"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </Button>
@@ -707,22 +698,25 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 disabled={!sandboxData}
                 size="sm"
                 title="Download your Vite app as ZIP"
-                className="bg-pink-600 text-white hover:bg-pink-500 rounded-full px-4"
+                className="bg-pink-600 text-white hover:bg-pink-500 rounded-full px-3 md:px-4"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
                 </svg>
               </Button>
-              <div className="inline-flex items-center gap-2 bg-white/10 text-white px-4 py-2 rounded-full text-sm font-medium shadow-md">
+              <div className="inline-flex items-center gap-2 bg-white/10 text-white px-3 md:px-4 py-1.5 md:py-2 rounded-full text-sm font-medium shadow-md">
                 <span id="status-text">{status.text}</span>
-                <div className={`w-3 h-3 rounded-full ${status.active ? 'bg-green-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)]'}`} />
+                <div className={`w-2 h-2 md:w-3 md:h-3 rounded-full ${status.active ? 'bg-green-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)]'}`} />
               </div>
+              <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all">
+                {theme === 'dark' ? <Sun className="w-4 h-4 text-white" /> : <Moon className="w-4 h-4 text-white" />}
+              </button>
             </div>
           </div>
 
-          <div className="flex-1 flex overflow-hidden bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-            <div className="flex-1 max-w-[450px] flex flex-col border-r border-indigo-200/50 bg-white/30 backdrop-blur-sm shadow-inner">
-              <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-transparent" ref={chatMessagesRef}>
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-800 dark:via-gray-700 dark:to-gray-600">
+            <div className="flex-1 max-w-full md:max-w-[450px] flex flex-col border-b md:border-r border-indigo-200/50 dark:border-gray-600 bg-white/30 dark:bg-gray-800/30 backdrop-blur-sm shadow-inner">
+              <div className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-4 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-transparent" ref={chatMessagesRef}>
                 <AnimatePresence>
                   {chatMessages.map((msg, idx) => (
                     <motion.div 
@@ -733,13 +727,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                       transition={{ duration: 0.3 }}
                       className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-md ${
-                        msg.type === 'user' ? 'bg-indigo-100 text-indigo-900' :
-                        msg.type === 'ai' ? 'bg-purple-100 text-purple-900' :
-                        msg.type === 'system' ? 'bg-pink-100 text-pink-900' :
-                        msg.type === 'command' ? 'bg-gray-100 text-gray-900 font-mono' :
-                        msg.type === 'error' ? 'bg-red-100 text-red-900 border border-red-300' :
-                        'bg-white text-gray-900'
+                      <div className={`max-w-[85%] rounded-2xl px-4 md:px-5 py-2 md:py-3 shadow-md ${
+                        msg.type === 'user' ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-900 dark:text-indigo-100' :
+                        msg.type === 'ai' ? 'bg-purple-100 text-purple-900 dark:bg-purple-900 dark:text-purple-100' :
+                        msg.type === 'system' ? 'bg-pink-100 text-pink-900 dark:bg-pink-900 dark:text-pink-100' :
+                        msg.type === 'command' ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100 font-mono' :
+                        msg.type === 'error' ? 'bg-red-100 text-red-900 dark:bg-red-900 dark:text-red-100 border border-red-300 dark:border-red-600' :
+                        'bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100'
                       }`}>
                         {msg.content}
                       </div>
@@ -748,10 +742,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 </AnimatePresence>
               </div>
 
-              <div className="p-6 border-t border-indigo-200/50 bg-white/20 backdrop-blur-md">
+              <div className="p-4 md:p-6 border-t border-indigo-200/50 dark:border-gray-600 bg-white/20 dark:bg-gray-800/20 backdrop-blur-md">
                 <div className="relative">
                   <Textarea
-                    className="min-h-[80px] pr-14 resize-none border-2 border-indigo-300 focus:border-indigo-500 focus:outline-none bg-white/50 backdrop-blur-sm rounded-2xl text-lg"
+                    className="min-h-[60px] md:min-h-[80px] pr-12 md:pr-14 resize-none border-2 border-indigo-300 focus:border-indigo-500 focus:outline-none bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-2xl text-base md:text-lg"
                     placeholder="Type your message..."
                     value={aiChatInput}
                     onChange={(e) => setAiChatInput(e.target.value)}
@@ -765,10 +759,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   />
                   <button
                     onClick={sendChatMessage}
-                    className="absolute right-4 bottom-4 p-3 bg-gradient-to-br from-indigo-500 to-pink-500 text-white rounded-full hover:scale-110 transition-all duration-300 shadow-lg hover:shadow-xl"
+                    className="absolute right-3 md:right-4 bottom-3 md:bottom-4 p-2 md:p-3 bg-gradient-to-br from-indigo-500 to-pink-500 text-white rounded-full hover:scale-110 transition-all duration-300 shadow-lg hover:shadow-xl"
                     title="Send message"
                   >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-4 h-4 md:w-6 md:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
                   </button>
@@ -777,15 +771,15 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             </div>
 
             <div className="flex-1 flex flex-col overflow-hidden">
-              <div className="px-6 py-3 bg-white/20 backdrop-blur-md border-b border-indigo-200/50 flex justify-between items-center shadow-sm">
-                <div className="flex items-center gap-4">
-                  <div className="flex bg-white/10 rounded-full p-1 shadow-md">
+              <div className="px-4 md:px-6 py-2 md:py-3 bg-white/20 dark:bg-gray-800/20 backdrop-blur-md border-b border-indigo-200/50 dark:border-gray-600 flex justify-between items-center shadow-sm">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="flex bg-white/10 dark:bg-gray-700/10 rounded-full p-1 shadow-md">
                     <button
                       onClick={() => setActiveTab('generation')}
-                      className={`px-5 py-2 rounded-full transition-all duration-300 ${
+                      className={`px-4 md:px-5 py-1.5 md:py-2 rounded-full transition-all duration-300 text-sm md:text-base ${
                         activeTab === 'generation' 
-                          ? 'bg-white text-indigo-900 font-medium shadow-inner' 
-                          : 'text-white hover:text-indigo-200'
+                          ? 'bg-white text-indigo-900 dark:bg-gray-800 dark:text-white font-medium shadow-inner' 
+                          : 'text-white hover:text-indigo-200 dark:hover:text-gray-200'
                       }`}
                       title="Code Generation"
                     >
@@ -793,10 +787,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     </button>
                     <button
                       onClick={() => setActiveTab('preview')}
-                      className={`px-5 py-2 rounded-full transition-all duration-300 ${
+                      className={`px-4 md:px-5 py-1.5 md:py-2 rounded-full transition-all duration-300 text-sm md:text-base ${
                         activeTab === 'preview' 
-                          ? 'bg-white text-indigo-900 font-medium shadow-inner' 
-                          : 'text-white hover:text-indigo-200'
+                          ? 'bg-white text-indigo-900 dark:bg-gray-800 dark:text-white font-medium shadow-inner' 
+                          : 'text-white hover:text-indigo-200 dark:hover:text-gray-200'
                       }`}
                       title="Live Preview"
                     >
@@ -804,23 +798,23 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     </button>
                   </div>
                 </div>
-                <div className="flex gap-3 items-center">
+                <div className="flex gap-2 md:gap-3 items-center">
                   {sandboxData && (
                     <a 
                       href={sandboxData.url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="px-4 py-2 bg-white/10 text-white rounded-full hover:bg-white/20 transition-all duration-300 shadow-md"
+                      className="px-3 md:px-4 py-1.5 md:py-2 bg-white/10 text-white rounded-full hover:bg-white/20 transition-all duration-300 shadow-md text-sm md:text-base"
                       title="Open in new tab"
                     >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </a>
                   )}
                 </div>
               </div>
-              <div className="flex-1 relative overflow-hidden p-4 bg-white/10 backdrop-blur-sm">
+              <div className="flex-1 relative overflow-hidden p-4 bg-white/10 dark:bg-gray-800/10 backdrop-blur-sm">
                 {renderMainContent()}
               </div>
             </div>
@@ -833,8 +827,10 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-100 to-pink-100 text-indigo-900 font-bold text-2xl">Loading Lovable...</div>}>
-      <AISandboxPage />
-    </Suspense>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-100 to-pink-100 dark:from-indigo-900 dark:to-pink-900 text-indigo-900 dark:text-white font-bold text-xl md:text-2xl">Loading Lovable...</div>}>
+        <AISandboxPage />
+      </Suspense>
+    </ThemeProvider>
   );
 }
