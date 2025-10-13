@@ -9,21 +9,11 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 // Import icons from centralized module to avoid Turbopack chunk issues
 import {
-  FiFile,
-  FiChevronRight,
-  FiChevronDown,
   FiGithub,
-  BsFolderFill,
-  BsFolder2Open,
-  SiJavascript,
-  SiReact,
-  SiCss3,
-  SiJson
 } from '@/lib/icons';
 import { UserButton } from '@/components/UserButton';
 import { useApiRequest } from '@/hooks/useApiRequest';
 import { motion, AnimatePresence } from 'framer-motion';
-import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
 
 interface SandboxData {
   sandboxId: string;
@@ -43,14 +33,17 @@ interface ChatMessage {
   };
 }
 
+type CodeApplicationState = {
+  stage: 'analyzing' | 'installing' | 'applying' | 'complete' | null;
+  packages?: string[];
+  installedPackages?: number;
+  filesGenerated?: number;
+};
+
 function AISandboxPage() {
-  const { makeRequest, makeRequestWithBody, hasRequiredKeys } = useApiRequest();
+  const { makeRequestWithBody } = useApiRequest();
   const [sandboxData, setSandboxData] = useState<SandboxData | null>(null);
-  const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ text: 'Not connected', active: false });
-  const [responseArea, setResponseArea] = useState<string[]>([]);
-  const [structureContent, setStructureContent] = useState('No sandbox created yet');
-  const [promptInput, setPromptInput] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       content: 'Welcome! I can help you generate code with full context of your sandbox files and structure. Just start chatting - I\'ll automatically create a sandbox for you if needed!\n\nTip: If you see package errors like "react-router-dom not found", just type "npm install" or "check packages" to automatically install missing packages.',
@@ -59,7 +52,6 @@ function AISandboxPage() {
     }
   ]);
   const [aiChatInput, setAiChatInput] = useState('');
-  const [aiEnabled] = useState(true);
   const searchParams = useSearchParams();
   const router = useRouter();
   const [aiModel, setAiModel] = useState(() => {
@@ -67,15 +59,8 @@ function AISandboxPage() {
     return appConfig.ai.availableModels.includes(modelParam || '') ? modelParam! : appConfig.ai.defaultModel;
   });
   const [showHomeScreen, setShowHomeScreen] = useState(true);
-  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['app', 'src', 'src/components']));
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
-  const [homeScreenFading, setHomeScreenFading] = useState(false);
   const [homeDescriptionInput, setHomeDescriptionInput] = useState('');
   const [activeTab, setActiveTab] = useState<'generation' | 'preview'>('preview');
-  const [showLoadingBackground, setShowLoadingBackground] = useState(false);
-  const [loadingStage, setLoadingStage] = useState<'planning' | 'generating' | null>(null);
-  const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
-  const [fileStructure, setFileStructure] = useState<string>('');
   
   const [conversationContext, setConversationContext] = useState<{
     generatedComponents: Array<{ name: string; path: string; content: string }>;
@@ -91,7 +76,6 @@ function AISandboxPage() {
   
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
-  const codeDisplayRef = useRef<HTMLDivElement>(null);
   
   const [codeApplicationState, setCodeApplicationState] = useState<CodeApplicationState>({
     stage: null
@@ -123,12 +107,10 @@ function AISandboxPage() {
     lastProcessedPosition: 0
   });
 
-  // Clear old conversation data on component mount and create/restore sandbox
   useEffect(() => {
     let isMounted = true;
 
     const initializePage = async () => {
-      // Clear old conversation
       try {
         await fetch('/api/conversation-state', {
           method: 'POST',
@@ -145,15 +127,11 @@ function AISandboxPage() {
       
       if (!isMounted) return;
 
-      // Check if sandbox ID is in URL
       const sandboxIdParam = searchParams.get('sandbox');
       
-      setLoading(true);
       try {
         if (sandboxIdParam) {
           console.log('[home] Attempting to restore sandbox:', sandboxIdParam);
-          // For now, just create a new sandbox - you could enhance this to actually restore
-          // the specific sandbox if your backend supports it
           await createSandbox(true);
         } else {
           console.log('[home] No sandbox in URL, creating new sandbox automatically...');
@@ -164,10 +142,6 @@ function AISandboxPage() {
         if (isMounted) {
           addChatMessage('Failed to create or restore sandbox.', 'error');
         }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
       }
     };
     
@@ -176,17 +150,12 @@ function AISandboxPage() {
     return () => {
       isMounted = false;
     };
-  }, []); // Run only on mount
-  
+  }, []); 
+
   useEffect(() => {
-    // Handle Escape key for home screen
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && showHomeScreen) {
-        setHomeScreenFading(true);
-        setTimeout(() => {
-          setShowHomeScreen(false);
-          setHomeScreenFading(false);
-        }, 500);
+        setShowHomeScreen(false);
       }
     };
     
@@ -195,20 +164,16 @@ function AISandboxPage() {
   }, [showHomeScreen]);
   
 
-
-
   useEffect(() => {
-    // Only check sandbox status on mount and when user navigates to the page
     checkSandboxStatus();
     
-    // Optional: Check status when window regains focus
     const handleFocus = () => {
       checkSandboxStatus();
     };
     
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); 
 
   useEffect(() => {
     if (chatMessagesRef.current) {
@@ -221,111 +186,18 @@ function AISandboxPage() {
     setStatus({ text, active });
   };
 
-  const log = (message: string, type: 'info' | 'error' | 'command' = 'info') => {
-    setResponseArea(prev => [...prev, `[${type}] ${message}`]);
-  };
-
   const addChatMessage = (content: string, type: ChatMessage['type'], metadata?: ChatMessage['metadata']) => {
     setChatMessages(prev => {
-      // Skip duplicate consecutive system messages
       if (type === 'system' && prev.length > 0) {
         const lastMessage = prev[prev.length - 1];
         if (lastMessage.type === 'system' && lastMessage.content === content) {
-          return prev; // Skip duplicate
+          return prev; 
         }
       }
       return [...prev, { content, type, timestamp: new Date(), metadata }];
     });
   };
   
-  const checkAndInstallPackages = async () => {
-    if (!sandboxData) {
-      addChatMessage('No active sandbox. Create a sandbox first!', 'system');
-      return;
-    }
-    
-    // Vite error checking removed - handled by template setup
-    addChatMessage('Sandbox is ready. Vite configuration is handled by the template.', 'system');
-  };
-  
-  const handleSurfaceError = (errors: any[]) => {
-    // Function kept for compatibility but Vite errors are now handled by template
-    
-    // Focus the input
-    const textarea = document.querySelector('textarea') as HTMLTextAreaElement;
-    if (textarea) {
-      textarea.focus();
-    }
-  };
-  
-  const installPackages = async (packages: string[]) => {
-    if (!sandboxData) {
-      addChatMessage('No active sandbox. Create a sandbox first!', 'system');
-      return;
-    }
-    
-    try {
-      const response = await fetch('/api/install-packages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packages })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to install packages: ${response.statusText}`);
-      }
-      
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      
-      while (reader) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              
-              switch (data.type) {
-                case 'command':
-                  // Don't show npm install commands - they're handled by info messages
-                  if (!data.command.includes('npm install')) {
-                    addChatMessage(data.command, 'command', { commandType: 'input' });
-                  }
-                  break;
-                case 'output':
-                  addChatMessage(data.message, 'command', { commandType: 'output' });
-                  break;
-                case 'error':
-                  if (data.message && data.message !== 'undefined') {
-                    addChatMessage(data.message, 'command', { commandType: 'error' });
-                  }
-                  break;
-                case 'warning':
-                  addChatMessage(data.message, 'command', { commandType: 'output' });
-                  break;
-                case 'success':
-                  addChatMessage(`${data.message}`, 'system');
-                  break;
-                case 'status':
-                  addChatMessage(data.message, 'system');
-                  break;
-              }
-            } catch (e) {
-              console.error('Failed to parse SSE data:', e);
-            }
-          }
-        }
-      }
-    } catch (error: any) {
-      addChatMessage(`Failed to install packages: ${error.message}`, 'system');
-    }
-  };
-
   const checkSandboxStatus = async () => {
     try {
       const response = await fetch('/api/sandbox-status');
@@ -335,9 +207,7 @@ function AISandboxPage() {
         setSandboxData(data.sandboxData);
         updateStatus('Sandbox active', true);
       } else if (data.active && !data.healthy) {
-        // Sandbox exists but not responding
         updateStatus('Sandbox not responding', false);
-        // Optionally try to create a new one
       } else {
         setSandboxData(null);
         updateStatus('No sandbox', false);
@@ -351,10 +221,7 @@ function AISandboxPage() {
 
   const createSandbox = async (fromHomeScreen = false) => {
     console.log('[createSandbox] Starting sandbox creation...');
-    setLoading(true);
-    setShowLoadingBackground(true);
     updateStatus('Creating sandbox...', false);
-    setResponseArea([]);
     
     try {
       const response = await makeRequestWithBody('/api/create-ai-sandbox', {});
@@ -365,49 +232,12 @@ function AISandboxPage() {
       if (data.success) {
         setSandboxData(data);
         updateStatus('Sandbox active', true);
-        log('Sandbox created successfully!');
-        log(`Sandbox ID: ${data.sandboxId}`);
-        log(`URL: ${data.url}`);
         
-        // Update URL with sandbox ID
         const newParams = new URLSearchParams(searchParams.toString());
         newParams.set('sandbox', data.sandboxId);
         newParams.set('model', aiModel);
         router.push(`/?${newParams.toString()}`, { scroll: false });
         
-        // Fade out loading background after sandbox loads
-        setTimeout(() => {
-          setShowLoadingBackground(false);
-        }, 3000);
-        
-        if (data.structure) {
-          displayStructure(data.structure);
-        }
-        
-        // Fetch sandbox files after creation
-        setTimeout(fetchSandboxFiles, 1000);
-        
-        // Restart Vite server to ensure it's running
-        setTimeout(async () => {
-          try {
-            console.log('[createSandbox] Ensuring Vite server is running...');
-            const restartResponse = await fetch('/api/restart-vite', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
-            });
-            
-            if (restartResponse.ok) {
-              const restartData = await restartResponse.json();
-              if (restartData.success) {
-                console.log('[createSandbox] Vite server started successfully');
-              }
-            }
-          } catch (error) {
-            console.error('[createSandbox] Error starting Vite server:', error);
-          }
-        }, 2000);
-        
-        // Only add welcome message if not coming from home screen
         if (!fromHomeScreen) {
           addChatMessage(`Sandbox created! ID: ${data.sandboxId}. I now have context of your sandbox and can help you build your app. Just ask me to create components and I'll automatically apply them!
 
@@ -425,38 +255,20 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     } catch (error: any) {
       console.error('[createSandbox] Error:', error);
       updateStatus('Error', false);
-      log(`Failed to create sandbox: ${error.message}`, 'error');
       addChatMessage(`Failed to create sandbox: ${error.message}`, 'system');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const displayStructure = (structure: any) => {
-    if (typeof structure === 'object') {
-      setStructureContent(JSON.stringify(structure, null, 2));
-    } else {
-      setStructureContent(structure || 'No structure available');
     }
   };
 
   const applyGeneratedCode = async (code: string, isEdit: boolean = false) => {
-    setLoading(true);
-    log('Applying AI-generated code...');
-    
     try {
-      // Show progress component instead of individual messages
       setCodeApplicationState({ stage: 'analyzing' });
       
-      // Get pending packages from tool calls
       const pendingPackages = ((window as any).pendingPackages || []).filter((pkg: any) => pkg && typeof pkg === 'string');
       if (pendingPackages.length > 0) {
         console.log('[applyGeneratedCode] Sending packages from tool calls:', pendingPackages);
-        // Clear pending packages after use
         (window as any).pendingPackages = [];
       }
       
-      // Use streaming endpoint for real-time feedback
       const response = await fetch('/api/apply-ai-code-stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -464,7 +276,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           response: code,
           isEdit: isEdit,
           packages: pendingPackages,
-          sandboxId: sandboxData?.sandboxId // Pass the sandbox ID to ensure proper connection
+          sandboxId: sandboxData?.sandboxId 
         })
       });
       
@@ -472,128 +284,86 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         throw new Error(`Failed to apply code: ${response.statusText}`);
       }
       
-      // Handle streaming response
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let finalData: any = null;
       
-      while (reader) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              
-              switch (data.type) {
-                case 'start':
-                  // Don't add as chat message, just update state
-                  setCodeApplicationState({ stage: 'analyzing' });
-                  break;
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                
+                switch (data.type) {
+                  case 'start':
+                    setCodeApplicationState({ stage: 'analyzing' });
+                    break;
                   
-                case 'step':
-                  // Update progress state based on step
-                  if (data.message.includes('Installing') && data.packages) {
-                    setCodeApplicationState({ 
-                      stage: 'installing', 
-                      packages: data.packages 
-                    });
-                  } else if (data.message.includes('Creating files') || data.message.includes('Applying')) {
-                    setCodeApplicationState({
-                      stage: 'applying',
-                      filesGenerated: data.filesCreated || 0
-                    });
-                  }
-                  break;
+                  case 'step':
+                    if (data.message.includes('Installing') && data.packages) {
+                      setCodeApplicationState({ 
+                        stage: 'installing', 
+                        packages: data.packages 
+                      });
+                    } else if (data.message.includes('Creating files') || data.message.includes('Applying')) {
+                      setCodeApplicationState({
+                        stage: 'applying',
+                        filesGenerated: data.filesCreated || 0
+                      });
+                    }
+                    break;
                   
-                case 'package-progress':
-                  // Handle package installation progress
-                  if (data.installedPackages) {
-                    setCodeApplicationState(prev => ({ 
-                      ...prev,
-                      installedPackages: data.installedPackages 
-                    }));
-                  }
-                  break;
+                  case 'package-progress':
+                    if (data.installedPackages) {
+                      setCodeApplicationState(prev => ({ 
+                        ...prev,
+                        installedPackages: data.installedPackages 
+                      }));
+                    }
+                    break;
                   
-                case 'command':
-                  // Don't show npm install commands - they're handled by info messages
-                  if (data.command && !data.command.includes('npm install')) {
-                    addChatMessage(data.command, 'command', { commandType: 'input' });
-                  }
-                  break;
+                  case 'success':
+                    if (data.installedPackages) {
+                      setCodeApplicationState(prev => ({ 
+                        ...prev,
+                        installedPackages: data.installedPackages 
+                      }));
+                    }
+                    break;
                   
-                case 'success':
-                  if (data.installedPackages) {
-                    setCodeApplicationState(prev => ({ 
-                      ...prev,
-                      installedPackages: data.installedPackages 
-                    }));
-                  }
-                  break;
+                  case 'complete':
+                    finalData = data;
+                    setCodeApplicationState({ stage: 'complete' });
+                    setTimeout(() => {
+                      setCodeApplicationState({ stage: null });
+                    }, 3000);
+                    break;
                   
-                case 'file-progress':
-                  // Skip file progress messages, they're noisy
-                  break;
+                  case 'error':
+                    addChatMessage(`Error: ${data.message || data.error || 'Unknown error'}`, 'system');
+                    break;
                   
-                case 'file-complete':
-                  // Could add individual file completion messages if desired
-                  break;
-                  
-                case 'command-progress':
-                  addChatMessage(`${data.action} command: ${data.command}`, 'command', { commandType: 'input' });
-                  break;
-                  
-                case 'command-output':
-                  addChatMessage(data.output, 'command', { 
-                    commandType: data.stream === 'stderr' ? 'error' : 'output' 
-                  });
-                  break;
-                  
-                case 'command-complete':
-                  if (data.success) {
-                    addChatMessage(`Command completed successfully`, 'system');
-                  } else {
-                    addChatMessage(`Command failed with exit code ${data.exitCode}`, 'system');
-                  }
-                  break;
-                  
-                case 'complete':
-                  finalData = data;
-                  setCodeApplicationState({ stage: 'complete' });
-                  // Clear the state after a delay
-                  setTimeout(() => {
-                    setCodeApplicationState({ stage: null });
-                  }, 3000);
-                  break;
-                  
-                case 'error':
-                  addChatMessage(`Error: ${data.message || data.error || 'Unknown error'}`, 'system');
-                  break;
-                  
-                case 'warning':
-                  addChatMessage(`${data.message}`, 'system');
-                  break;
-                  
-                case 'info':
-                  // Show info messages, especially for package installation
-                  if (data.message) {
-                    addChatMessage(data.message, 'system');
-                  }
-                  break;
+                  case 'info':
+                    if (data.message) {
+                      addChatMessage(data.message, 'system');
+                    }
+                    break;
+                }
+              } catch (e) {
+                // Ignore
               }
-            } catch (e) {
-              // Ignore parse errors
             }
           }
         }
       }
       
-      // Process final data
       if (finalData && finalData.type === 'complete') {
         const data = {
           success: true,
@@ -606,215 +376,31 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         if (data.success) {
           const { results } = data;
         
-        // Log package installation results without duplicate messages
-        if (results.packagesInstalled?.length > 0) {
-          log(`Packages installed: ${results.packagesInstalled.join(', ')}`);
-        }
-        
-        if (results.filesCreated?.length > 0) {
-          log('Files created:');
-          results.filesCreated.forEach((file: string) => {
-            log(`  ${file}`, 'command');
-          });
-          
-          // Verify files were actually created by refreshing the sandbox if needed
-          if (sandboxData?.sandboxId && results.filesCreated.length > 0) {
-            // Small delay to ensure files are written
-            setTimeout(() => {
-              // Force refresh the iframe to show new files
-              if (iframeRef.current) {
-                iframeRef.current.src = iframeRef.current.src;
-              }
-            }, 1000);
-          }
-        }
-        
-        if (results.filesUpdated?.length > 0) {
-          log('Files updated:');
-          results.filesUpdated.forEach((file: string) => {
-            log(`  ${file}`, 'command');
-          });
-        }
-        
-        // Update conversation context with applied code
-        setConversationContext(prev => ({
-          ...prev,
-          appliedCode: [...prev.appliedCode, {
-            files: [...(results.filesCreated || []), ...(results.filesUpdated || [])],
-            timestamp: new Date()
-          }]
-        }));
-        
-        if (results.commandsExecuted?.length > 0) {
-          log('Commands executed:');
-          results.commandsExecuted.forEach((cmd: string) => {
-            log(`  $ ${cmd}`, 'command');
-          });
-        }
-        
-        if (results.errors?.length > 0) {
-          results.errors.forEach((err: string) => {
-            log(err, 'error');
-          });
-        }
-        
-        if (data.structure) {
-          displayStructure(data.structure);
-        }
-        
-        if (data.explanation) {
-          log(data.explanation);
-        }
-        
-        if ((data as any).autoCompleted) {
-          log('Auto-generating missing components...', 'command');
-
-          if ((data as any).autoCompletedComponents) {
-            setTimeout(() => {
-              log('Auto-generated missing components:', 'info');
-              (data as any).autoCompletedComponents.forEach((comp: string) => {
-                log(`  ${comp}`, 'command');
-              });
-            }, 1000);
-          }
-        } else if ((data as any).warning) {
-          log((data as any).warning, 'error');
-
-          if ((data as any).missingImports && (data as any).missingImports.length > 0) {
-            const missingList = (data as any).missingImports.join(', ');
-            addChatMessage(
-              `Ask me to "create the missing components: ${missingList}" to fix these import errors.`,
-              'system'
-            );
-          }
-        }
-
-        log('Code applied successfully!');
-        console.log('[applyGeneratedCode] Response data:', data);
-        console.log('[applyGeneratedCode] Debug info:', (data as any).debug);
-        console.log('[applyGeneratedCode] Current sandboxData:', sandboxData);
-        console.log('[applyGeneratedCode] Current iframe element:', iframeRef.current);
-        console.log('[applyGeneratedCode] Current iframe src:', iframeRef.current?.src);
-        
-        if (results.filesCreated?.length > 0) {
-          setConversationContext(prev => ({
-            ...prev,
-            appliedCode: [...prev.appliedCode, {
-              files: results.filesCreated,
-              timestamp: new Date()
-            }]
-          }));
-          
-          // Update the chat message to show success
-          // Only show file list if not in edit mode
-          if (isEdit) {
-            addChatMessage(`Edit applied successfully!`, 'system');
-          } else {
-            // Check if this is part of a generation flow (has recent AI recreation message)
-            const recentMessages = chatMessages.slice(-5);
-            const isPartOfGeneration = recentMessages.some(m => 
-              m.content.includes('AI recreation generated') || 
-              m.content.includes('Code generated')
-            );
-            
-            // Don't show files if part of generation flow to avoid duplication
-            if (isPartOfGeneration) {
-              addChatMessage(`Applied ${results.filesCreated.length} files successfully!`, 'system');
-            } else {
-              addChatMessage(`Applied ${results.filesCreated.length} files successfully!`, 'system', {
-                appliedFiles: results.filesCreated
-              });
-            }
+          if (results.filesCreated?.length > 0) {
+            addChatMessage(`Applied ${results.filesCreated.length} files successfully!`, 'system', {
+              appliedFiles: results.filesCreated
+            });
           }
           
-          // If there are failed packages, add a message about checking for errors
-          if (results.packagesFailed?.length > 0) {
-            addChatMessage(`⚠️ Some packages failed to install. Check the error banner above for details.`, 'system');
-          }
-          
-          // Fetch updated file structure
-          await fetchSandboxFiles();
-          
-          // Automatically check and install any missing packages
-          await checkAndInstallPackages();
-          
-          // Test build to ensure everything compiles correctly
-          // Skip build test for now - it's causing errors with undefined activeSandbox
-          // The build test was trying to access global.activeSandbox from the frontend,
-          // but that's only available in the backend API routes
-          console.log('[build-test] Skipping build test - would need API endpoint');
-          
-          // Force iframe refresh after applying code
-          const refreshDelay = appConfig.codeApplication.defaultRefreshDelay; // Allow Vite to process changes
-          
-          setTimeout(() => {
-            if (iframeRef.current && sandboxData?.url) {
-              console.log('[home] Refreshing iframe after code application...');
-              
-              // Method 1: Change src with timestamp
-              const urlWithTimestamp = `${sandboxData.url}?t=${Date.now()}&applied=true`;
-              iframeRef.current.src = urlWithTimestamp;
-              
-              // Method 2: Force reload after a short delay
-              setTimeout(() => {
-                try {
-                  if (iframeRef.current?.contentWindow) {
-                    iframeRef.current.contentWindow.location.reload();
-                    console.log('[home] Force reloaded iframe content');
-                  }
-                } catch (e) {
-                  console.log('[home] Could not reload iframe (cross-origin):', e);
-                }
-              }, 1000);
-            }
-          }, refreshDelay);
-          
-          // Vite error checking removed - handled by template setup
-        }
-        
-          // Give Vite HMR a moment to detect changes, then ensure refresh
           if (iframeRef.current && sandboxData?.url) {
-            // Wait for Vite to process the file changes
-            // If packages were installed, wait longer for Vite to restart
-            const packagesInstalled = results?.packagesInstalled?.length > 0 || data.results?.packagesInstalled?.length > 0;
-            const refreshDelay = packagesInstalled ? appConfig.codeApplication.packageInstallRefreshDelay : appConfig.codeApplication.defaultRefreshDelay;
+            const iframe = iframeRef.current;
+            const url = sandboxData.url;
+            const packagesInstalled = results?.packagesInstalled?.length > 0;
+            const refreshDelay = packagesInstalled ? 5000 : 2000; // Example delays
             
             setTimeout(() => {
-              iframeRef.current.src = `${sandboxData.url}?t=${Date.now()}`;
+              iframe.src = `${url}?t=${Date.now()}`;
             }, refreshDelay);
-          }
-        } else {
-          log('Failed to apply code', 'error');
-          if (data.explanation) {
-            log(data.explanation, 'error');
           }
         }
       }
     } catch (error: any) {
-      console.error('[applyGeneratedCode] Error:', error);
-      log(`Error applying code: ${error.message}`, 'error');
       addChatMessage(`Error applying code: ${error.message}`, 'system');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchSandboxFiles = async () => {
-    try {
-      const response = await fetch('/api/sandbox-files');
-      const data = await response.json();
-      
-      if (data.success && data.files) {
-        setSandboxFiles(data.files);
-        setFileStructure(data.structure);
-      }
-    } catch (error) {
-      console.error('Failed to fetch sandbox files:', error);
     }
   };
 
   const sendChatMessage = async () => {
-    if (!aiChatInput.trim() || !aiEnabled || !sandboxData) return;
+    if (!aiChatInput.trim() || !sandboxData) return;
 
     const message = aiChatInput.trim();
     setAiChatInput('');
@@ -837,10 +423,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       if (data.success) {
         addChatMessage(data.response, 'ai');
         
-        // Update conversation context
         setConversationContext(data.updatedContext || conversationContext);
         
-        // If code was generated, apply it
         if (data.generatedCode) {
           await applyGeneratedCode(data.generatedCode);
         }
@@ -856,20 +440,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     e.preventDefault();
     if (!homeDescriptionInput.trim()) return;
 
-    setHomeScreenFading(true);
-    setTimeout(async () => {
-      setShowHomeScreen(false);
-      setHomeScreenFading(false);
-      
-      // Create sandbox and start generation
-      await createSandbox(true);
-      
-      // Add initial message
-      addChatMessage(homeDescriptionInput, 'user', { websiteDescription: homeDescriptionInput });
-      
-      // Trigger AI generation
-      await sendChatMessage();
-    }, 500);
+    setShowHomeScreen(false);
+    
+    await createSandbox(true);
+    
+    addChatMessage(homeDescriptionInput, 'user', { websiteDescription: homeDescriptionInput });
+    
+    await sendChatMessage();
   };
 
   const downloadZip = async () => {
@@ -960,10 +537,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               </motion.div>
             </div>
             
-            {/* Main content */}
             <div className="relative z-10 h-full flex items-center justify-center px-4">
               <div className="text-center max-w-4xl mx-auto">
-                {/* Enhanced Lovable-style Header */}
                 <motion.div 
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -1010,11 +585,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                       </button>
                     </div>
 
-                    {/* Enhanced glow effect */}
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl blur-3xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-500 -z-10 animate-pulse-slow" />
                   </div>
 
-                  {/* Example prompts with animations */}
                   <div className="mt-8 flex flex-wrap justify-center gap-3 px-4">
                     {[
                       "A sleek portfolio website",
@@ -1036,7 +609,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   </div>
                 </motion.form>
                 
-                {/* Enhanced Model Selector */}
                 <motion.div 
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
@@ -1056,7 +628,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                       }
                       router.push(`/?${params.toString()}`);
                     }}
-                    className="px-8 py-3 text-base bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-white/30 transition-all duration-300 hover:bg-white/15 cursor-pointer shadow-md hover:shadow-lg"
+                    className="px-8 py-3 text-base bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white/30 transition-all duration-300 hover:bg-white/15 cursor-pointer shadow-md hover:shadow-lg"
                   >
                     {appConfig.ai.availableModels.map(model => (
                       <option key={model} value={model} className="bg-indigo-900 text-white">
@@ -1110,7 +682,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 ))}
               </select>
               <Button 
-                variant="code"
                 onClick={() => createSandbox()}
                 size="sm"
                 title="Create new sandbox"
@@ -1121,7 +692,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 </svg>
               </Button>
               <Button 
-                variant="code"
                 onClick={reapplyLastGeneration}
                 size="sm"
                 title="Re-apply last generation"
@@ -1133,7 +703,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 </svg>
               </Button>
               <Button 
-                variant="code"
                 onClick={downloadZip}
                 disabled={!sandboxData}
                 size="sm"
@@ -1152,7 +721,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           </div>
 
           <div className="flex-1 flex overflow-hidden bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
-            {/* Center Panel - AI Chat */}
             <div className="flex-1 max-w-[450px] flex flex-col border-r border-indigo-200/50 bg-white/30 backdrop-blur-sm shadow-inner">
               <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4 scrollbar-thin scrollbar-thumb-purple-300 scrollbar-track-transparent" ref={chatMessagesRef}>
                 <AnimatePresence>
@@ -1208,7 +776,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               </div>
             </div>
 
-            {/* Right Panel - Preview or Generation */}
             <div className="flex-1 flex flex-col overflow-hidden">
               <div className="px-6 py-3 bg-white/20 backdrop-blur-md border-b border-indigo-200/50 flex justify-between items-center shadow-sm">
                 <div className="flex items-center gap-4">
