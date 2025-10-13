@@ -570,9 +570,18 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                         className="absolute top-1/2 right-3 md:right-4 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-indigo-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 disabled:bg-gray-600 rounded-full flex items-center justify-center transition-all duration-300 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl hover:scale-105 disabled:scale-100 disabled:shadow-none disabled:opacity-70"
                         title="Create with AI"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" md:width="24" md:height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
-                          <path d="M5 12h14M12 5l7 7-7 7"></path>
-                        </svg>
+                    <svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="currentColor"
+  strokeWidth="2"
+  strokeLinecap="round"
+  strokeLinejoin="round"
+  className="text-white w-5 h-5 md:w-6 md:h-6"
+>
+  <path d="M5 12h14M12 5l7 7-7 7"></path>
+</svg>
                       </button>
                     </div>
 
