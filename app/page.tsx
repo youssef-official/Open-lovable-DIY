@@ -2478,11 +2478,12 @@ Focus on creating a beautiful, functional website that matches the user's vision
            
               <span className={`font-bold text-lg ${theme.text_main}`}>❤️</span>
             </div>
+            {/* ✅ RESPONSIVENESS: Hide text on small screens */}
             <span className={`font-semibold text-lg ${theme.text_main} hidden sm:inline`}>Open-Lovable</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Day/Night Mode Toggle - NEW */}
+          {/* Day/Night Mode Toggle */}
           <Button 
             variant="code"
             onClick={toggleTheme}
@@ -2494,7 +2495,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
           </Button>
 
           <UserButton />
-          {/* Model Selector - Left side */}
+          {/* Model Selector */}
+          {/* ✅ RESPONSIVENESS: Hide on small screens */}
           <select
  
             value={aiModel}
@@ -2508,7 +2510,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
   }
               router.push(`/?${params.toString()}`);
   }}
-            className={`px-3 py-1.5 text-sm ${isDarkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'} border rounded-[10px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-colors duration-200 hidden md:inline`}
+            className={`px-3 py-1.5 text-sm ${isDarkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'} border rounded-[10px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-colors duration-200 hidden md:inline-block`}
           >
             {appConfig.ai.availableModels.map(model => (
               <option key={model} value={model} className={isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>
@@ -2565,11 +2567,11 @@ Focus on creating a beautiful, functional website that matches the user's vision
         </div>
       </div>
 
-      {/* ✅ RESPONSIVENESS FIX: Changed to flex-col on mobile and lg:flex-row on large screens */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      {/* ✅ RESPONSIVENESS FIX: Reverted to flex-row to keep side-by-side layout */}
+      <div className="flex-1 flex flex-row overflow-hidden">
         {/* Center Panel - AI Chat */}
-        {/* ✅ RESPONSIVENESS FIX: Adjusted width, height, and borders for mobile/desktop toggle */}
-        <div className={`w-full lg:max-w-[400px] flex flex-col ${theme.bg_card} border-b lg:border-b-0 lg:border-r ${theme.border_color}`}>
+        {/* ✅ RESPONSIVENESS FIX: Adjusted width to be flexible on mobile (w-2/5) and fixed on large screens (lg:max-w-[400px]) */}
+        <div className={`flex flex-col border-r ${theme.border_color} ${theme.bg_card} w-2/5 lg:w-auto lg:flex-1 lg:max-w-[400px]`}>
 
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1 scrollbar-hide" ref={chatMessagesRef}>
             {chatMessages.map((msg, 
@@ -2857,7 +2859,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
         </div>
 
         {/* Right Panel - Preview or Generation */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* ✅ RESPONSIVENESS FIX: Adjusted width to take remaining space */}
+        <div className="flex-1 flex flex-col overflow-hidden w-3/5 lg:w-auto">
           <div className={`px-4 py-2 ${theme.bg_card} border-b ${theme.border_color} flex 
   justify-between items-center`}>
             <div className="flex items-center gap-4">
