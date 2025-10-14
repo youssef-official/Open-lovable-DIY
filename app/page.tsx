@@ -2344,32 +2344,23 @@ Focus on creating a beautiful, functional website that matches the user's vision
          
             <div className="flex items-center gap-3 sm:gap-4">
               <UserButton />
-              <a
-                href="https://github.com/zainulabedeen123/Open-lovable-DIY.git"
-                target="_blank"
-                rel="noopener noreferrer"
-               
-  className="inline-flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-semibold border border-white/30 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl min-w-[100px] sm:min-w-[120px] justify-center"
-              >
-                <FiGithub className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span>GitHub</span>
-              </a>
-          
-  </div>
+              {/* ✅ GITHUB BUTTON REMOVED AS REQUESTED */}
+            </div>
           </div>
           
           {/* Main content */}
           <div className="relative z-10 h-full flex items-center justify-center px-4">
-            <div className="text-center max-w-4xl min-w-[600px] mx-auto">
+            {/* ✅ RESPONSIVENESS FIX: Removed min-w-[600px] and adjusted width to be flexible */}
+            <div className="text-center w-full max-w-4xl mx-auto">
               {/* Enhanced Lovable-style Header */}
               
-  <div className="text-center">
+              <div className="text-center">
                 <h1 className="text-[2.5rem] sm:text-[3.5rem] lg:text-[4.2rem] text-center text-white font-bold tracking-tight leading-[1.1] animate-[fadeIn_0.8s_ease-out] px-4">
                   <span className="block sm:inline">Build something </span>
                   <span className="bg-gradient-to-r from-gray-300 via-white to-gray-400 bg-clip-text text-transparent whitespace-nowrap">
                     ❤️ Open-Lovable
      
-  </span>
+                  </span>
                 </h1>
                 <motion.p
                   className="text-lg lg:text-xl max-w-2xl mx-auto mt-8 text-white/90 text-center text-balance px-4"
@@ -2448,7 +2439,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
               
               {/* Enhanced Model Selector */}
           
-      <div className="mt-10 flex flex-col items-center justify-center animate-[fadeIn_1s_ease-out] px-4">
+              <div className="mt-10 flex flex-col items-center justify-center animate-[fadeIn_1s_ease-out] px-4">
                 <div className="text-white/60 text-sm mb-3">Powered by</div>
                 <select
                   value={aiModel}
@@ -2474,7 +2465,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
                 </select>
               </div>
             
-  </div>
+            </div>
           </div>
         </div>
       )}
@@ -2487,7 +2478,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
            
               <span className={`font-bold text-lg ${theme.text_main}`}>❤️</span>
             </div>
-            <span className={`font-semibold text-lg ${theme.text_main}`}>Open-Lovable</span>
+            <span className={`font-semibold text-lg ${theme.text_main} hidden sm:inline`}>Open-Lovable</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -2517,7 +2508,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
   }
               router.push(`/?${params.toString()}`);
   }}
-            className={`px-3 py-1.5 text-sm ${isDarkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'} border rounded-[10px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-colors duration-200`}
+            className={`px-3 py-1.5 text-sm ${isDarkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'} border rounded-[10px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-colors duration-200 hidden md:inline`}
           >
             {appConfig.ai.availableModels.map(model => (
               <option key={model} value={model} className={isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>
@@ -2574,10 +2565,11 @@ Focus on creating a beautiful, functional website that matches the user's vision
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
-        {/* Center Panel - AI Chat (1/3 of remaining width) */}
-        <div className={`flex-1 max-w-[400px] flex flex-col border-r ${theme.border_color} ${theme.bg_card}`}>
-
+      {/* ✅ RESPONSIVENESS FIX: Changed to flex-col on mobile and lg:flex-row on large screens */}
+      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        {/* Center Panel - AI Chat */}
+        {/* ✅ RESPONSIVENESS FIX: Adjusted width, height, and borders for mobile/desktop toggle */}
+        <div className={`w-full lg:max-w-[400px] flex flex-col ${theme.bg_card} border-b lg:border-b-0 lg:border-r ${theme.border_color}`}>
 
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1 scrollbar-hide" ref={chatMessagesRef}>
             {chatMessages.map((msg, 
@@ -2837,7 +2829,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
               <Textarea
          
                 className={`min-h-[60px] pr-12 resize-y border-2 ${theme.border_color} focus:outline-none ${theme.bg_card} ${theme.text_main}`}
-                placeholder=""
+                placeholder="Ask AI to edit or add features..."
                 value={aiChatInput}
                 onChange={(e) => setAiChatInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -2864,7 +2856,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
           </div>
         </div>
 
-        {/* Right Panel - Preview or Generation (2/3 of remaining width) */}
+        {/* Right Panel - Preview or Generation */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className={`px-4 py-2 ${theme.bg_card} border-b ${theme.border_color} flex 
   justify-between items-center`}>
@@ -2968,10 +2960,6 @@ Focus on creating a beautiful, functional website that matches the user's vision
           </div>
         </div>
       </div>
-
-
-
-
     </div>
   );
   // End of AISandboxPage
