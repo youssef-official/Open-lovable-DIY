@@ -5,18 +5,13 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { appConfig } from '@/config/app.config';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import {
-    FiFile, FiChevronRight, FiChevronDown, FiGithub, FiEdit2, FiEye, FiZap, FiDownload, FiRefreshCw, FiPlus, FiSend, FiCode, FiEyeOff, FiMenu, FiX, FiKey, FiTerminal
+    FiFile, FiEdit2, FiEye, FiZap, FiRefreshCw, FiSend, FiKey, FiArrowUp
 } from 'react-icons/fi';
-import { BsFolderFill, BsFolder2Open } from 'react-icons/bs';
-import { SiJavascript, SiReact, SiCss3, SiJson } from 'react-icons/si';
 import { FaSun, FaMoon, FaSpinner } from 'react-icons/fa';
 import { UserButton } from '@/components/UserButton';
 import { useApiRequest } from '@/hooks/useApiRequest';
 import { motion, AnimatePresence } from 'framer-motion';
-import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
 
 // --- Interfaces ---
 interface SandboxData {
@@ -43,11 +38,9 @@ interface ChatMessage {
 // --- Main Component ---
 function AISandboxPage() {
     // --- State Management ---
-    const { makeRequest, makeRequestWithBody, hasRequiredKeys } = useApiRequest();
+    const { makeRequestWithBody } = useApiRequest();
     const [sandboxData, setSandboxData] = useState<SandboxData | null>(null);
-    const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState({ text: 'Not connected', active: false });
-    const [promptInput, setPromptInput] = useState('');
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
         {
             content: 'Welcome! Describe the app you want to build.',
@@ -60,35 +53,29 @@ function AISandboxPage() {
     const router = useRouter();
     const [aiModel, setAiModel] = useState(() => {
         const modelParam = searchParams.get('model');
-        return appConfig.ai.availableModels.includes(modelParam || '') ? modelParam! : appConfig.ai.defaultModel;
+        const availableModels = [...appConfig.ai.availableModels, 'openrouter'];
+        return availableModels.includes(modelParam || '') ? modelParam! : appConfig.ai.defaultModel;
     });
     const [showHomeScreen, setShowHomeScreen] = useState(true);
     const [homeScreenFading, setHomeScreenFading] = useState(false);
     const [homeDescriptionInput, setHomeDescriptionInput] = useState('');
-    const [activeTab, setActiveTab] = useState<'chat' | 'preview'>('chat');
-    const [conversationContext, setConversationContext] = useState<{ lastGeneratedCode?: string }>({ lastGeneratedCode: undefined });
+    const [lastGeneratedCode, setLastGeneratedCode] = useState<string | undefined>(undefined);
 
-    // --- NEW: Mobile & Theme States ---
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    // --- NEW: Theme & OpenRouter States ---
     const [isDarkMode, setIsDarkMode] = useState(true);
     const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
     const [openRouterApiKey, setOpenRouterApiKey] = useState('');
+    const [openRouterModelName, setOpenRouterModelName] = useState('');
 
     const [generationProgress, setGenerationProgress] = useState<{
         isGenerating: boolean;
         status: string;
-        files: Array<{ path: string; content: string; type: string; completed: boolean }>;
         streamedCode: string;
-        isStreaming: boolean;
     }>({
         isGenerating: false,
         status: '',
-        files: [],
         streamedCode: '',
-        isStreaming: false,
     });
-    const [codeApplicationState, setCodeApplicationState] = useState<CodeApplicationState>({ stage: null });
-
 
     // --- Refs ---
     const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -97,7 +84,9 @@ function AISandboxPage() {
     // --- Effects ---
     useEffect(() => {
         const key = localStorage.getItem('openrouter_api_key');
+        const model = localStorage.getItem('openrouter_model_name');
         if (key) setOpenRouterApiKey(key);
+        if (model) setOpenRouterModelName(model);
     }, []);
 
     useEffect(() => {
@@ -123,19 +112,19 @@ function AISandboxPage() {
         if (newModel === 'openrouter' && !localStorage.getItem('openrouter_api_key')) {
             setIsApiKeyModalOpen(true);
         }
-        const params = new URLSearchParams(searchParams);
+        const params = new URLSearchParams(searchParams.toString());
         params.set('model', newModel);
         router.push(`/?${params.toString()}`);
     };
 
     const saveApiKey = () => {
         localStorage.setItem('openrouter_api_key', openRouterApiKey);
+        localStorage.setItem('openrouter_model_name', openRouterModelName);
         setIsApiKeyModalOpen(false);
-        addChatMessage('OpenRouter API Key saved successfully!', 'system');
+        addChatMessage('OpenRouter API Key and Model Name saved successfully!', 'system');
     };
 
-    const createSandbox = async (fromHomeScreen = false) => {
-        setLoading(true);
+    const createSandbox = async () => {
         addChatMessage('Creating sandbox...', 'system');
         try {
             const response = await makeRequestWithBody('/api/create-ai-sandbox', {});
@@ -145,19 +134,15 @@ function AISandboxPage() {
                 setStatus({ text: 'Sandbox active', active: true });
                 if (iframeRef.current) iframeRef.current.src = data.url;
                 addChatMessage(`Sandbox created! URL: ${data.url}`, 'system');
-
                 const newParams = new URLSearchParams(searchParams.toString());
                 newParams.set('sandbox', data.sandboxId);
                 router.push(`/?${newParams.toString()}`, { scroll: false });
-
             } else {
                 throw new Error(data.error || 'Unknown error');
             }
         } catch (error: any) {
             addChatMessage(`Failed to create sandbox: ${error.message}`, 'error');
             setStatus({ text: 'Error', active: false });
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -166,14 +151,13 @@ function AISandboxPage() {
             addChatMessage('Cannot apply code, no active sandbox.', 'error');
             return;
         }
-        setCodeApplicationState({ stage: 'applying' });
+        addChatMessage('Applying generated code...', 'system');
         try {
-            const response = await makeRequestWithBody('/api/apply-ai-code-stream', {
+            await makeRequestWithBody('/api/apply-ai-code-stream', {
                 response: code,
                 sandboxId: sandboxData.sandboxId,
                 packages: (window as any).pendingPackages || []
             });
-            // Handle streaming response for progress...
             addChatMessage('Code applied successfully!', 'system');
             setTimeout(() => {
                 if (iframeRef.current) {
@@ -183,7 +167,6 @@ function AISandboxPage() {
         } catch (error: any) {
             addChatMessage(`Failed to apply code: ${error.message}`, 'error');
         } finally {
-            setCodeApplicationState({ stage: null });
             (window as any).pendingPackages = [];
         }
     };
@@ -191,14 +174,14 @@ function AISandboxPage() {
     const sendChatMessage = async () => {
         const message = aiChatInput.trim();
         if (!message) return;
-        if (aiModel === 'openrouter' && !openRouterApiKey) {
+        if (aiModel === 'openrouter' && (!openRouterApiKey || !openRouterModelName)) {
             setIsApiKeyModalOpen(true);
             return;
         }
 
         addChatMessage(message, 'user');
         setAiChatInput('');
-        setGenerationProgress(prev => ({ ...prev, isGenerating: true, status: 'Sending request...' }));
+        setGenerationProgress({ isGenerating: true, status: 'Sending request...', streamedCode: '' });
 
         let sandboxPromise: Promise<void> | null = null;
         if (!sandboxData) {
@@ -211,13 +194,14 @@ function AISandboxPage() {
                 model: aiModel,
                 context: {
                     sandboxId: sandboxData?.sandboxId,
-                    apiKey: aiModel === 'openrouter' ? openRouterApiKey : undefined
+                    apiKey: aiModel === 'openrouter' ? openRouterApiKey : undefined,
+                    modelName: aiModel === 'openrouter' ? openRouterModelName : undefined,
                 }
             });
 
             const reader = response.body?.getReader();
             const decoder = new TextDecoder();
-            let generatedCode = '';
+            let currentGeneratedCode = '';
 
             if (reader) {
                 while (true) {
@@ -235,7 +219,6 @@ function AISandboxPage() {
                                         addChatMessage(data.text, 'thought', { duration: data.duration });
                                         break;
                                     case 'tool_code':
-                                        // This is where you can handle file edits/reads
                                         if (data.tool_name === 'edit_file') {
                                             addChatMessage(`Edited: ${data.args.path}`, 'system', { editedFiles: [data.args.path] });
                                         } else if (data.tool_name === 'read_file') {
@@ -243,21 +226,18 @@ function AISandboxPage() {
                                         }
                                         break;
                                     case 'stream':
-                                        generatedCode += data.text;
-                                        setGenerationProgress(prev => ({ ...prev, streamedCode: prev.streamedCode + data.text, isStreaming: true }));
+                                        currentGeneratedCode += data.text;
                                         break;
                                     case 'complete':
-                                        generatedCode = data.generatedCode;
-                                        setConversationContext({ lastGeneratedCode: generatedCode });
+                                        currentGeneratedCode = data.generatedCode;
+                                        setLastGeneratedCode(currentGeneratedCode);
                                         if (sandboxPromise) await sandboxPromise;
-                                        await applyGeneratedCode(generatedCode);
+                                        await applyGeneratedCode(currentGeneratedCode);
                                         break;
                                     case 'error':
                                         throw new Error(data.error);
                                 }
-                            } catch (e) {
-                                console.error('SSE parse error:', e);
-                            }
+                            } catch (e) { console.error('SSE parse error:', e); }
                         }
                     }
                 }
@@ -265,7 +245,7 @@ function AISandboxPage() {
         } catch (error: any) {
             addChatMessage(`Error: ${error.message}`, 'error');
         } finally {
-            setGenerationProgress({ isGenerating: false, status: '', files: [], streamedCode: '', isStreaming: false });
+            setGenerationProgress({ isGenerating: false, status: '', streamedCode: '' });
         }
     };
 
@@ -275,9 +255,8 @@ function AISandboxPage() {
         setHomeScreenFading(true);
         setTimeout(() => {
             setShowHomeScreen(false);
+            setHomeScreenFading(false); // Reset fading state
             setAiChatInput(homeDescriptionInput);
-            // Automatically send the message after hiding home screen
-            // Use a short timeout to ensure state update before sending
             setTimeout(() => sendChatMessage(), 100);
         }, 500);
     };
@@ -294,40 +273,26 @@ function AISandboxPage() {
     };
 
     const renderThoughtMessage = (msg: ChatMessage) => {
-        const iconMap = {
-            "Thinking": <FaSpinner className="animate-spin" />,
-            "Edited": <FiEdit2 />,
-            "Read": <FiEye />,
-        };
-        const text = msg.content;
-        const duration = msg.metadata?.duration ? ` for ${msg.metadata.duration} seconds` : '';
-        let statusText = text;
+        const { content, metadata } = msg;
+        const durationText = metadata?.duration ? ` for ${metadata.duration} seconds` : '';
         let files: string[] = [];
+        let type: 'thought' | 'edit' | 'read' = 'thought';
 
-        if (text.startsWith("Solving all problems now")) {
-            statusText = "Solving problems...";
-        }
+        if (metadata?.editedFiles) { type = 'edit'; files = metadata.editedFiles; }
+        else if (metadata?.readFiles) { type = 'read'; files = metadata.readFiles; }
 
-        if (msg.metadata?.editedFiles) {
-            statusText = "Edited";
-            files = msg.metadata.editedFiles;
-        } else if (msg.metadata?.readFiles) {
-            statusText = "Read";
-            files = msg.metadata.readFiles;
-        }
+        const icon = { thought: <FaSpinner className="animate-spin" />, edit: <FiEdit2 />, read: <FiEye /> }[type];
 
         return (
             <div className={`p-3 rounded-lg ${themeClasses.cardBg} border ${themeClasses.border} mb-2`}>
                 <div className="flex items-center gap-3 text-sm text-gray-400 mb-2">
-                    {text.includes("Thought") ? <FaSpinner className="animate-spin" /> : text.includes("Edited") ? <FiEdit2 /> : <FiEye />}
-                    <span>{text}{duration}</span>
+                    {icon}<span>{content}{durationText}</span>
                 </div>
                 {files.length > 0 && (
                     <div className="pl-5 border-l-2 border-gray-700 ml-2">
                         {files.map((file, i) => (
                             <div key={i} className="flex items-center gap-2 text-sm py-1">
-                                <FiFile className="w-4 h-4 text-gray-500" />
-                                <span className="font-mono">{file}</span>
+                                <FiFile className="w-4 h-4 text-gray-500" /><span className="font-mono">{file}</span>
                             </div>
                         ))}
                     </div>
@@ -347,32 +312,16 @@ function AISandboxPage() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.5 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+                        className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 ${homeScreenFading ? 'opacity-0' : 'opacity-100'}`}
                     >
                         <div className="w-full max-w-2xl text-center">
-                            <motion.h1
-                                initial={{ y: -20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.2, duration: 0.5 }}
-                                className="text-4xl md:text-6xl font-bold text-white mb-4"
-                            >
+                            <motion.h1 initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }} className="text-4xl md:text-6xl font-bold text-white mb-4">
                                 Build something <span className="text-indigo-400">lovable</span>
                             </motion.h1>
-                            <motion.p
-                                initial={{ y: -20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.4, duration: 0.5 }}
-                                className="text-lg text-gray-300 mb-8"
-                            >
+                            <motion.p initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4, duration: 0.5 }} className="text-lg text-gray-300 mb-8">
                                 Create apps and websites by chatting with AI.
                             </motion.p>
-                            <motion.form
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.6, duration: 0.5 }}
-                                onSubmit={handleHomeScreenSubmit}
-                                className="relative"
-                            >
+                            <motion.form initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6, duration: 0.5 }} onSubmit={handleHomeScreenSubmit} className="relative">
                                 <input
                                     type="text"
                                     value={homeDescriptionInput}
@@ -381,11 +330,7 @@ function AISandboxPage() {
                                     className={`w-full h-14 pl-5 pr-16 rounded-full text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${themeClasses.inputBg} ${themeClasses.text} border ${themeClasses.border}`}
                                     autoFocus
                                 />
-                                <button
-                                    type="submit"
-                                    disabled={!homeDescriptionInput.trim()}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-500 transition-all"
-                                >
+                                <button type="submit" disabled={!homeDescriptionInput.trim()} className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-500 transition-all">
                                     <FiArrowUp className="text-white" />
                                 </button>
                             </motion.form>
@@ -394,10 +339,8 @@ function AISandboxPage() {
                 )}
             </AnimatePresence>
 
-
             {/* --- Main UI --- */}
             <div className={`flex-1 flex flex-col md:flex-row overflow-hidden ${showHomeScreen ? 'hidden' : 'flex'}`}>
-
                 {/* --- Left Panel (Chat & Controls) --- */}
                 <div className={`w-full md:w-2/5 lg:w-1/3 xl:w-1/4 flex flex-col ${themeClasses.cardBg} border-r ${themeClasses.border}`}>
                     <div className={`p-4 border-b ${themeClasses.border} flex justify-between items-center`}>
@@ -410,20 +353,16 @@ function AISandboxPage() {
                         </div>
                     </div>
 
-                    {/* Chat Messages */}
                     <div ref={chatMessagesRef} className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {chatMessages.map((msg, idx) => {
-                            if (msg.type === 'thought' || msg.metadata?.editedFiles || msg.metadata?.readFiles) {
-                                return <div key={idx}>{renderThoughtMessage(msg)}</div>;
-                            }
-                            return (
+                        {chatMessages.map((msg, idx) => (
+                            (msg.type === 'thought' || msg.metadata?.editedFiles || msg.metadata?.readFiles) ?
+                                <div key={idx}>{renderThoughtMessage(msg)}</div> :
                                 <div key={idx} className={`flex items-end gap-2 ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     <div className={`max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-2xl ${msg.type === 'user' ? 'bg-indigo-600 text-white rounded-br-none' : `${themeClasses.bg} rounded-bl-none`}`}>
                                         <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                                     </div>
                                 </div>
-                            );
-                        })}
+                        ))}
                         {generationProgress.isGenerating && (
                             <div className="flex items-center gap-2 text-sm text-gray-400">
                                 <FaSpinner className="animate-spin" />
@@ -432,7 +371,6 @@ function AISandboxPage() {
                         )}
                     </div>
 
-                    {/* Input Area */}
                     <div className={`p-4 border-t ${themeClasses.border}`}>
                         <div className="relative">
                             <Textarea
@@ -443,61 +381,36 @@ function AISandboxPage() {
                                 className={`w-full p-3 pr-12 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 ${themeClasses.inputBg} border ${themeClasses.border}`}
                                 rows={2}
                             />
-                            <button
-                                onClick={sendChatMessage}
-                                className={`absolute right-3 bottom-3 p-2 rounded-md ${themeClasses.accentButton} disabled:bg-gray-500`}
-                                disabled={!aiChatInput.trim() || generationProgress.isGenerating}
-                            >
+                            <button onClick={sendChatMessage} className={`absolute right-3 bottom-3 p-2 rounded-md ${themeClasses.accentButton} disabled:bg-gray-500`} disabled={!aiChatInput.trim() || generationProgress.isGenerating}>
                                 <FiSend />
                             </button>
                         </div>
                         <div className="mt-2 flex items-center justify-between">
-                            <select
-                                value={aiModel}
-                                onChange={(e) => handleModelChange(e.target.value)}
-                                className={`p-2 rounded-md text-xs ${themeClasses.inputBg} border ${themeClasses.border} focus:outline-none`}
-                            >
-                                {appConfig.ai.availableModels.map(model => (
-                                    <option key={model} value={model}>{(appConfig.ai.modelDisplayNames as any)[model] || model}</option>
-                                ))}
+                            <select value={aiModel} onChange={(e) => handleModelChange(e.target.value)} className={`p-2 rounded-md text-xs ${themeClasses.inputBg} border ${themeClasses.border} focus:outline-none`}>
+                                {appConfig.ai.availableModels.map(model => (<option key={model} value={model}>{(appConfig.ai.modelDisplayNames as any)[model] || model}</option>))}
                                 <option value="openrouter">OpenRouter</option>
                             </select>
                             <div className={`text-xs p-2 rounded-md flex items-center gap-2 ${themeClasses.inputBg}`}>
-                                <div className={`w-2 h-2 rounded-full ${status.active ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                                {status.text}
+                                <div className={`w-2 h-2 rounded-full ${status.active ? 'bg-green-500' : 'bg-red-500'}`}></div>{status.text}
                             </div>
                         </div>
                     </div>
                 </div>
 
-
                 {/* --- Right Panel (Preview) --- */}
                 <div className="flex-1 flex flex-col">
                     <div className={`p-2 border-b ${themeClasses.border} flex justify-end items-center`}>
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => { if (iframeRef.current && sandboxData) iframeRef.current.src = sandboxData.url + `?t=${Date.now()}` }}
-                            disabled={!sandboxData}
-                            className={themeClasses.button}
-                        >
+                        <Button variant="ghost" size="sm" onClick={() => { if (iframeRef.current && sandboxData) iframeRef.current.src = sandboxData.url + `?t=${Date.now()}` }} disabled={!sandboxData} className={themeClasses.button}>
                             <FiRefreshCw className="mr-2" /> Refresh
                         </Button>
                     </div>
                     <div className="flex-1 bg-gray-800 relative">
                         {sandboxData?.url ? (
-                            <iframe
-                                ref={iframeRef}
-                                src={sandboxData.url}
-                                className="w-full h-full border-none"
-                                title="Sandbox Preview"
-                                sandbox="allow-scripts allow-same-origin allow-forms"
-                            />
+                            <iframe ref={iframeRef} src={sandboxData.url} className="w-full h-full border-none" title="Sandbox Preview" sandbox="allow-scripts allow-same-origin allow-forms" />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center flex-col text-gray-500">
                                 <FiZap size={48} className="mb-4" />
-                                <h3 className="text-xl">Sandbox Preview</h3>
-                                <p>Your app preview will appear here once generated.</p>
+                                <h3 className="text-xl">Sandbox Preview</h3><p>Your app preview will appear here.</p>
                             </div>
                         )}
                     </div>
@@ -507,41 +420,19 @@ function AISandboxPage() {
             {/* API Key Modal */}
             <AnimatePresence>
                 {isApiKeyModalOpen && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
-                        onClick={() => setIsApiKeyModalOpen(false)}
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            onClick={(e) => e.stopPropagation()}
-                            className={`p-6 rounded-lg w-full max-w-md border ${themeClasses.cardBg} ${themeClasses.border}`}
-                        >
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={() => setIsApiKeyModalOpen(false)}>
+                        <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={(e) => e.stopPropagation()} className={`p-6 rounded-lg w-full max-w-md border ${themeClasses.cardBg} ${themeClasses.border}`}>
                             <div className="flex items-center gap-3 mb-4">
-                                <FiKey className="text-yellow-400" size={24} />
-                                <h3 className="text-lg font-bold">Enter OpenRouter API Key</h3>
+                                <FiKey className="text-yellow-400" size={24} /><h3 className="text-lg font-bold">Configure OpenRouter</h3>
                             </div>
-                            <p className="text-sm text-gray-400 mb-4">
-                                To use the OpenRouter model, please provide your API key. It will be saved securely in your browser's local storage.
-                            </p>
-                            <input
-                                type="password"
-                                value={openRouterApiKey}
-                                onChange={(e) => setOpenRouterApiKey(e.target.value)}
-                                placeholder="sk-or-..."
-                                className={`w-full p-2 rounded-md ${themeClasses.inputBg} border ${themeClasses.border} focus:outline-none focus:ring-2 focus:ring-indigo-500`}
-                            />
+                            <p className="text-sm text-gray-400 mb-4">Enter your API Key and the desired model name. They will be saved in your browser's local storage.</p>
+                            <label className="text-xs font-bold text-gray-400">API KEY</label>
+                            <input type="password" value={openRouterApiKey} onChange={(e) => setOpenRouterApiKey(e.target.value)} placeholder="sk-or-..." className={`w-full p-2 rounded-md ${themeClasses.inputBg} border ${themeClasses.border} focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3`} />
+                            <label className="text-xs font-bold text-gray-400">MODEL NAME</label>
+                            <input type="text" value={openRouterModelName} onChange={(e) => setOpenRouterModelName(e.target.value)} placeholder="qwen/qwen2-72b-instruct" className={`w-full p-2 rounded-md ${themeClasses.inputBg} border ${themeClasses.border} focus:outline-none focus:ring-2 focus:ring-indigo-500`} />
                             <div className="mt-4 flex justify-end gap-2">
-                                <Button variant="ghost" onClick={() => setIsApiKeyModalOpen(false)} className={themeClasses.button}>
-                                    Cancel
-                                </Button>
-                                <Button onClick={saveApiKey} className={themeClasses.accentButton}>
-                                    Save Key
-                                </Button>
+                                <Button variant="ghost" onClick={() => setIsApiKeyModalOpen(false)} className={themeClasses.button}>Cancel</Button>
+                                <Button onClick={saveApiKey} className={themeClasses.accentButton}>Save</Button>
                             </div>
                         </motion.div>
                     </motion.div>
