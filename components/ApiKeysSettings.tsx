@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import { useApiKeys } from '@/contexts/ApiKeysContext';
-import { ApiKeys } from '@/lib/api-keys';
+import { ApiKeys, OPENROUTER_FREE_MODELS } from '@/lib/api-keys';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, EyeOff, Check, X, ExternalLink, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Check, X, ExternalLink, Loader2, Zap } from 'lucide-react';
 
 interface ApiKeyInputProps {
   label: string;
@@ -112,6 +112,9 @@ export function ApiKeysSettings({ onClose }: ApiKeysSettingsProps) {
   const { apiKeys, setApiKey, hasRequiredKeys, missingKeys, validateApiKey, isValidating } = useApiKeys();
   const [localKeys, setLocalKeys] = useState<ApiKeys>(apiKeys);
   const [validationResults, setValidationResults] = useState<Record<string, { isValid: boolean; error?: string }>>({});
+  const [selectedOpenRouterModel, setSelectedOpenRouterModel] = useState<string>(
+    OPENROUTER_FREE_MODELS[0]?.id || ''
+  );
 
   const handleKeyChange = (provider: keyof ApiKeys, value: string) => {
     setLocalKeys(prev => ({ ...prev, [provider]: value }));
@@ -153,7 +156,7 @@ export function ApiKeysSettings({ onClose }: ApiKeysSettingsProps) {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
         <CardTitle>API Keys Configuration</CardTitle>
         <CardDescription>
@@ -199,8 +202,6 @@ export function ApiKeysSettings({ onClose }: ApiKeysSettingsProps) {
                 getApiUrl="https://e2b.dev/dashboard"
                 required
               />
-
-
             </div>
           </div>
 
@@ -247,9 +248,71 @@ export function ApiKeysSettings({ onClose }: ApiKeysSettingsProps) {
               />
             </div>
           </div>
+
+          <div className="border-t pt-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Zap className="w-5 h-5 text-yellow-500" />
+              <h3 className="text-lg font-semibold">OpenRouter API (Free Models)</h3>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                FREE
+              </Badge>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Use free AI models from OpenRouter without any cost. Perfect for testing and development.
+            </p>
+            
+            <div className="space-y-4">
+              <ApiKeyInput
+                label="OpenRouter API Key"
+                description="Access free AI models including Qwen 3 Coder, GLM 4.5 Air, and GPT OSS 20B"
+                placeholder="sk-or-..."
+                value={localKeys.openrouter || ''}
+                onChange={(value) => handleKeyChange('openrouter', value)}
+                onValidate={() => handleValidateKey('openrouter')}
+                isValidating={isValidating}
+                validationResult={validationResults.openrouter}
+                getApiUrl="https://openrouter.ai/keys"
+              />
+
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Available Free Models</Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {OPENROUTER_FREE_MODELS.map(model => (
+                    <div
+                      key={model.id}
+                      onClick={() => setSelectedOpenRouterModel(model.id)}
+                      className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                        selectedOpenRouterModel === model.id
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-sm">{model.name}</h4>
+                          <p className="text-xs text-gray-600 mt-1">{model.description}</p>
+                          <div className="flex items-center gap-2 mt-2">
+                            <Badge variant="outline" className="text-xs">
+                              {model.contextLength.toLocaleString()} tokens
+                            </Badge>
+                          </div>
+                        </div>
+                        {selectedOpenRouterModel === model.id && (
+                          <Check className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Selected model: <code className="bg-gray-100 px-2 py-1 rounded">{selectedOpenRouterModel}</code>
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="flex justify-between pt-4">
+        <div className="flex flex-col md:flex-row justify-between gap-4 pt-4 border-t">
           <div className="flex items-center gap-2">
             {hasRequiredKeys && (
               <Badge variant="secondary" className="text-green-600">
@@ -276,3 +339,4 @@ export function ApiKeysSettings({ onClose }: ApiKeysSettingsProps) {
     </Card>
   );
 }
+

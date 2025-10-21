@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ApiKeysProvider } from "@/contexts/ApiKeysContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ProjectProvider } from "@/contexts/ProjectContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -78,7 +79,9 @@ export default function RootLayout({
       <body className={inter.className}>
         <AuthProvider>
           <ApiKeysProvider>
-            {children}
+            <ProjectProvider>
+              {children}
+            </ProjectProvider>
           </ApiKeysProvider>
         </AuthProvider>
       </body>

@@ -9,12 +9,52 @@ export interface ApiKeys {
   anthropic?: string;
   openai?: string;
   gemini?: string;
+  openrouter?: string;
 }
 
 export interface ApiKeyValidationResult {
   isValid: boolean;
   error?: string;
 }
+
+export interface OpenRouterModel {
+  id: string;
+  name: string;
+  description: string;
+  contextLength: number;
+  pricing: {
+    prompt: number;
+    completion: number;
+  };
+  isFree: boolean;
+}
+
+export const OPENROUTER_FREE_MODELS: OpenRouterModel[] = [
+  {
+    id: 'qwen/qwen3-coder:free',
+    name: 'Qwen 3 Coder',
+    description: 'Specialized for code generation and programming tasks',
+    contextLength: 32768,
+    pricing: { prompt: 0, completion: 0 },
+    isFree: true
+  },
+  {
+    id: 'z-ai/glm-4.5-air:free',
+    name: 'GLM 4.5 Air',
+    description: 'Balanced model for general tasks and conversations',
+    contextLength: 128000,
+    pricing: { prompt: 0, completion: 0 },
+    isFree: true
+  },
+  {
+    id: 'openai/gpt-oss-20b:free',
+    name: 'GPT OSS 20B',
+    description: 'Open-source GPT model for various applications',
+    contextLength: 4096,
+    pricing: { prompt: 0, completion: 0 },
+    isFree: true
+  }
+];
 
 const API_KEYS_STORAGE_KEY = 'open-lovable-api-keys';
 
@@ -119,7 +159,34 @@ export async function validateE2bApiKey(apiKey: string): Promise<ApiKeyValidatio
   }
 }
 
+/**
+ * Validate OpenRouter API key
+ */
+export async function validateOpenRouterApiKey(apiKey: string): Promise<ApiKeyValidationResult> {
+  if (!apiKey || !apiKey.startsWith('sk-or-')) {
+    return { isValid: false, error: 'OpenRouter API key should start with "sk-or-"' };
+  }
 
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/auth/key', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      return { isValid: false, error: 'Invalid OpenRouter API key' };
+    }
+
+    return { isValid: true };
+  } catch (error) {
+    console.error('OpenRouter validation error:', error);
+    // If validation fails due to network/other issues, assume valid if format is correct
+    return { isValid: true };
+  }
+}
 
 /**
  * Get API key for a specific provider (from storage or environment)
@@ -149,3 +216,18 @@ export function getMissingRequiredApiKeys(): string[] {
 
   return missing;
 }
+
+/**
+ * Get OpenRouter free models
+ */
+export function getOpenRouterFreeModels(): OpenRouterModel[] {
+  return OPENROUTER_FREE_MODELS;
+}
+
+/**
+ * Get OpenRouter model by ID
+ */
+export function getOpenRouterModelById(modelId: string): OpenRouterModel | undefined {
+  return OPENROUTER_FREE_MODELS.find(m => m.id === modelId);
+}
+
