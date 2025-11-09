@@ -2296,9 +2296,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     e.preventDefault();
     if (!homeDescriptionInput.trim()) return;
     
-    const projectId = await ensureProjectForPrompt(homeDescriptionInput);
-    if (projectId) {
-      setActiveProjectId(projectId);
+      const newProjectId = await ensureProjectForPrompt(homeDescriptionInput);
+      if (newProjectId) {
+        setActiveProjectId(newProjectId);
     }
     
     setHomeScreenFading(true);
@@ -2314,7 +2314,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       setHomeScreenFading(false);
 
       // Start the generation process
-      generateWebsiteFromDescription(homeDescriptionInput, projectId);
+        generateWebsiteFromDescription(homeDescriptionInput, newProjectId);
     }, 800);
   };
 
