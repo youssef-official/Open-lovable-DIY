@@ -5,6 +5,7 @@ import { useApiKeys } from '@/contexts/ApiKeysContext';
 import ApiKeySettings from '@/components/ApiKeySettings';
 import { Button } from '@/components/ui/button';
 import { X, Settings } from 'lucide-react';
+import { useTheme } from 'next-themes';
 
 interface ApiKeysModalProps {
   isOpen: boolean;
@@ -23,7 +24,7 @@ export function ApiKeysModal({ isOpen, onClose }: ApiKeysModalProps) {
       />
       
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-4xl max-h-[90vh] mx-4 bg-white rounded-lg shadow-xl overflow-hidden">
+      <div className={`relative z-10 w-full max-w-4xl max-h-[90vh] mx-4 bg-card text-card-foreground rounded-lg shadow-xl overflow-hidden`}>
         <div className="flex items-center justify-between p-4 border-b">
           <h2 className="text-lg font-semibold">API Keys Configuration</h2>
           <Button

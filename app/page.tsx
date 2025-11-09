@@ -30,6 +30,7 @@ import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
 import ApiKeySettings from '@/components/ApiKeySettings';
 import { ApiKeysProvider } from '@/contexts/ApiKeysContext';
+import { ThemeProvider } from 'next-themes';
 
 
 
@@ -2997,10 +2998,12 @@ export default function Page() {
   };
 
   return (
-    <ApiKeysProvider>
-      <Suspense fallback={<div className={`flex items-center justify-center min-h-screen ${theme.bg_main} ${theme.text_main}`}>Loading...</div>}>
-        <AISandboxPage isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} theme={theme} />
-      </Suspense>
-    </ApiKeysProvider>
+    <ThemeProvider attribute="class">
+      <ApiKeysProvider>
+        <Suspense fallback={<div className={`flex items-center justify-center min-h-screen ${theme.bg_main} ${theme.text_main}`}>Loading...</div>}>
+          <AISandboxPage isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} theme={theme} />
+        </Suspense>
+      </ApiKeysProvider>
+    </ThemeProvider>
   );
 }

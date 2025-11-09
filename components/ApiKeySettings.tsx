@@ -43,6 +43,9 @@ const ApiKeySettings = ({ onClose }: { onClose: () => void }) => {
   return (
     <div className="p-4">
       <h3 className="text-lg font-medium mb-4">API Keys</h3>
+      <p className="text-sm text-muted-foreground mb-4">
+        Only the Open Router API key is required. This key will be used for all the listed models.
+      </p>
       <div className="space-y-4">
         {appConfig.ai.availableModels.map(model => {
           const service = model.split('/')[0];
