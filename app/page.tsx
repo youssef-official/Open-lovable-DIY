@@ -2004,11 +2004,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     ...prev,
                     lastGeneratedCode: generatedCode
                   }));
-              if (data.projectId) {
-                setActiveProjectId(data.projectId);
-              } else if (resolvedProjectId) {
-                setActiveProjectId(resolvedProjectId);
-              }
+                if (data.projectId) {
+                  setActiveProjectId(data.projectId);
+                } else {
+                  const fallbackProjectId = projectIdOverride ?? activeProjectId;
+                  if (fallbackProjectId) {
+                    setActiveProjectId(fallbackProjectId);
+                  }
+                }
   // Clear thinking state when generation completes
                   setGenerationProgress(prev => ({
                     ...prev,
@@ -2400,7 +2403,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
           conversationContext: conversationContext
         },
       isEdit: false,
-        projectId: resolvedProjectId
+        projectId: projectIdOverride ?? activeProjectId
       });
   if (!response.ok) {
         throw new Error(`Generation failed: ${response.status}`);
@@ -2458,8 +2461,11 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   }));
             if (data.projectId) {
               setActiveProjectId(data.projectId);
-            } else if (resolvedProjectId) {
-              setActiveProjectId(resolvedProjectId);
+            } else {
+              const fallbackProjectId = projectIdOverride ?? activeProjectId;
+              if (fallbackProjectId) {
+                setActiveProjectId(fallbackProjectId);
+              }
             }
   break;
                 } else if (data.type === 'error') {
