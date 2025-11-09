@@ -2006,8 +2006,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   }));
               if (data.projectId) {
                 setActiveProjectId(data.projectId);
-              } else if (projectId) {
-                setActiveProjectId(projectId);
+              } else if (projectIdOverride) {
+                setActiveProjectId(projectIdOverride);
               }
   // Clear thinking state when generation completes
                   setGenerationProgress(prev => ({
@@ -2445,7 +2445,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
                  
   currentComponent: prev.currentComponent + 1
                   }));
-          } else if (data.type === 'complete') {
+            } else if (data.type === 'complete') {
                   if (data.generatedCode) {
                     generatedCode = data.generatedCode;
   }
@@ -2458,8 +2458,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   }));
             if (data.projectId) {
               setActiveProjectId(data.projectId);
-            } else if (projectId) {
-              setActiveProjectId(projectId);
+            } else if (projectIdOverride) {
+              setActiveProjectId(projectIdOverride);
             }
   break;
                 } else if (data.type === 'error') {
