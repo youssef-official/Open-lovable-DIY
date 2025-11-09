@@ -2006,8 +2006,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   }));
                 if (data.projectId) {
                   setActiveProjectId(data.projectId);
-                } else if (resolvedProjectId) {
-                  setActiveProjectId(resolvedProjectId);
+                } else if (targetProjectId) {
+                  setActiveProjectId(targetProjectId);
                 }
   // Clear thinking state when generation completes
                   setGenerationProgress(prev => ({
@@ -2325,7 +2325,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   return;
     }
 
-      const resolvedProjectId = projectIdOverride ?? activeProjectId;
+    const targetProjectId = projectIdOverride ?? activeProjectId;
 
     addChatMessage(`Creating website: ${description}`, 'system');
 
@@ -2400,7 +2400,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
           conversationContext: conversationContext
         },
       isEdit: false,
-        projectId: resolvedProjectId
+        projectId: targetProjectId
       });
   if (!response.ok) {
         throw new Error(`Generation failed: ${response.status}`);
@@ -2458,8 +2458,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   }));
             if (data.projectId) {
               setActiveProjectId(data.projectId);
-            } else if (resolvedProjectId) {
-              setActiveProjectId(resolvedProjectId);
+            } else if (targetProjectId) {
+              setActiveProjectId(targetProjectId);
             }
   break;
                 } else if (data.type === 'error') {
