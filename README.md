@@ -1,4 +1,4 @@
-# Open Lovable DIY 🚀
+# Open Lovable DIY 🚀 🥺
 
 **The Open-Source Website Cloning Platform**
 
