@@ -49,7 +49,7 @@ interface ChatMessage {
   };
 }
 
-function AISandboxPage() {
+function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boolean, setIsDarkMode: (value: boolean) => void, theme: any }) {
   const { makeRequest, makeRequestWithBody, hasRequiredKeys } = useApiRequest();
   const [sandboxData, setSandboxData] = useState<SandboxData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -82,7 +82,6 @@ function AISandboxPage() {
   const [loadingStage, setLoadingStage] = useState<'planning' | 'generating' | null>(null);
   const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
   const [fileStructure, setFileStructure] = useState<string>('');
-  const [isDarkMode, setIsDarkMode] = useState(true);
   
   const [conversationContext, setConversationContext] = useState<{
     generatedComponents: Array<{ name: string; path: string;
@@ -129,25 +128,6 @@ function AISandboxPage() {
     files: [],
     lastProcessedPosition: 0
   });
-
-  // Theme based on the provided image
-  const theme = isDarkMode ? {
-    bg_main: 'bg-[#0A0D1B]',
-    text_main: 'text-gray-200',
-    bg_card: 'bg-[#181C2A]',
-    border_color: 'border-gray-800',
-    chat_user_bg: 'bg-gray-700',
-    chat_ai_bg: 'bg-gray-800',
-    code_bg: 'bg-gray-900',
-  } : {
-    bg_main: 'bg-white',
-    text_main: 'text-gray-900',
-    bg_card: 'bg-gray-100',
-    border_color: 'border-gray-200',
-    chat_user_bg: 'bg-blue-500',
-    chat_ai_bg: 'bg-gray-200',
-    code_bg: 'bg-gray-50',
-  };
 
   // Clear old conversation data on component mount and create/restore sandbox
   useEffect(() => {
@@ -2960,9 +2940,28 @@ Focus on creating a beautiful, functional website that matches the user's vision
 }
 
 export default function Page() {
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const theme = isDarkMode ? {
+    bg_main: 'bg-[#0A0D1B]',
+    text_main: 'text-gray-200',
+    bg_card: 'bg-[#181C2A]',
+    border_color: 'border-gray-800',
+    chat_user_bg: 'bg-gray-700',
+    chat_ai_bg: 'bg-gray-800',
+    code_bg: 'bg-gray-900',
+  } : {
+    bg_main: 'bg-white',
+    text_main: 'text-gray-900',
+    bg_card: 'bg-gray-100',
+    border_color: 'border-gray-200',
+    chat_user_bg: 'bg-blue-500',
+    chat_ai_bg: 'bg-gray-200',
+    code_bg: 'bg-gray-50',
+  };
+
   return (
     <Suspense fallback={<div className={`flex items-center justify-center min-h-screen ${theme.bg_main} ${theme.text_main}`}>Loading...</div>}>
-      <AISandboxPage />
+      <AISandboxPage isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} theme={theme} />
     </Suspense>
   );
 }
