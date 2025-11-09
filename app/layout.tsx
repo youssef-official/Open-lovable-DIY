@@ -7,8 +7,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Open Lovable DIY - AI-Powered Website Cloning Platform",
-  description: "Transform any website into a modern, responsive web application with AI. Open-source alternative to Lovable.dev. Clone websites instantly with React, TypeScript, and Tailwind CSS.",
+  title: "Youssef AI – Build and remix apps with conversational AI",
+  description:
+    "Youssef AI helps you design, build, and iterate on modern web apps using AI-powered conversations. Generate polished React, TypeScript, and Tailwind code in minutes.",
   keywords: [
     "website cloning",
     "AI website builder",
@@ -18,31 +19,32 @@ export const metadata: Metadata = {
     "TypeScript",
     "Tailwind CSS",
     "Next.js",
-    "website recreation"
+    "website recreation",
   ],
-  authors: [{ name: "Open Source Community" }],
-  creator: "Open Lovable DIY",
-  publisher: "Open Lovable DIY",
+  authors: [{ name: "Youssef AI" }],
+  creator: "Youssef AI",
+  publisher: "Youssef AI",
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL("https://openlovable.diy"),
+  metadataBase: new URL("https://youssef.ai"),
   alternates: {
     canonical: "/",
   },
   openGraph: {
-    title: "Open Lovable DIY - AI-Powered Website Cloning Platform",
-    description: "Transform any website into a modern, responsive web application with AI. Open-source alternative to Lovable.dev.",
-    url: "https://openlovable.diy",
-    siteName: "Open Lovable DIY",
+    title: "Youssef AI – Build and remix apps with conversational AI",
+    description:
+      "Ship beautiful web experiences faster with Youssef AI’s collaborative, open-source builder.",
+    url: "https://youssef.ai",
+    siteName: "Youssef AI",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Open Lovable DIY - AI Website Cloning Platform",
+        alt: "Youssef AI – Conversational builder",
       },
     ],
     locale: "en_US",
@@ -50,10 +52,11 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Open Lovable DIY - AI-Powered Website Cloning Platform",
-    description: "Transform any website into a modern, responsive web application with AI. Open-source alternative to Lovable.dev.",
+    title: "Youssef AI – Build and remix apps with conversational AI",
+    description:
+      "Generate React, TypeScript, and Tailwind UI from natural language prompts.",
     images: ["/og-image.png"],
-    creator: "@openlovable",
+    creator: "@youssefai",
   },
   robots: {
     index: true,

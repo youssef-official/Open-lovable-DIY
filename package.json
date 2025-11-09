@@ -1,16 +1,16 @@
 {
-  "name": "open-lovable-diy",
+  "name": "youssef-ai",
   "version": "1.0.0",
-  "description": "The open-source website cloning platform. Transform any website into a modern, responsive web application with AI.",
-  "author": "Open Source Community",
+  "description": "Conversational builder that helps you prototype and ship modern web apps with AI.",
+  "author": "Youssef AI",
   "license": "MIT",
-  "homepage": "https://openlovable.diy",
+  "homepage": "https://youssef.ai",
   "repository": {
     "type": "git",
-    "url": "https://github.com/zainulabedeen123/Open-lovable-DIY.git"
+    "url": "https://github.com/youssef-official/Open-lovable-DIY.git"
   },
   "bugs": {
-    "url": "https://github.com/zainulabedeen123/Open-lovable-DIY/issues"
+    "url": "https://github.com/youssef-official/Open-lovable-DIY/issues"
   },
   "keywords": [
     "website-cloning",
@@ -44,6 +44,7 @@
     "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-switch": "^1.2.5",
+    "@supabase/supabase-js": "^2.80.0",
     "@types/pg": "^8.15.5",
     "@types/react-syntax-highlighter": "^15.5.13",
     "ai": "^5.0.0",

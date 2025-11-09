@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://openlovable.diy/sitemap.xml
+Sitemap: https://youssef.ai/sitemap.xml
 
 # Crawl-delay
 Crawl-delay: 1

@@ -1,164 +1,190 @@
-import { Pool } from 'pg';
+import { ensureSupabase } from './supabase';
 
-// Check if DATABASE_URL is available
-if (!process.env.DATABASE_URL) {
-  console.error('DATABASE_URL environment variable is not set');
-}
-
-// Create a connection pool for better performance
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
-});
-
-// User interface for TypeScript
 export interface User {
-  id: number;
+  id: string;
   google_id: string;
   email: string;
-  name?: string;
-  image?: string;
-  created_at: Date;
-  updated_at: Date;
-  last_login: Date;
+  name?: string | null;
+  image?: string | null;
+  created_at: string;
+  updated_at: string;
+  last_login: string;
   login_count: number;
 }
 
-// Database functions for user management
 export class UserDatabase {
-  // Create or update user on login
   static async upsertUser(userData: {
     google_id: string;
     email: string;
     name?: string;
     image?: string;
   }): Promise<User> {
-    const client = await pool.connect();
-    try {
-      const query = `
-        INSERT INTO users (google_id, email, name, image, created_at, updated_at, last_login, login_count)
-        VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1)
-        ON CONFLICT (google_id) 
-        DO UPDATE SET 
-          email = EXCLUDED.email,
-          name = EXCLUDED.name,
-          image = EXCLUDED.image,
-          updated_at = CURRENT_TIMESTAMP,
-          last_login = CURRENT_TIMESTAMP,
-          login_count = users.login_count + 1
-        RETURNING *;
-      `;
-      
-      const result = await client.query(query, [
-        userData.google_id,
-        userData.email,
-        userData.name || null,
-        userData.image || null
-      ]);
-      
-      return result.rows[0];
-    } finally {
-      client.release();
+    const supabase = ensureSupabase();
+    const now = new Date().toISOString();
+
+    const existingRes = await supabase
+      .from<User>('users')
+      .select('*')
+      .eq('google_id', userData.google_id)
+      .maybeSingle();
+
+    if (existingRes.error) {
+      throw existingRes.error;
     }
+
+    if (existingRes.data) {
+      const updateRes = await supabase
+        .from<User>('users')
+        .update({
+          email: userData.email,
+          name: userData.name || null,
+          image: userData.image || null,
+          updated_at: now,
+          last_login: now,
+          login_count: existingRes.data.login_count + 1,
+        })
+        .eq('google_id', userData.google_id)
+        .select()
+        .single();
+
+      if (updateRes.error || !updateRes.data) {
+        throw updateRes.error || new Error('Failed to update user');
+      }
+
+      return updateRes.data;
+    }
+
+    const insertRes = await supabase
+      .from<User>('users')
+      .insert({
+        google_id: userData.google_id,
+        email: userData.email,
+        name: userData.name || null,
+        image: userData.image || null,
+        created_at: now,
+        updated_at: now,
+        last_login: now,
+        login_count: 1,
+      })
+      .select()
+      .single();
+
+    if (insertRes.error || !insertRes.data) {
+      throw insertRes.error || new Error('Failed to insert user');
+    }
+
+    return insertRes.data;
   }
 
-  // Get all users for admin dashboard
-  static async getAllUsers(limit: number = 100, offset: number = 0): Promise<{
+  static async getAllUsers(limit = 100, offset = 0): Promise<{
     users: User[];
     total: number;
   }> {
-    const client = await pool.connect();
-    try {
-      // Get total count
-      const countQuery = 'SELECT COUNT(*) as total FROM users';
-      const countResult = await client.query(countQuery);
-      const total = parseInt(countResult.rows[0].total);
+    const supabase = ensureSupabase();
 
-      // Get users with pagination
-      const usersQuery = `
-        SELECT * FROM users 
-        ORDER BY created_at DESC 
-        LIMIT $1 OFFSET $2
-      `;
-      const usersResult = await client.query(usersQuery, [limit, offset]);
-      
-      return {
-        users: usersResult.rows,
-        total
-      };
-    } finally {
-      client.release();
+    const { data, error, count } = await supabase
+      .from<User>('users')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error || !data) {
+      throw error || new Error('Failed to fetch users');
     }
+
+    return {
+      users: data,
+      total: count ?? data.length,
+    };
   }
 
-  // Get user by Google ID
   static async getUserByGoogleId(googleId: string): Promise<User | null> {
-    const client = await pool.connect();
-    try {
-      const query = 'SELECT * FROM users WHERE google_id = $1';
-      const result = await client.query(query, [googleId]);
-      return result.rows[0] || null;
-    } finally {
-      client.release();
+    const supabase = ensureSupabase();
+
+    const { data, error } = await supabase
+      .from<User>('users')
+      .select('*')
+      .eq('google_id', googleId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
     }
+
+    return data ?? null;
   }
 
-  // Get user statistics for admin dashboard
   static async getUserStats(): Promise<{
     totalUsers: number;
     newUsersToday: number;
     newUsersThisWeek: number;
     newUsersThisMonth: number;
   }> {
-    const client = await pool.connect();
-    try {
-      const query = `
-        SELECT 
-          COUNT(*) as total_users,
-          COUNT(CASE WHEN created_at >= CURRENT_DATE THEN 1 END) as new_today,
-          COUNT(CASE WHEN created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as new_week,
-          COUNT(CASE WHEN created_at >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as new_month
-        FROM users
-      `;
-      const result = await client.query(query);
-      const row = result.rows[0];
-      
-      return {
-        totalUsers: parseInt(row.total_users),
-        newUsersToday: parseInt(row.new_today),
-        newUsersThisWeek: parseInt(row.new_week),
-        newUsersThisMonth: parseInt(row.new_month)
-      };
-    } finally {
-      client.release();
+    const supabase = ensureSupabase();
+
+    const [totalRes, todayRes, weekRes, monthRes] = await Promise.all([
+      supabase.from<User>('users').select('*', { count: 'exact', head: true }),
+      supabase
+        .from<User>('users')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startOfDay().toISOString()),
+      supabase
+        .from<User>('users')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', daysAgoIso(7)),
+      supabase
+        .from<User>('users')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', daysAgoIso(30)),
+    ]);
+
+    if (totalRes.error || todayRes.error || weekRes.error || monthRes.error) {
+      throw (
+        totalRes.error ||
+        todayRes.error ||
+        weekRes.error ||
+        monthRes.error ||
+        new Error('Failed to load user stats')
+      );
     }
+
+    return {
+      totalUsers: totalRes.count ?? 0,
+      newUsersToday: todayRes.count ?? 0,
+      newUsersThisWeek: weekRes.count ?? 0,
+      newUsersThisMonth: monthRes.count ?? 0,
+    };
   }
 
-  // Test database connection
   static async testConnection(): Promise<boolean> {
     try {
-      if (!process.env.DATABASE_URL) {
-        console.error('DATABASE_URL environment variable is not set');
+      ensureSupabase();
+      const { error } = await ensureSupabase()
+        .from<User>('users')
+        .select('id', { count: 'exact', head: true })
+        .limit(1);
+
+      if (error) {
+        console.error('[database] Supabase connectivity check failed:', error);
         return false;
       }
 
-      const client = await pool.connect();
-      await client.query('SELECT 1');
-      client.release();
-      console.log('Database connection test successful');
       return true;
     } catch (error) {
-      console.error('Database connection test failed:', error);
-      console.error('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+      console.error('[database] Supabase connectivity check threw:', error);
       return false;
     }
   }
 }
 
-// Export the pool for direct queries if needed
-export { pool };
+function startOfDay() {
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  return now;
+}
+
+function daysAgoIso(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() - days);
+  return date.toISOString();
+}

@@ -10,36 +10,52 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
-      // Store user in database when they sign in
+    async signIn({ user, account }) {
       if (account?.provider === 'google' && user.email) {
         try {
-          await UserDatabase.upsertUser({
+          const dbUser = await UserDatabase.upsertUser({
             google_id: user.id,
             email: user.email,
             name: user.name || undefined,
             image: user.image || undefined,
           });
+
+          (user as any).dbUserId = dbUser.id;
           return true;
         } catch (error) {
           console.error('Error storing user in database:', error);
-          // Still allow sign in even if database storage fails
           return true;
         }
       }
       return true;
     },
-    async jwt({ token, account, profile }) {
-      // Persist the OAuth access_token and or the user id to the token right after signin
+    async jwt({ token, user, account }) {
       if (account) {
-        token.accessToken = account.access_token
+        token.accessToken = account.access_token;
       }
-      return token
+
+      if (user && (user as any).dbUserId) {
+        token.dbUserId = (user as any).dbUserId as string;
+      } else if (!token.dbUserId && token.sub) {
+        try {
+          const existingUser = await UserDatabase.getUserByGoogleId(token.sub);
+          if (existingUser) {
+            token.dbUserId = existingUser.id;
+          }
+        } catch (error) {
+          console.error('Error loading user by Google ID:', error);
+        }
+      }
+
+      return token;
     },
     async session({ session, token }) {
-      // Send properties to the client, like an access_token and user id from a provider.
-      session.accessToken = token.accessToken
-      return session
+      session.accessToken = token.accessToken;
+      if (session.user) {
+        session.user.id = (token.dbUserId as string | undefined) || undefined;
+        session.user.googleId = (token.sub as string | undefined) || undefined;
+      }
+      return session;
     },
   },
   pages: {

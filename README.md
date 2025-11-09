@@ -1,10 +1,10 @@
-# Open Lovable DIY 🚀 🥺
+# Youssef AI – Conversational App Builder 🚀
 
-**The Open-Source Website Cloning Platform**
+**Design, build, and remix web experiences with AI**
 
-Transform any website into a modern, responsive web application with the power of AI. Simply provide a URL, and watch as our intelligent system recreates it as clean, customizable code.
+Describe the product you want and let Youssef AI turn it into a modern, responsive application. Iterate in real time, inspect the generated code, and deploy anywhere.
 
-🌐 **Live Demo**: [openlovable.diy](https://openlovable.diy)
+🌐 **Live Demo**: [youssef.ai](https://youssef.ai)
 
 ## ✨ Features
 
@@ -16,6 +16,7 @@ Transform any website into a modern, responsive web application with the power o
 - 🚀 **Deploy Anywhere**: Vercel, Netlify, or any hosting platform
 - 🔒 **Secure Sandboxing**: Safe code execution in isolated environments
 - 💾 **Smart Caching**: 500% faster scraping with intelligent caching
+- 🗂️ **Project History**: Persist chats and generated code per user with Supabase
 
 ## 🎯 How It Works
 
@@ -72,7 +73,7 @@ Transform any website into a modern, responsive web application with the power o
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/zainulabedeen123/Open-lovable-DIY.git
+git clone https://github.com/youssef-official/Open-lovable-DIY.git
 cd Open-lovable-DIY
 npm install
 ```
@@ -95,11 +96,21 @@ FIRECRAWL_API_KEY=fc-your_api_key_here
 # REQUIRED - AI inference via OpenRouter
 OPENROUTER_API_KEY=or_your_api_key_here
 
+# REQUIRED - Persistent storage (Supabase)
+SUPABASE_URL=https://eovdsfouwvgtvlhxmqya.supabase.co
+SUPABASE_ANON_KEY=your_supabase_anon_or_service_key
+
 # OPTIONAL - OpenRouter overrides
 # OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 # OPENROUTER_HTTP_REFERER=https://your-app-domain.com
-# OPENROUTER_APP_NAME=Open Lovable DIY
+# OPENROUTER_APP_NAME=Youssef AI
 ```
+
+### 2.1 Database Setup (Supabase)
+
+1. Create a new Supabase project (or use the provided instance).
+2. Open the SQL editor and run the script in `Full/txt.sql` to provision tables and indexes.
+3. Add the `SUPABASE_URL` and `SUPABASE_ANON_KEY` (or service role key) to your environment variables.
 
 ### 3. Run Development Server
 
@@ -123,7 +134,7 @@ Open [http://localhost:3000](http://localhost:3000) and start creating! 🎉
 
 ### Automatic Deployment
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/zainulabedeen123/Open-lovable-DIY)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/youssef-official/Open-lovable-DIY)
 
 ### Manual Deployment
 
@@ -135,7 +146,7 @@ Open [http://localhost:3000](http://localhost:3000) and start creating! 🎉
    - Add all required API keys in Vercel dashboard
    - Go to Project Settings → Environment Variables
 4. **Custom Domain** (optional):
-   - Add `openlovable.diy` in Domains section
+   - Add `youssef.ai` (or your custom domain) in Vercel Domains
    - Configure DNS records as instructed
 5. **Deploy!** 🚀
 
@@ -147,10 +158,12 @@ In your Vercel dashboard, add these environment variables:
 OPENROUTER_API_KEY=your_production_openrouter_key
 E2B_API_KEY=your_production_e2b_key
 FIRECRAWL_API_KEY=your_production_firecrawl_key
+SUPABASE_URL=https://eovdsfouwvgtvlhxmqya.supabase.co
+SUPABASE_ANON_KEY=your_supabase_service_key
 # Optional OpenRouter overrides
 # OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 # OPENROUTER_HTTP_REFERER=https://your-app-domain.com
-# OPENROUTER_APP_NAME=Open Lovable DIY
+# OPENROUTER_APP_NAME=Youssef AI
 ```
 
 ## 📁 Project Structure
@@ -205,10 +218,10 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 🆘 Support & Community
 
-- **🐛 Bug Reports**: [GitHub Issues](https://github.com/zainulabedeen123/Open-lovable-DIY/issues)
-- **💡 Feature Requests**: [GitHub Discussions](https://github.com/zainulabedeen123/Open-lovable-DIY/discussions)
-- **📧 Email**: support@openlovable.diy
-- **🐦 Twitter**: [@openlovable](https://twitter.com/openlovable)
+- **🐛 Bug Reports**: [GitHub Issues](https://github.com/youssef-official/Open-lovable-DIY/issues)
+- **💡 Feature Requests**: [GitHub Discussions](https://github.com/youssef-official/Open-lovable-DIY/discussions)
+- **📧 Email**: support@youssef.ai
+- **🐦 Twitter**: [@youssefai](https://twitter.com/youssefai)
 
 ## 🙏 Acknowledgments
 
@@ -220,6 +233,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-**Made with ❤️ by the Open Source Community**
+**Crafted with care by the Youssef AI community**
 
 ⭐ **Star this repo** if you find it useful!

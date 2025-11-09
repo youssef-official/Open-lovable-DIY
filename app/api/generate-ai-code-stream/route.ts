@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 import type { SandboxState } from '@/types/sandbox';
@@ -8,6 +9,8 @@ import { FileManifest } from '@/types/file-manifest';
 import type { ConversationState, ConversationMessage, ConversationEdit } from '@/types/conversation';
 import { appConfig } from '@/config/app.config';
 import { getAllApiKeysFromHeaders, getAllApiKeysFromBody } from '@/lib/api-key-utils';
+import { authOptions } from '@/lib/auth';
+import { ProjectRepository } from '@/lib/projects';
 
 // Helper function to create AI clients with dynamic API keys
 function createAIClients(apiKeys: {
@@ -81,24 +84,35 @@ declare global {
 
 export async function POST(request: NextRequest) {
   try {
-      const body = await request.json();
-      const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false } = body;
+    const session = await getServerSession(authOptions);
+    const userId = session?.user?.id;
+    const body = await request.json();
+    const {
+      prompt,
+      model = appConfig.ai.defaultModel,
+      context,
+      isEdit = false,
+      projectId: rawProjectId,
+    } = body;
+    const projectId = typeof rawProjectId === 'string' ? rawProjectId : undefined;
 
     // Get API keys from headers or body, with fallback to environment variables
     const apiKeysFromHeaders = getAllApiKeysFromHeaders(request);
     const apiKeysFromBody = getAllApiKeysFromBody(body);
-      const apiKeys = { ...apiKeysFromHeaders, ...apiKeysFromBody };
+    const apiKeys = { ...apiKeysFromHeaders, ...apiKeysFromBody };
 
-      // Create AI clients with dynamic API keys
-      const { openrouter, openrouterKey } = createAIClients(apiKeys);
+    // Create AI clients with dynamic API keys
+    const { openrouter, openrouterKey } = createAIClients(apiKeys);
     
     console.log('[generate-ai-code-stream] Received request:');
     console.log('[generate-ai-code-stream] - prompt:', prompt);
     console.log('[generate-ai-code-stream] - isEdit:', isEdit);
     console.log('[generate-ai-code-stream] - context.sandboxId:', context?.sandboxId);
-      console.log('[generate-ai-code-stream] - context.currentFiles:', context?.currentFiles ? Object.keys(context.currentFiles) : 'none');
-      console.log('[generate-ai-code-stream] - currentFiles count:', context?.currentFiles ? Object.keys(context.currentFiles).length : 0);
-      console.log('[generate-ai-code-stream] - has OpenRouter key:', !!openrouterKey, apiKeys.openrouter ? '(from request)' : process.env.OPENROUTER_API_KEY ? '(from env)' : '(missing)');
+    console.log('[generate-ai-code-stream] - context.currentFiles:', context?.currentFiles ? Object.keys(context.currentFiles) : 'none');
+    console.log('[generate-ai-code-stream] - currentFiles count:', context?.currentFiles ? Object.keys(context.currentFiles).length : 0);
+    console.log('[generate-ai-code-stream] - has OpenRouter key:', !!openrouterKey, apiKeys.openrouter ? '(from request)' : process.env.OPENROUTER_API_KEY ? '(from env)' : '(missing)');
+    console.log('[generate-ai-code-stream] - projectId:', projectId || 'none');
+    console.log('[generate-ai-code-stream] - userId:', userId || 'anonymous');
     
     // Initialize conversation state if not exists
     if (!global.conversationState) {
@@ -160,8 +174,9 @@ export async function POST(request: NextRequest) {
     const writer = stream.writable.getWriter();
     
     // Function to send progress updates
-    const sendProgress = async (data: any) => {
-      const message = `data: ${JSON.stringify(data)}\n\n`;
+      const sendProgress = async (data: Record<string, any>) => {
+        const payload = projectId ? { ...data, projectId } : data;
+        const message = `data: ${JSON.stringify(payload)}\n\n`;
       await writer.write(encoder.encode(message));
     };
     
@@ -1706,7 +1721,7 @@ Provide the complete file content without any truncation. Include all necessary 
         });
         
         // Track edit in conversation history
-        if (isEdit && editContext && global.conversationState) {
+          if (isEdit && editContext && global.conversationState) {
           const editRecord: ConversationEdit = {
             timestamp: Date.now(),
             userRequest: prompt,
@@ -1732,6 +1747,24 @@ Provide the complete file content without any truncation. Include all necessary 
           
           console.log('[generate-ai-code-stream] Updated conversation history with edit:', editRecord);
         }
+
+          if (global.conversationState) {
+            global.conversationState.lastUpdated = Date.now();
+
+            if (userId && projectId) {
+              try {
+                await ProjectRepository.saveState({
+                  userId,
+                  projectId,
+                  state: global.conversationState,
+                  sandboxId: context?.sandboxId,
+                  lastPrompt: prompt,
+                });
+              } catch (error) {
+                console.error('[generate-ai-code-stream] Failed to persist project state:', error);
+              }
+            }
+          }
         
       } catch (error) {
         console.error('[generate-ai-code-stream] Stream processing error:', error);

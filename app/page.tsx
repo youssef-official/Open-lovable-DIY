@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { appConfig } from '@/config/app.config';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,8 @@ import {
   FaMoon    // Night Mode Icon
 } from '@/lib/icons';
 
+import Image from 'next/image';
+import { useSession } from 'next-auth/react';
 import { UserButton } from '@/components/UserButton';
 import { useApiRequest } from '@/hooks/useApiRequest';
 import { motion } from 'framer-motion';
@@ -31,6 +33,7 @@ import CodeApplicationProgress, { type CodeApplicationState } from '@/components
 import ApiKeySettings from '@/components/ApiKeySettings';
 import { ApiKeysProvider } from '@/contexts/ApiKeysContext';
 import { ThemeProvider } from 'next-themes';
+import type { ConversationState } from '@/types/conversation';
 
 
 
@@ -52,8 +55,19 @@ interface ChatMessage {
   };
 }
 
+interface ProjectSummary {
+  id: string;
+  name: string;
+  description?: string | null;
+  last_prompt?: string | null;
+  sandbox_id?: string | null;
+  updated_at: string;
+  last_opened_at?: string | null;
+}
+
 function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boolean, setIsDarkMode: (value: boolean) => void, theme: any }) {
   const { makeRequest, makeRequestWithBody } = useApiRequest();
+  const { data: session } = useSession();
   const [sandboxData, setSandboxData] = useState<SandboxData | null>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ text: 'Not connected', active: false });
@@ -86,6 +100,81 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
   const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
   const [fileStructure, setFileStructure] = useState<string>('');
   const [showApiKeysSettings, setShowApiKeysSettings] = useState(false);
+  const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(false);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const loadProjects = useCallback(async () => {
+    if (!session?.user?.id) {
+      return;
+    }
+
+    setProjectsLoading(true);
+    setProjectsError(null);
+    try {
+      const response = await fetch('/api/projects', { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`Failed to load projects (${response.status})`);
+      }
+      const data = await response.json();
+      if (data.success && Array.isArray(data.projects)) {
+        setProjects(data.projects);
+      } else if (!data.success) {
+        throw new Error(data.error || 'Failed to load projects');
+      }
+    } catch (error) {
+      setProjectsError((error as Error).message);
+    } finally {
+      setProjectsLoading(false);
+    }
+  }, [session?.user?.id]);
+
+  const syncConversationState = useCallback(
+    async (
+      action: 'reset' | 'update' | 'clear-old' | 'hydrate',
+      payload: {
+        projectId?: string | null;
+        data?: Record<string, unknown>;
+        state?: ConversationState;
+      } = {}
+    ) => {
+      try {
+        await fetch('/api/conversation-state', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action,
+            projectId: payload.projectId ?? activeProjectId ?? undefined,
+            data: payload.data,
+            state: payload.state,
+          }),
+        });
+      } catch (error) {
+        console.error('[conversation-state] sync error:', error);
+      }
+    },
+    [activeProjectId]
+  );
+
+  const hydrateFromState = useCallback((state: ConversationState) => {
+    const mappedMessages: ChatMessage[] = (state.context.messages || []).map(msg => ({
+      content: msg.content,
+      type: msg.role === 'assistant' ? 'ai' : 'user',
+      timestamp: new Date(msg.timestamp),
+      metadata: msg.metadata,
+    }));
+
+    setChatMessages(mappedMessages);
+    setConversationContext({
+      generatedComponents: [],
+      appliedCode: (state.context.edits || []).map(edit => ({
+        files: edit.targetFiles,
+        timestamp: new Date(edit.timestamp),
+      })),
+      currentProject: state.context.currentTopic || '',
+      lastGeneratedCode: undefined,
+    });
+  }, []);
   
   const [conversationContext, setConversationContext] = useState<{
     generatedComponents: Array<{ name: string; path: string;
@@ -133,19 +222,24 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
     lastProcessedPosition: 0
   });
 
+  useEffect(() => {
+    if (!session?.user?.id) {
+      setProjects([]);
+      setActiveProjectId(null);
+      return;
+    }
+
+    loadProjects();
+  }, [session?.user?.id, loadProjects]);
+
   // Clear old conversation data on component mount and create/restore sandbox
   useEffect(() => {
     let isMounted = true;
 
     const initializePage = async () => {
       // Clear old conversation
-      try {
-        await fetch('/api/conversation-state', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'clear-old' })
-    
-      });
+        try {
+          await syncConversationState('clear-old');
         console.log('[home] Cleared old conversation data on mount');
       } catch (error) {
         console.error('[ai-sandbox] Failed to clear old conversation:', error);
@@ -246,6 +340,126 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
        return [...prev, { content, type, timestamp: new Date(), metadata }];
     });
   };
+
+  const handleProjectSelect = useCallback(
+    async (project: ProjectSummary) => {
+      try {
+        setProjects(prev => [project, ...prev.filter(p => p.id !== project.id)]);
+        setActiveProjectId(project.id);
+
+        const response = await fetch(`/api/projects?projectId=${project.id}`, {
+          cache: 'no-store',
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to load project (${response.status})`);
+        }
+
+        const data = await response.json();
+        if (!data.success || !data.project) {
+          throw new Error(data.error || 'Failed to load project');
+        }
+
+        const projectDetail = data.project as ProjectSummary & {
+          last_state?: ConversationState | null;
+        };
+
+        if (projectDetail.last_prompt) {
+          setHomeDescriptionInput(projectDetail.last_prompt);
+        }
+
+        if (projectDetail.last_state) {
+          hydrateFromState(projectDetail.last_state);
+          await syncConversationState('hydrate', {
+            projectId: projectDetail.id,
+            state: projectDetail.last_state,
+            data: {
+              sandboxId: projectDetail.sandbox_id,
+              lastPrompt: projectDetail.last_prompt,
+            },
+          });
+        } else {
+          await syncConversationState('reset', {
+            projectId: projectDetail.id,
+            data: {
+              sandboxId: projectDetail.sandbox_id,
+              lastPrompt: projectDetail.last_prompt,
+            },
+          });
+          setChatMessages([]);
+        }
+
+        if (session?.user?.id) {
+          await loadProjects();
+        }
+
+        setShowHomeScreen(false);
+        setHomeScreenFading(false);
+      } catch (error) {
+        console.error('[projects] select error:', error);
+        addChatMessage('Failed to load project conversation state.', 'error');
+      }
+    },
+    [hydrateFromState, syncConversationState, addChatMessage, session?.user?.id, loadProjects]
+  );
+
+  const ensureProjectForPrompt = useCallback(
+    async (prompt: string) => {
+      if (!session?.user?.id) {
+        return null;
+      }
+
+      if (activeProjectId) {
+        await syncConversationState('update', {
+          projectId: activeProjectId,
+          data: {
+            lastPrompt: prompt,
+            sandboxId: sandboxData?.sandboxId,
+          },
+        });
+        return activeProjectId;
+      }
+
+      try {
+        const response = await fetch('/api/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            initialPrompt: prompt,
+            sandboxId: sandboxData?.sandboxId,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to create project (${response.status})`);
+        }
+
+        const data = await response.json();
+        if (!data.success || !data.project) {
+          throw new Error(data.error || 'Failed to create project');
+        }
+
+        const { project } = data;
+        setActiveProjectId(project.id);
+        setProjects(prev => [project, ...prev.filter(p => p.id !== project.id)]);
+        await loadProjects();
+
+        await syncConversationState('reset', {
+          projectId: project.id,
+          data: {
+            sandboxId: sandboxData?.sandboxId,
+            lastPrompt: prompt,
+          },
+        });
+
+        return project.id as string;
+      } catch (error) {
+        console.error('[projects] create error:', error);
+        addChatMessage('Unable to create project record. Progress will not be saved.', 'error');
+        return null;
+      }
+  },
+  [session?.user?.id, activeProjectId, sandboxData?.sandboxId, syncConversationState, addChatMessage, loadProjects]
+  );
   const checkAndInstallPackages = async () => {
     if (!sandboxData) {
       addChatMessage('No active sandbox. Create a sandbox first!', 'system');
@@ -1444,17 +1658,16 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       
       // Show sandbox iframe only when not in any loading state
       if (sandboxData?.url && !loading) {
-        return (
-          <div className="relative w-full h-full">
-            <iframe
-              ref={iframeRef}
-              src={sandboxData.url}
-      
-              className="w-full h-full border-none"
-              title="Open Lovable Sandbox"
-              allow="clipboard-write"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-            />
+          return (
+            <div className="relative w-full h-full">
+              <iframe
+                ref={iframeRef}
+                src={sandboxData.url}
+                className="w-full h-full border-none"
+                title="Youssef AI Sandbox"
+                allow="clipboard-write"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+              />
             {/* Refresh button */}
             <button
    
@@ -1770,7 +1983,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     status: data.message || `Installing ${data.name}`
       
                   }));
-  } else if (data.type === 'complete') {
+            } else if (data.type === 'complete') {
                   generatedCode = data.generatedCode;
   explanation = data.explanation;
                   
@@ -1779,6 +1992,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     ...prev,
                     lastGeneratedCode: generatedCode
                   }));
+              if (data.projectId) {
+                setActiveProjectId(data.projectId);
+              } else if (projectId) {
+                setActiveProjectId(projectId);
+              }
   // Clear thinking state when generation completes
                   setGenerationProgress(prev => ({
                     ...prev,
@@ -2041,6 +2259,21 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }]);
   };
 
+  const formatRelativeTime = (isoString: string) => {
+    const date = new Date(isoString);
+    const diffMs = Date.now() - date.getTime();
+    const minutes = Math.max(1, Math.round(diffMs / 60000));
+    if (minutes < 60) {
+      return `${minutes} min ago`;
+    }
+    const hours = Math.round(minutes / 60);
+    if (hours < 24) {
+      return `${hours} hr${hours === 1 ? '' : 's'} ago`;
+    }
+    const days = Math.round(hours / 24);
+    return `${days} day${days === 1 ? '' : 's'} ago`;
+  };
+
 
 
 
@@ -2051,6 +2284,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     e.preventDefault();
     if (!homeDescriptionInput.trim()) return;
     
+    const projectId = await ensureProjectForPrompt(homeDescriptionInput);
+    if (projectId) {
+      setActiveProjectId(projectId);
+    }
+    
     setHomeScreenFading(true);
   // Clear messages and show the generation message
     setChatMessages([]);
@@ -2059,21 +2297,23 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     setLoadingStage('planning');
   // Also ensure we're on preview tab to show the loading overlay
     setActiveTab('preview');
-  setTimeout(() => {
+    setTimeout(() => {
       setShowHomeScreen(false);
       setHomeScreenFading(false);
 
       // Start the generation process
-      generateWebsiteFromDescription(homeDescriptionInput);
+      generateWebsiteFromDescription(homeDescriptionInput, projectId);
     }, 800);
   };
 
   // Add the generateWebsiteFromDescription function here
-  const generateWebsiteFromDescription = async (description: string) => {
+  const generateWebsiteFromDescription = async (description: string, projectIdOverride?: string | null) => {
     if (!description.trim()) {
       addChatMessage('Please provide a description of the website you want to create.', 'system');
   return;
     }
+
+    const projectId = projectIdOverride ?? activeProjectId;
 
     addChatMessage(`Creating website: ${description}`, 'system');
 
@@ -2147,7 +2387,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
           sandboxId: sandboxData?.sandboxId,
           conversationContext: conversationContext
         },
-        isEdit: false
+      isEdit: false,
+      projectId
       });
   if (!response.ok) {
         throw new Error(`Generation failed: ${response.status}`);
@@ -2192,7 +2433,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
                  
   currentComponent: prev.currentComponent + 1
                   }));
-  } else if (data.type === 'complete') {
+          } else if (data.type === 'complete') {
                   if (data.generatedCode) {
                     generatedCode = data.generatedCode;
   }
@@ -2203,6 +2444,11 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   
   status: 'Generation complete!'
                   }));
+            if (data.projectId) {
+              setActiveProjectId(data.projectId);
+            } else if (projectId) {
+              setActiveProjectId(projectId);
+            }
   break;
                 } else if (data.type === 'error') {
                   throw new Error(data.error);
@@ -2218,6 +2464,9 @@ Focus on creating a beautiful, functional website that matches the user's vision
   }
 
       if (generatedCode.trim()) {
+        if (session?.user?.id) {
+          loadProjects();
+        }
         // Wait for sandbox to be ready if it was being created
         if (sandboxPromise) {
           await sandboxPromise;
@@ -2319,31 +2568,35 @@ Focus on creating a beautiful, functional website that matches the user's vision
             </svg>
           </button>
           
-          {/* Header */}
-          <div className="absolute top-0 left-0 right-0 z-20 px-6 py-4 flex items-center justify-between animate-[fadeIn_0.8s_ease-out]">
-         
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center border border-white/20">
-                <span className="text-white font-bold text-lg">❤️</span>
+            {/* Header */}
+            <div className="absolute top-0 left-0 right-0 z-20 px-6 py-4 flex items-center justify-between animate-[fadeIn_0.8s_ease-out]">
+              <div className="flex items-center gap-3">
+                <div className="relative w-9 h-9 bg-white/10 rounded-lg border border-white/20 overflow-hidden">
+                  <Image
+                    src="/youssef-logo.png"
+                    alt="Youssef AI logo"
+                    fill
+                    priority
+                    sizes="36px"
+                    className="object-contain"
+                  />
+                </div>
+                <span className="text-white font-semibold text-lg">Youssef AI</span>
               </div>
-              <span className="text-white font-semibold text-lg">Open-Lovable</span>
-            </div>
-         
-            <div className="flex items-center gap-3 sm:gap-4">
-              <UserButton />
-              <a
-                href="https://github.com/zainulabedeen123/Open-lovable-DIY.git"
-                target="_blank"
-                rel="noopener noreferrer"
-               
-  className="inline-flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-semibold border border-white/30 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl min-w-[100px] sm:min-w-[120px] justify-center"
-              >
-                <FiGithub className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span>GitHub</span>
-              </a>
-          
-  </div>
+
+              <div className="flex items-center gap-3 sm:gap-4">
+                <UserButton />
+                <a
+                  href="https://github.com/youssef-official/Open-lovable-DIY.git"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-semibold border border-white/30 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl min-w-[100px] sm:min-w-[120px] justify-center"
+                >
+                  <FiGithub className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span>GitHub</span>
+                </a>
           </div>
+            </div>
           
           {/* Main content */}
           <div className="relative z-10 h-full flex items-center justify-center px-4">
@@ -2353,10 +2606,9 @@ Focus on creating a beautiful, functional website that matches the user's vision
   <div className="text-center">
                 <h1 className="text-[2.5rem] sm:text-[3.5rem] lg:text-[4.2rem] text-center text-white font-bold tracking-tight leading-[1.1] animate-[fadeIn_0.8s_ease-out] px-4">
                   <span className="block sm:inline">Build something </span>
-                  <span className="bg-gradient-to-r from-gray-300 via-white to-gray-400 bg-clip-text text-transparent whitespace-nowrap">
-                    ❤️ Open-Lovable
-     
-  </span>
+                    <span className="bg-gradient-to-r from-gray-300 via-white to-gray-400 bg-clip-text text-transparent whitespace-nowrap">
+                      unforgettable with Youssef AI
+                    </span>
                 </h1>
                 <motion.p
                   className="text-lg lg:text-xl max-w-2xl mx-auto mt-8 text-white/90 text-center text-balance px-4"
@@ -2432,6 +2684,45 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   ))}
                 </div>
               </form>
+
+                {session?.user?.id && (
+                  <div className="mt-10 max-w-3xl mx-auto px-4">
+                    <div className="text-left text-white/70 text-[0.7rem] uppercase tracking-[0.4em] mb-3">
+                      Recent projects
+                    </div>
+                    {projectsLoading ? (
+                      <p className="text-white/70 text-sm">Loading your projects…</p>
+                    ) : projects.length === 0 ? (
+                      <p className="text-white/60 text-sm">
+                        No saved projects yet. Describe an idea above to start building.
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {projects.map(project => (
+                          <button
+                            key={project.id}
+                            type="button"
+                            onClick={() => handleProjectSelect(project)}
+                            className={`group text-left px-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 ${activeProjectId === project.id ? 'ring-2 ring-white/70' : ''}`}
+                          >
+                            <div className="text-white font-semibold truncate">
+                              {project.name}
+                            </div>
+                            <div className="text-white/60 text-xs mt-1 line-clamp-2">
+                              {project.last_prompt || 'No prompt yet'}
+                            </div>
+                            <div className="text-white/40 text-xs mt-2">
+                              {formatRelativeTime(project.updated_at)}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {projectsError && (
+                      <p className="text-red-300 text-sm mt-2">{projectsError}</p>
+                    )}
+                  </div>
+                )}
               
               {/* Enhanced Model Selector */}
           
@@ -2470,11 +2761,16 @@ Focus on creating a beautiful, functional website that matches the user's vision
       <div className={`px-4 py-4 border-b ${theme.border_color} flex items-center justify-between ${theme.bg_card}`}>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center border ${theme.border_color}`}>
-           
-              <span className={`font-bold text-lg ${theme.text_main}`}>❤️</span>
+            <div className={`relative w-8 h-8 rounded-lg overflow-hidden border ${theme.border_color}`}>
+              <Image
+                src="/youssef-logo.png"
+                alt="Youssef AI logo"
+                fill
+                sizes="32px"
+                className="object-contain"
+              />
             </div>
-            <span className={`font-semibold text-lg ${theme.text_main}`}>Open-Lovable</span>
+            <span className={`font-semibold text-lg ${theme.text_main}`}>Youssef AI</span>
           </div>
         </div>
         <div className="flex items-center gap-2">

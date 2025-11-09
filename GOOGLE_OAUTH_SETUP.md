@@ -1,11 +1,11 @@
 # Google OAuth Setup Guide
 
-This guide explains how to set up Google OAuth authentication for Open Lovable DIY.
+This guide explains how to set up Google OAuth authentication for Youssef AI.
 
 ## Prerequisites
 
 1. Google Cloud Console project
-2. Domain configured (https://www.openlovable.diy)
+2. Domain configured (https://www.youssef.ai)
 
 ## Google Cloud Console Configuration
 
@@ -20,13 +20,13 @@ This guide explains how to set up Google OAuth authentication for Open Lovable D
 
 **Authorized JavaScript origins:**
 ```
-https://www.openlovable.diy
+https://www.youssef.ai
 http://localhost:3000 (for development)
 ```
 
 **Authorized redirect URIs:**
 ```
-https://www.openlovable.diy/api/auth/callback/google
+https://www.youssef.ai/api/auth/callback/google
 http://localhost:3000/api/auth/callback/google (for development)
 ```
 
@@ -34,7 +34,7 @@ http://localhost:3000/api/auth/callback/google (for development)
 
 **Client ID:** `your-google-client-id.apps.googleusercontent.com`
 **Client Secret:** `GOCSPX-your-google-client-secret`
-**Authorized Redirect URI:** `https://www.openlovable.diy/`
+**Authorized Redirect URI:** `https://www.youssef.ai/`
 
 ## Environment Variables
 
@@ -47,7 +47,7 @@ GOOGLE_CLIENT_SECRET=GOCSPX-your-google-client-secret
 
 # NextAuth.js configuration
 NEXTAUTH_SECRET=your-super-secret-nextauth-key-change-this-in-production
-NEXTAUTH_URL=https://www.openlovable.diy
+NEXTAUTH_URL=https://www.youssef.ai
 ```
 
 ## Features Implemented

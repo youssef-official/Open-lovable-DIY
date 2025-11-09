@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import Image from "next/image"
 import { Suspense } from "react"
 
 function AuthErrorContent() {
@@ -31,16 +32,23 @@ function AuthErrorContent() {
         <div className="absolute top-40 left-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md">
+        <div className="relative z-10 w-full max-w-md">
         {/* Logo and branding */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">❤️</span>
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/20 bg-white/10">
+                <Image
+                  src="/youssef-logo.png"
+                  alt="Youssef AI logo"
+                  fill
+                  priority
+                  sizes="48px"
+                  className="object-contain"
+                />
+              </div>
+              <h1 className="text-3xl font-bold text-white">Youssef AI</h1>
             </div>
-            <h1 className="text-3xl font-bold text-white">Open-Lovable</h1>
           </div>
-        </div>
 
         {/* Error card */}
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">

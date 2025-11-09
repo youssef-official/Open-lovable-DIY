@@ -1,6 +1,6 @@
-# 🚀 Deployment Guide for Open Lovable DIY
+# 🚀 Deployment Guide for Youssef AI
 
-This guide will help you deploy Open Lovable DIY to Vercel and configure it for the `openlovable.diy` domain.
+This guide walks you through deploying Youssef AI to Vercel and configuring a custom domain such as `youssef.ai`.
 
 ## 📋 Prerequisites
 
@@ -8,13 +8,13 @@ Before deploying, make sure you have:
 - ✅ GitHub account with the forked repository
 - ✅ Vercel account (free tier is sufficient)
 - ✅ All required API keys (OpenRouter, E2B, Firecrawl)
-- ✅ Domain access to `openlovable.diy` (if using custom domain)
+- ✅ Domain access to `youssef.ai` (or your chosen custom domain)
 
 ## 🌐 Deploy to Vercel
 
 ### Option 1: One-Click Deploy
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/zainulabedeen123/Open-lovable-DIY)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/youssef-official/Open-lovable-DIY)
 
 ### Option 2: Manual Deployment
 
@@ -25,10 +25,10 @@ Before deploying, make sure you have:
 2. **Import Project**
    - Click "New Project"
    - Select "Import Git Repository"
-   - Choose `zainulabedeen123/Open-lovable-DIY`
+    - Choose `youssef-official/Open-lovable-DIY`
 
 3. **Configure Project**
-   - **Project Name**: `open-lovable-diy`
+    - **Project Name**: `youssef-ai`
    - **Framework Preset**: Next.js
    - **Root Directory**: `./` (default)
    - **Build Command**: `npm run build` (default)
@@ -40,12 +40,17 @@ Before deploying, make sure you have:
 OPENROUTER_API_KEY=your_openrouter_api_key
 E2B_API_KEY=your_e2b_api_key
 FIRECRAWL_API_KEY=your_firecrawl_api_key
+SUPABASE_URL=https://eovdsfouwvgtvlhxmqya.supabase.co
+SUPABASE_ANON_KEY=your_supabase_service_key
 # Optional overrides
 # OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 # OPENROUTER_HTTP_REFERER=https://your-app-domain.com
-# OPENROUTER_APP_NAME=Open Lovable DIY
+# OPENROUTER_APP_NAME=Youssef AI
 NODE_ENV=production
 ```
+
+> 🗂️ **Database Setup**  
+> Run the SQL script in `Full/txt.sql` once to create the necessary tables in Supabase before deploying.
 
 5. **Deploy**
    - Click "Deploy"
@@ -53,18 +58,18 @@ NODE_ENV=production
 
 ## 🌍 Custom Domain Setup
 
-### Configure openlovable.diy Domain
+### Configure youssef.ai Domain
 
 1. **Add Domain in Vercel**
    - Go to your project dashboard
    - Click "Settings" → "Domains"
-   - Add `openlovable.diy`
-   - Add `www.openlovable.diy` (optional)
+   - Add `youssef.ai` (or your custom domain)
+   - Add `www.youssef.ai` if you want a www variant
 
 2. **DNS Configuration**
    Configure these DNS records with your domain provider:
    
-   **For Apex Domain (openlovable.diy):**
+**For Apex Domain (youssef.ai):**
    ```
    Type: A
    Name: @
@@ -72,7 +77,7 @@ NODE_ENV=production
    TTL: 3600
    ```
    
-   **For WWW Subdomain (www.openlovable.diy):**
+**For WWW Subdomain (www.youssef.ai):**
    ```
    Type: CNAME
    Name: www
@@ -98,11 +103,11 @@ FIRECRAWL_API_KEY=fc-production_key
 # Optional OpenRouter overrides
 # OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
 # OPENROUTER_HTTP_REFERER=https://your-app-domain.com
-# OPENROUTER_APP_NAME=Open Lovable DIY
+# OPENROUTER_APP_NAME=Youssef AI
 
 # System
 NODE_ENV=production
-NEXT_PUBLIC_APP_URL=https://openlovable.diy
+NEXT_PUBLIC_APP_URL=https://youssef.ai
 ```
 
 ### Performance Optimizations
@@ -118,7 +123,7 @@ The project includes several optimizations:
 
 After deployment, verify these work:
 
-1. **Homepage loads** at `https://openlovable.diy`
+1. **Homepage loads** at `https://youssef.ai`
 2. **API key validation** works in settings
 3. **Website cloning** functionality works
 4. **Sandbox creation** works properly
@@ -146,13 +151,13 @@ After deployment, verify these work:
 ### Getting Help
 
 - **Vercel Support**: [vercel.com/support](https://vercel.com/support)
-- **Project Issues**: [GitHub Issues](https://github.com/zainulabedeen123/Open-lovable-DIY/issues)
-- **Community**: [GitHub Discussions](https://github.com/zainulabedeen123/Open-lovable-DIY/discussions)
+- **Project Issues**: [GitHub Issues](https://github.com/youssef-official/Open-lovable-DIY/issues)
+- **Community**: [GitHub Discussions](https://github.com/youssef-official/Open-lovable-DIY/discussions)
 
 ## 🎉 Success!
 
-Once deployed, your Open Lovable DIY platform will be live at:
-- **Production**: https://openlovable.diy
-- **Vercel URL**: https://open-lovable-diy.vercel.app
+Once deployed, your Youssef AI workspace will be live at:
+- **Production**: https://youssef.ai
+- **Vercel URL**: https://youssef-ai.vercel.app
 
 Share your success and help others by contributing back to the project! 🚀

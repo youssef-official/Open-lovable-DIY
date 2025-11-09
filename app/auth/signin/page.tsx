@@ -5,6 +5,7 @@ import { useEffect, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { FiGithub } from "@/lib/icons"
+import Image from "next/image"
 
 function SignInContent() {
   const router = useRouter()
@@ -43,25 +44,32 @@ function SignInContent() {
         <div className="absolute top-40 left-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-md">
+        <div className="relative z-10 w-full max-w-md">
         {/* Logo and branding */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center">
-              <span className="text-white font-bold text-2xl">❤️</span>
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/20 bg-white/10">
+                <Image
+                  src="/youssef-logo.png"
+                  alt="Youssef AI logo"
+                  fill
+                  priority
+                  sizes="48px"
+                  className="object-contain"
+                />
+              </div>
+              <h1 className="text-3xl font-bold text-white">Youssef AI</h1>
             </div>
-            <h1 className="text-3xl font-bold text-white">Open-Lovable</h1>
+            <p className="text-gray-300 text-lg">
+              Create beautiful apps and websites by chatting with AI
+            </p>
           </div>
-          <p className="text-gray-300 text-lg">
-            Create beautiful apps and websites by chatting with AI
-          </p>
-        </div>
 
         {/* Sign in card */}
         <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-white/20 shadow-2xl">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-semibold text-white mb-2">Welcome Back</h2>
-            <p className="text-gray-300">Sign in to continue building amazing projects</p>
+              <p className="text-gray-300">Sign in to continue building amazing projects</p>
           </div>
 
           <Button
@@ -92,8 +100,8 @@ function SignInContent() {
         {/* Footer */}
         <div className="text-center mt-8">
           <div className="flex items-center justify-center gap-4 text-gray-400">
-            <a
-              href="https://github.com/zainulabedeen123/Open-lovable-DIY.git"
+              <a
+                href="https://github.com/youssef-official/Open-lovable-DIY.git"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 hover:text-white transition-colors"
