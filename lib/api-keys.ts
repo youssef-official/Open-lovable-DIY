@@ -4,11 +4,9 @@
  */
 
 export interface ApiKeys {
-  groq?: string;
+  openrouter?: string;
   e2b?: string;
-  anthropic?: string;
-  openai?: string;
-  gemini?: string;
+  firecrawl?: string;
 }
 
 export interface ApiKeyValidationResult {
@@ -60,22 +58,22 @@ export function clearStoredApiKeys(): void {
 }
 
 /**
- * Validate Groq API key
+ * Validate OpenRouter API key
  */
-export async function validateGroqApiKey(apiKey: string): Promise<ApiKeyValidationResult> {
-  if (!apiKey || !apiKey.startsWith('gsk_')) {
-    return { isValid: false, error: 'Groq API key should start with "gsk_"' };
+export async function validateOpenRouterApiKey(apiKey: string): Promise<ApiKeyValidationResult> {
+  if (!apiKey) {
+    return { isValid: false, error: 'OpenRouter API key is required' };
   }
 
   try {
     const response = await fetch('/api/validate-api-key', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider: 'groq', apiKey })
+      body: JSON.stringify({ provider: 'openrouter', apiKey })
     });
 
     if (!response.ok) {
-      console.error('Groq validation request failed:', response.status);
+      console.error('OpenRouter validation request failed:', response.status);
       // If validation endpoint fails, assume valid if format is correct
       return { isValid: true };
     }
@@ -83,7 +81,7 @@ export async function validateGroqApiKey(apiKey: string): Promise<ApiKeyValidati
     const result = await response.json();
     return { isValid: result.valid, error: result.error };
   } catch (error) {
-    console.error('Groq validation error:', error);
+    console.error('OpenRouter validation error:', error);
     // If validation fails due to network/other issues, assume valid if format is correct
     return { isValid: true };
   }
@@ -134,7 +132,7 @@ export function getApiKey(provider: keyof ApiKeys): string | undefined {
  */
 export function hasRequiredApiKeys(): boolean {
   const keys = getStoredApiKeys();
-  return !!(keys.groq && keys.e2b);
+  return !!(keys.openrouter && keys.e2b);
 }
 
 /**
@@ -144,7 +142,7 @@ export function getMissingRequiredApiKeys(): string[] {
   const keys = getStoredApiKeys();
   const missing: string[] = [];
 
-  if (!keys.groq) missing.push('Groq');
+  if (!keys.openrouter) missing.push('OpenRouter');
   if (!keys.e2b) missing.push('E2B');
 
   return missing;

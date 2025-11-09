@@ -27,7 +27,7 @@ Transform any website into a modern, responsive web application with the power o
    - Respects robots.txt and implements smart retry logic
 
 2. **🧠 AI Analysis & Generation**
-   - Multiple AI providers (Groq, OpenAI, Anthropic) analyze the content
+   - OpenRouter’s multi-provider marketplace (Anthropic, Google, DeepSeek, Moonshot, MiniMax, Qwen, and more) analyzes the content
    - Understands design patterns, component structure, and user flows
    - Generates clean, semantic React components with TypeScript
 
@@ -55,7 +55,7 @@ Transform any website into a modern, responsive web application with the power o
 |----------|------------|---------|
 | **Frontend** | Next.js 15, React 18, TypeScript | Modern web application framework |
 | **Styling** | Tailwind CSS | Utility-first CSS framework |
-| **AI Providers** | Groq, OpenAI, Anthropic | Content analysis and code generation |
+| **AI Providers** | OpenRouter (Claude, Gemini, DeepSeek, Moonshot, Qwen, MiniMax) | Content analysis and code generation |
 | **Web Scraping** | Firecrawl | Reliable content extraction |
 | **Sandboxing** | E2B | Secure code execution environment |
 | **Deployment** | Vercel | Serverless deployment platform |
@@ -92,12 +92,13 @@ E2B_API_KEY=e2b_your_api_key_here
 # REQUIRED - Web scraping engine
 FIRECRAWL_API_KEY=fc-your_api_key_here
 
-# REQUIRED - AI inference (choose at least one)
-GROQ_API_KEY=gsk_your_groq_key_here
+# REQUIRED - AI inference via OpenRouter
+OPENROUTER_API_KEY=or_your_api_key_here
 
-# OPTIONAL - Additional AI providers
-OPENAI_API_KEY=sk-your_openai_key_here
-ANTHROPIC_API_KEY=sk-ant-your_anthropic_key_here
+# OPTIONAL - OpenRouter overrides
+# OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+# OPENROUTER_HTTP_REFERER=https://your-app-domain.com
+# OPENROUTER_APP_NAME=Open Lovable DIY
 ```
 
 ### 3. Run Development Server
@@ -114,16 +115,9 @@ Open [http://localhost:3000](http://localhost:3000) and start creating! 🎉
 
 | Service | Purpose | Get API Key | Free Tier |
 |---------|---------|-------------|-----------|
+| **OpenRouter** | Unified gateway to Claude, Gemini, DeepSeek, Moonshot, Qwen, MiniMax | [openrouter.ai](https://openrouter.ai) | ✅ Yes |
 | **E2B** | Secure code execution | [e2b.dev](https://e2b.dev) | ✅ Yes |
 | **Firecrawl** | Web scraping | [firecrawl.dev](https://firecrawl.dev) | ✅ Yes |
-| **Groq** | Fast AI inference | [console.groq.com](https://console.groq.com) | ✅ Yes |
-
-### Optional Services
-
-| Service | Purpose | Get API Key |
-|---------|---------|-------------|
-| **OpenAI** | GPT models | [platform.openai.com](https://platform.openai.com) |
-| **Anthropic** | Claude models | [console.anthropic.com](https://console.anthropic.com) |
 
 ## 🌐 Deployment on Vercel
 
@@ -150,11 +144,13 @@ Open [http://localhost:3000](http://localhost:3000) and start creating! 🎉
 In your Vercel dashboard, add these environment variables:
 
 ```
+OPENROUTER_API_KEY=your_production_openrouter_key
 E2B_API_KEY=your_production_e2b_key
 FIRECRAWL_API_KEY=your_production_firecrawl_key
-GROQ_API_KEY=your_production_groq_key
-OPENAI_API_KEY=your_production_openai_key (optional)
-ANTHROPIC_API_KEY=your_production_anthropic_key (optional)
+# Optional OpenRouter overrides
+# OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+# OPENROUTER_HTTP_REFERER=https://your-app-domain.com
+# OPENROUTER_APP_NAME=Open Lovable DIY
 ```
 
 ## 📁 Project Structure

@@ -3,11 +3,8 @@
 import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 
 interface ApiKeys {
-  groq?: string;
+  openrouter?: string;
   e2b?: string;
-  anthropic?: string;
-  openai?: string;
-  gemini?: string;
   [key: string]: string | undefined;
 }
 
@@ -46,7 +43,7 @@ export function ApiKeysProvider({ children }: { children: React.ReactNode }) {
   };
 
   const { hasRequiredKeys, missingKeys } = useMemo(() => {
-    const requiredKeys = ['groq', 'e2b'];
+    const requiredKeys = ['openrouter', 'e2b'];
     const missingKeys = requiredKeys.filter(key => !apiKeys[key]);
     return {
       hasRequiredKeys: missingKeys.length === 0,

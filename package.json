@@ -37,11 +37,8 @@
     "test:all": "npm run test:integration && npm run test:api && npm run test:code"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^2.0.1",
     "@ai-sdk/google": "^2.0.4",
-    "@ai-sdk/groq": "^2.0.0",
-    "@ai-sdk/openai": "^2.0.4",
-    "@anthropic-ai/sdk": "^0.57.0",
+    "@ai-sdk/openai": "^2.0.64",
     "@auth/prisma-adapter": "^2.10.0",
     "@e2b/code-interpreter": "^1.5.1",
     "@radix-ui/react-label": "^2.1.8",
@@ -57,7 +54,6 @@
     "dotenv": "^17.2.1",
     "e2b": "^1.13.2",
     "framer-motion": "^12.23.12",
-    "groq-sdk": "^0.29.0",
     "lightningcss": "^1.30.1",
     "lucide-react": "^0.532.0",
     "mocha": "^11.7.5",

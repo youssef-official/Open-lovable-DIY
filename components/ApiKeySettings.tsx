@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { appConfig } from '@/config/app.config';
 import { useApiKeys } from '@/contexts/ApiKeysContext';
 
 const ApiKeySettings = ({ onClose }: { onClose: () => void }) => {
@@ -44,23 +43,28 @@ const ApiKeySettings = ({ onClose }: { onClose: () => void }) => {
     <div className="p-4">
       <h3 className="text-lg font-medium mb-4">API Keys</h3>
       <p className="text-sm text-muted-foreground mb-4">
-        Only the Open Router API key is required. This key will be used for all the listed models.
+        Provide your OpenRouter API key to generate code, and the E2B key to run the editable sandbox. Other keys are optional.
       </p>
       <div className="space-y-4">
-        {appConfig.ai.availableModels.map(model => {
-          const service = model.split('/')[0];
-          return (
-            <div key={service} className="space-y-2">
-              <Label htmlFor={service}>{service}</Label>
-              <Input
-                id={service}
-                type="password"
-                value={localKeys[service] || ''}
-                onChange={(e) => handleInputChange(service, e.target.value)}
-              />
+        {[
+          { key: 'openrouter', label: 'OpenRouter', placeholder: 'sk-or-...', required: true },
+          { key: 'e2b', label: 'E2B Sandbox', placeholder: 'e2b_...', required: true },
+          { key: 'firecrawl', label: 'Firecrawl (optional)', placeholder: 'fc-...', required: false },
+        ].map(({ key, label, placeholder, required }) => (
+          <div key={key} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor={key}>{label}</Label>
+              {required && <span className="text-xs text-muted-foreground uppercase">Required</span>}
             </div>
-          );
-        })}
+            <Input
+              id={key}
+              type="password"
+              placeholder={placeholder}
+              value={localKeys[key] || ''}
+              onChange={(e) => handleInputChange(key, e.target.value)}
+            />
+          </div>
+        ))}
       </div>
       <div className="mt-6 flex justify-end">
         <Button onClick={handleSave} disabled={loading}>

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createGroq } from '@ai-sdk/groq';
-import { createAnthropic } from '@ai-sdk/anthropic';
+import { NextRequest, NextResponse } from 'next/server';
 import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 import type { SandboxState } from '@/types/sandbox';
@@ -13,20 +12,28 @@ import { getAllApiKeysFromHeaders, getAllApiKeysFromBody } from '@/lib/api-key-u
 
 // Helper function to create AI clients with dynamic API keys
 function createAIClients(apiKeys: {
-  groq?: string;
-  anthropic?: string;
-  openai?: string;
+  openrouter?: string;
 }) {
-  const groq = apiKeys.groq ? createGroq({ apiKey: apiKeys.groq }) : null;
-  const anthropic = apiKeys.anthropic ? createAnthropic({
-    apiKey: apiKeys.anthropic,
-    baseURL: process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1',
-  }) : null;
-  const openai = apiKeys.openai ? createOpenAI({
-    apiKey: apiKeys.openai,
-  }) : null;
+  const openrouterKey = apiKeys.openrouter || process.env.OPENROUTER_API_KEY;
 
-  return { groq, anthropic, openai };
+  const headers: Record<string, string> = {};
+  if (process.env.OPENROUTER_HTTP_REFERER) {
+    headers['HTTP-Referer'] = process.env.OPENROUTER_HTTP_REFERER;
+  }
+  if (process.env.OPENROUTER_APP_NAME) {
+    headers['X-Title'] = process.env.OPENROUTER_APP_NAME;
+  }
+
+  const openrouter = openrouterKey
+    ? createOpenAI({
+        apiKey: openrouterKey,
+        baseURL: process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1',
+        headers: Object.keys(headers).length ? headers : undefined,
+        name: 'openrouter',
+      })
+    : null;
+
+  return { openrouter };
 }
 
 // Helper function to analyze user preferences from conversation history
@@ -75,8 +82,8 @@ declare global {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { prompt, model = 'openai/gpt-oss-20b', context, isEdit = false } = body;
+      const body = await request.json();
+      const { prompt, model = appConfig.ai.defaultModel, context, isEdit = false } = body;
 
     // Get API keys from headers or body, with fallback to environment variables
     const apiKeysFromHeaders = getAllApiKeysFromHeaders(request);
@@ -84,7 +91,7 @@ export async function POST(request: NextRequest) {
     const apiKeys = { ...apiKeysFromHeaders, ...apiKeysFromBody };
 
     // Create AI clients with dynamic API keys
-    const { groq, anthropic, openai } = createAIClients(apiKeys);
+      const { openrouter } = createAIClients(apiKeys);
     
     console.log('[generate-ai-code-stream] Received request:');
     console.log('[generate-ai-code-stream] - prompt:', prompt);
@@ -1158,42 +1165,24 @@ CRITICAL: When files are provided in the context:
           }
         }
         
-        await sendProgress({ type: 'status', message: 'Planning application structure...' });
-        
-        console.log('\n[generate-ai-code-stream] Starting streaming response...\n');
-        
-        // Track packages that need to be installed
-        const packagesToInstall: string[] = [];
-        
-        // Determine which provider to use based on model
-        const isAnthropic = model.startsWith('anthropic/');
-        const isOpenAI = model.startsWith('openai/gpt-5');
-
-        let modelProvider;
-        if (isAnthropic) {
-          if (!anthropic) {
-            return NextResponse.json({ error: 'Anthropic API key is required for this model' }, { status: 400 });
+          await sendProgress({ type: 'status', message: 'Planning application structure...' });
+          
+          console.log('\n[generate-ai-code-stream] Starting streaming response...\n');
+          
+          // Track packages that need to be installed
+          const packagesToInstall: string[] = [];
+          
+          // Ensure we have an OpenRouter client available
+          if (!openrouter) {
+            return NextResponse.json({ error: 'OpenRouter API key is required for this model' }, { status: 400 });
           }
-          modelProvider = anthropic;
-        } else if (isOpenAI) {
-          if (!openai) {
-            return NextResponse.json({ error: 'OpenAI API key is required for this model' }, { status: 400 });
-          }
-          modelProvider = openai;
-        } else {
-          if (!groq) {
-            return NextResponse.json({ error: 'Groq API key is required for this model' }, { status: 400 });
-          }
-          modelProvider = groq;
-        }
 
-        const actualModel = isAnthropic ? model.replace('anthropic/', '') :
-                           (model === 'openai/gpt-5') ? 'gpt-5' : model;
+          const actualModel = model;
 
-        // Make streaming API call with appropriate provider
-        const streamOptions: any = {
-          model: modelProvider(actualModel),
-          messages: [
+          // Make streaming API call with OpenRouter
+          const streamOptions: any = {
+            model: openrouter(actualModel),
+            messages: [
             { 
               role: 'system', 
               content: systemPrompt + `
@@ -1253,25 +1242,14 @@ If you're running out of space, generate FEWER files but make them COMPLETE.
 It's better to have 3 complete files than 10 incomplete files.`
             }
           ],
-          maxTokens: 8192, // Reduce to ensure completion
-          stopSequences: [] // Don't stop early
-          // Note: Neither Groq nor Anthropic models support tool/function calling in this context
+            maxTokens: appConfig.ai.maxTokens,
+            stopSequences: [] // Don't stop early
+            // Note: OpenRouter models do not support tool/function calling in this context
           // We use XML tags for package detection instead
         };
         
         // Add temperature for non-reasoning models
-        if (!model.startsWith('openai/gpt-5')) {
-          streamOptions.temperature = 0.7;
-        }
-        
-        // Add reasoning effort for GPT-5 models
-        if (isOpenAI) {
-          streamOptions.experimental_providerMetadata = {
-            openai: {
-              reasoningEffort: 'high'
-            }
-          };
-        }
+          streamOptions.temperature = appConfig.ai.defaultTemperature;
         
         const result = await streamText(streamOptions);
         
@@ -1642,34 +1620,14 @@ Original request: ${prompt}
                 
 Provide the complete file content without any truncation. Include all necessary imports, complete all functions, and close all tags properly.`;
                 
-                // Make a focused API call to complete this specific file
-                // Create a new client for the completion based on the provider
-                let completionClient;
-                if (model.includes('gpt') || model.includes('openai')) {
-                  if (!openai) {
-                    console.error('[generate-ai-code-stream] OpenAI client not available for completion');
+                  // Make a focused API call to complete this specific file
+                  if (!openrouter) {
+                    console.error('[generate-ai-code-stream] OpenRouter client not available for completion');
                     continue;
                   }
-                  completionClient = openai;
-                } else if (model.includes('claude')) {
-                  if (!anthropic) {
-                    console.error('[generate-ai-code-stream] Anthropic client not available for completion');
-                    continue;
-                  }
-                  completionClient = anthropic;
-                } else {
-                  if (!groq) {
-                    console.error('[generate-ai-code-stream] Groq client not available for completion');
-                    continue;
-                  }
-                  completionClient = groq;
-                }
-
-                // Check if this is a GPT-5 model (reasoning models don't use temperature)
-                const isGPT5 = model.includes('gpt-5') || model.includes('openai/gpt-5');
 
                 const completionResult = await streamText({
-                  model: completionClient(model),
+                    model: openrouter(model),
                   messages: [
                     {
                       role: 'system',
@@ -1677,7 +1635,7 @@ Provide the complete file content without any truncation. Include all necessary 
                     },
                     { role: 'user', content: completionPrompt }
                   ],
-                  temperature: isGPT5 ? undefined : appConfig.ai.defaultTemperature
+                    temperature: appConfig.ai.defaultTemperature
                 });
                 
                 // Get the full text from the stream

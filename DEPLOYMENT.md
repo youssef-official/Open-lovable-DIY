@@ -7,7 +7,7 @@ This guide will help you deploy Open Lovable DIY to Vercel and configure it for 
 Before deploying, make sure you have:
 - ✅ GitHub account with the forked repository
 - ✅ Vercel account (free tier is sufficient)
-- ✅ All required API keys (E2B, Firecrawl, Groq)
+- ✅ All required API keys (OpenRouter, E2B, Firecrawl)
 - ✅ Domain access to `openlovable.diy` (if using custom domain)
 
 ## 🌐 Deploy to Vercel
@@ -36,14 +36,16 @@ Before deploying, make sure you have:
 
 4. **Environment Variables**
    Add these in the Vercel dashboard:
-   ```
-   E2B_API_KEY=your_e2b_api_key
-   FIRECRAWL_API_KEY=your_firecrawl_api_key
-   GROQ_API_KEY=your_groq_api_key
-   OPENAI_API_KEY=your_openai_api_key (optional)
-   ANTHROPIC_API_KEY=your_anthropic_api_key (optional)
-   NODE_ENV=production
-   ```
+```
+OPENROUTER_API_KEY=your_openrouter_api_key
+E2B_API_KEY=your_e2b_api_key
+FIRECRAWL_API_KEY=your_firecrawl_api_key
+# Optional overrides
+# OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+# OPENROUTER_HTTP_REFERER=https://your-app-domain.com
+# OPENROUTER_APP_NAME=Open Lovable DIY
+NODE_ENV=production
+```
 
 5. **Deploy**
    - Click "Deploy"
@@ -89,13 +91,14 @@ Before deploying, make sure you have:
 
 ```env
 # Required
+OPENROUTER_API_KEY=or-production_key
 E2B_API_KEY=e2b_production_key
 FIRECRAWL_API_KEY=fc-production_key
-GROQ_API_KEY=gsk_production_key
 
-# Optional
-OPENAI_API_KEY=sk-production_openai_key
-ANTHROPIC_API_KEY=sk-ant-production_anthropic_key
+# Optional OpenRouter overrides
+# OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+# OPENROUTER_HTTP_REFERER=https://your-app-domain.com
+# OPENROUTER_APP_NAME=Open Lovable DIY
 
 # System
 NODE_ENV=production

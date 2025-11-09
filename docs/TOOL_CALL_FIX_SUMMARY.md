@@ -4,7 +4,7 @@
 The error message "tool call validation failed: parameters for tool installPackage did not match schema" was occurring when the AI tried to install packages.
 
 ## Root Cause
-The Groq models (including `moonshotai/kimi-k2-instruct`) do not support function/tool calling. This is a limitation of most Groq models - only specific models like `llama3-groq-70b-8192-tool-use-preview` support tools.
+The OpenRouter marketplace models (including `moonshotai/kimi-k2-instruct`, `deepseek/deepseek-chat:free`, and the other free tiers) do not expose OpenAI-style tool/function calling. Most third-party models on OpenRouter ignore tool definitions entirely.
 
 ## Solution
 Instead of using the Vercel AI SDK's tool calling feature, we switched to XML-based package detection:
@@ -54,7 +54,7 @@ while ((packageMatch = packageRegex.exec(searchText)) !== null) {
 - ✅ Package detection now works reliably
 - ✅ Real-time UI feedback shows packages as they're detected
 - ✅ No more tool validation errors
-- ✅ Compatible with all Groq models
+- ✅ Compatible with all OpenRouter-hosted models (free and paid)
 
 ## UI Feedback
 Users now see:
