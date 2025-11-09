@@ -49,10 +49,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
+    const headerApiKey = request.headers.get('x-openrouter-api-key');
     const apiKey =
-      request.headers.get('x-openrouter-api-key') ||
+      headerApiKey ||
       openrouterApiKey ||
       process.env.OPENROUTER_API_KEY;
+
+    console.log('[analyze-edit-intent] OpenRouter key source:', headerApiKey ? 'header' : openrouterApiKey ? 'body' : process.env.OPENROUTER_API_KEY ? 'env' : 'missing');
 
     if (!apiKey) {
       return NextResponse.json({

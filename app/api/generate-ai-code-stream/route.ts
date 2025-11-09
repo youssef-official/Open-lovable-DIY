@@ -32,7 +32,7 @@ function createAIClients(apiKeys: {
       })
     : null;
 
-  return { openrouter };
+  return { openrouter, openrouterKey };
 }
 
 // Helper function to analyze user preferences from conversation history
@@ -87,17 +87,18 @@ export async function POST(request: NextRequest) {
     // Get API keys from headers or body, with fallback to environment variables
     const apiKeysFromHeaders = getAllApiKeysFromHeaders(request);
     const apiKeysFromBody = getAllApiKeysFromBody(body);
-    const apiKeys = { ...apiKeysFromHeaders, ...apiKeysFromBody };
+      const apiKeys = { ...apiKeysFromHeaders, ...apiKeysFromBody };
 
-    // Create AI clients with dynamic API keys
-      const { openrouter } = createAIClients(apiKeys);
+      // Create AI clients with dynamic API keys
+      const { openrouter, openrouterKey } = createAIClients(apiKeys);
     
     console.log('[generate-ai-code-stream] Received request:');
     console.log('[generate-ai-code-stream] - prompt:', prompt);
     console.log('[generate-ai-code-stream] - isEdit:', isEdit);
     console.log('[generate-ai-code-stream] - context.sandboxId:', context?.sandboxId);
-    console.log('[generate-ai-code-stream] - context.currentFiles:', context?.currentFiles ? Object.keys(context.currentFiles) : 'none');
-    console.log('[generate-ai-code-stream] - currentFiles count:', context?.currentFiles ? Object.keys(context.currentFiles).length : 0);
+      console.log('[generate-ai-code-stream] - context.currentFiles:', context?.currentFiles ? Object.keys(context.currentFiles) : 'none');
+      console.log('[generate-ai-code-stream] - currentFiles count:', context?.currentFiles ? Object.keys(context.currentFiles).length : 0);
+      console.log('[generate-ai-code-stream] - has OpenRouter key:', !!openrouterKey, apiKeys.openrouter ? '(from request)' : process.env.OPENROUTER_API_KEY ? '(from env)' : '(missing)');
     
     // Initialize conversation state if not exists
     if (!global.conversationState) {
@@ -193,8 +194,11 @@ export async function POST(request: NextRequest) {
             try {
               const intentResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/analyze-edit-intent`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, manifest, model })
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(openrouterKey ? { 'x-openrouter-api-key': openrouterKey } : {})
+                },
+                body: JSON.stringify({ prompt, manifest, model, openrouterApiKey: openrouterKey })
               });
               
               if (intentResponse.ok) {
@@ -337,8 +341,11 @@ User request: "${prompt}"`;
                     try {
                       const intentResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/analyze-edit-intent`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt, manifest, model })
+                        headers: {
+                          'Content-Type': 'application/json',
+                          ...(openrouterKey ? { 'x-openrouter-api-key': openrouterKey } : {})
+                        },
+                        body: JSON.stringify({ prompt, manifest, model, openrouterApiKey: openrouterKey })
                       });
                       
                       if (intentResponse.ok) {
@@ -988,8 +995,11 @@ CRITICAL: When files are provided in the context:
                       try {
                         const intentResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/analyze-edit-intent`, {
                           method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ prompt, manifest: filesData.manifest, model })
+                          headers: {
+                            'Content-Type': 'application/json',
+                            ...(openrouterKey ? { 'x-openrouter-api-key': openrouterKey } : {})
+                          },
+                          body: JSON.stringify({ prompt, manifest: filesData.manifest, model, openrouterApiKey: openrouterKey })
                         });
                         
                         if (intentResponse.ok) {
