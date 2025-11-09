@@ -33,7 +33,7 @@ import CodeApplicationProgress, { type CodeApplicationState } from '@/components
 import ApiKeySettings from '@/components/ApiKeySettings';
 import { ApiKeysProvider } from '@/contexts/ApiKeysContext';
 import { ThemeProvider } from 'next-themes';
-import type { ConversationState } from '@/types/conversation';
+import type { ConversationState, ConversationMessage } from '@/types/conversation';
 
 
 
