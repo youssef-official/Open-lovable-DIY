@@ -2006,11 +2006,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   }));
                 if (data.projectId) {
                   setActiveProjectId(data.projectId);
-                } else {
-                  const fallbackProjectId = projectIdOverride ?? activeProjectId;
-                  if (fallbackProjectId) {
-                    setActiveProjectId(fallbackProjectId);
-                  }
+                } else if (resolvedProjectId) {
+                  setActiveProjectId(resolvedProjectId);
                 }
   // Clear thinking state when generation completes
                   setGenerationProgress(prev => ({
@@ -2403,7 +2400,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
           conversationContext: conversationContext
         },
       isEdit: false,
-        projectId: projectIdOverride ?? activeProjectId
+        projectId: resolvedProjectId
       });
   if (!response.ok) {
         throw new Error(`Generation failed: ${response.status}`);
@@ -2461,11 +2458,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   }));
             if (data.projectId) {
               setActiveProjectId(data.projectId);
-            } else {
-              const fallbackProjectId = projectIdOverride ?? activeProjectId;
-              if (fallbackProjectId) {
-                setActiveProjectId(fallbackProjectId);
-              }
+            } else if (resolvedProjectId) {
+              setActiveProjectId(resolvedProjectId);
             }
   break;
                 } else if (data.type === 'error') {
