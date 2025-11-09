@@ -2006,8 +2006,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   }));
                 if (data.projectId) {
                   setActiveProjectId(data.projectId);
-                } else if (targetProjectId) {
-                  setActiveProjectId(targetProjectId);
+                } else if (projectIdOverride ?? activeProjectId) {
+                  setActiveProjectId(projectIdOverride ?? activeProjectId);
                 }
   // Clear thinking state when generation completes
                   setGenerationProgress(prev => ({
@@ -2325,8 +2325,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   return;
     }
 
-    const targetProjectId = projectIdOverride ?? activeProjectId;
-
     addChatMessage(`Creating website: ${description}`, 'system');
 
     setConversationContext(prev => ({
@@ -2391,17 +2389,17 @@ Focus on creating a beautiful, functional website that matches the user's vision
       isEdit: false
     }));
 
-    try {
-      const response = await makeRequestWithBody('/api/generate-ai-code-stream', {
-        prompt: generatePrompt,
-        model: aiModel,
-        context: {
-          sandboxId: sandboxData?.sandboxId,
-          conversationContext: conversationContext
-        },
-      isEdit: false,
-        projectId: targetProjectId
-      });
+      try {
+        const response = await makeRequestWithBody('/api/generate-ai-code-stream', {
+          prompt: generatePrompt,
+          model: aiModel,
+          context: {
+            sandboxId: sandboxData?.sandboxId,
+            conversationContext: conversationContext
+          },
+        isEdit: false,
+          projectId: projectIdOverride ?? activeProjectId
+        });
   if (!response.ok) {
         throw new Error(`Generation failed: ${response.status}`);
   }
@@ -2458,8 +2456,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   }));
             if (data.projectId) {
               setActiveProjectId(data.projectId);
-            } else if (targetProjectId) {
-              setActiveProjectId(targetProjectId);
+            } else if (projectIdOverride ?? activeProjectId) {
+              setActiveProjectId(projectIdOverride ?? activeProjectId);
             }
   break;
                 } else if (data.type === 'error') {
