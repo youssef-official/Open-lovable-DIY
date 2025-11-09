@@ -2319,13 +2319,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   };
 
   // Add the generateWebsiteFromDescription function here
-  const generateWebsiteFromDescription = async (description: string, projectIdOverride?: string | null) => {
+    const generateWebsiteFromDescription = async (description: string, projectIdOverride?: string | null) => {
     if (!description.trim()) {
       addChatMessage('Please provide a description of the website you want to create.', 'system');
   return;
     }
 
-    const projectId = projectIdOverride ?? activeProjectId;
+      const resolvedProjectId = projectIdOverride ?? activeProjectId;
 
     addChatMessage(`Creating website: ${description}`, 'system');
 
@@ -2400,7 +2400,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
           conversationContext: conversationContext
         },
       isEdit: false,
-      projectId
+        projectId: resolvedProjectId
       });
   if (!response.ok) {
         throw new Error(`Generation failed: ${response.status}`);
@@ -2458,8 +2458,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   }));
             if (data.projectId) {
               setActiveProjectId(data.projectId);
-            } else if (projectIdOverride) {
-              setActiveProjectId(projectIdOverride);
+            } else if (resolvedProjectId) {
+              setActiveProjectId(resolvedProjectId);
             }
   break;
                 } else if (data.type === 'error') {
