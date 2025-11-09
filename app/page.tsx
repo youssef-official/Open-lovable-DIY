@@ -129,27 +129,16 @@ function AISandboxPage() {
     lastProcessedPosition: 0
   });
 
-  // NEW: Theme State and Toggle
-  const [isDarkMode, setIsDarkMode] = useState(true); // Start in dark mode as default
-
-  const toggleTheme = () => {
-    setIsDarkMode(prev => {
-      // Logic to update a global class on the body or documentElement if needed, 
-      // but here we rely solely on React state and dynamic Tailwind classes.
-      return !prev;
-    });
-  };
-
-  // Helper for theme colors
+  // Theme based on the provided image
   const theme = {
-    bg_main: isDarkMode ? 'bg-gray-950' : 'bg-white',
-    text_main: isDarkMode ? 'text-white' : 'text-gray-900',
-    bg_card: isDarkMode ? 'bg-gray-900' : 'bg-gray-50',
-    border_color: isDarkMode ? 'border-gray-800' : 'border-gray-200',
-    chat_user_bg: isDarkMode ? 'bg-gray-700' : 'bg-gray-200',
-    chat_ai_bg: isDarkMode ? 'bg-gray-800' : 'bg-gray-100',
-    code_bg: isDarkMode ? 'bg-gray-900' : 'bg-gray-800', // Code block background remains dark for better contrast
-  }
+    bg_main: 'bg-[#0A0D1B]',
+    text_main: 'text-gray-200',
+    bg_card: 'bg-[#181C2A]',
+    border_color: 'border-gray-800',
+    chat_user_bg: 'bg-gray-700',
+    chat_ai_bg: 'bg-gray-800',
+    code_bg: 'bg-gray-900',
+  };
 
   // Clear old conversation data on component mount and create/restore sandbox
   useEffect(() => {
@@ -954,7 +943,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           {!generationProgress.isEdit && (
             <div className={`w-[250px] border-r ${theme.border_color} ${theme.bg_card} 
   flex flex-col flex-shrink-0 ${theme.text_main}`}>
-            <div className={`p-3 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-900'} flex items-center justify-between`}>
+            <div className={`p-3 bg-gray-800 text-white flex items-center justify-between`}>
               <div className="flex items-center gap-2">
                 <BsFolderFill className="w-4 h-4" />
                 <span className="text-sm font-medium">Explorer</span>
@@ -968,14 +957,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 {/* Root app folder */}
                 <div 
      
-                  className={`flex items-center gap-1 py-1 px-2 hover:${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} rounded cursor-pointer ${theme.text_main}`}
+                  className={`flex items-center gap-1 py-1 px-2 hover:bg-gray-800 rounded cursor-pointer ${theme.text_main}`}
                   onClick={() => toggleFolder('app')}
                 >
                   {expandedFolders.has('app') ?
   (
-                    <FiChevronDown className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                    <FiChevronDown className={`w-4 h-4 text-gray-400`} />
                   ) : (
-                    <FiChevronRight className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                    <FiChevronRight className={`w-4 h-4 text-gray-400`} />
                   )}
               
                   {expandedFolders.has('app') ? (
@@ -2286,29 +2275,15 @@ Focus on creating a beautiful, functional website that matches the user's vision
       {/* Home Screen Overlay */}
       {showHomeScreen && (
         <div className={`fixed inset-0 z-50 transition-opacity duration-500 ${homeScreenFading ? 'opacity-0' : 'opacity-100'}`}>
-          {/* Custom B&W/Glow Background, similar to the attached image */}
-          <div className="absolute inset-0 bg-gray-950 overflow-hidden">
-            {/* Soft, subtle radial glow matching the image's aesthetic */}
-            <div className="absolute inset-0 opacity-80" style={{
-              background: 'radial-gradient(circle at center, rgba(255, 0, 127, 0.2) 0%, rgba(0, 0, 0, 0.9) 70%)',
-            }} />
-            
-            {/* The main pink/blue glow ring from the image */}
-            <div className="absolute inset-0" style={{
-              boxShadow: '0 0 100px 50px rgba(128, 0, 128, 0.5) inset, 0 0 100px 50px rgba(0, 0, 255, 0.3) inset',
-              mixBlendMode: 'screen',
-              opacity: 0.3,
-            }} />
-
-            {/* Subtle B&W/grain overlay for a classic feel */}
-            <div className="absolute inset-0 opacity-10" style={{
-                backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.4) 1px, transparent 0)`,
-                backgroundSize: '60px 60px'
-            }} />
-
-            {/* Animated simple blur circles */}
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse" />
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gray-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+          {/* Custom Background from the image */}
+          <div className="absolute inset-0 bg-[#0A0D1B] overflow-hidden">
+             {/* Gradient Overlay */}
+             <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: 'radial-gradient(circle at center, rgba(29, 78, 216, 0.2) 0%, transparent 50%)',
+              }}
+            />
           </div>
          
           
@@ -2483,7 +2458,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
       <div className={`px-4 py-4 border-b ${theme.border_color} flex items-center justify-between ${theme.bg_card}`}>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} rounded-lg flex items-center justify-center border ${theme.border_color}`}>
+            <div className={`w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center border ${theme.border_color}`}>
            
               <span className={`font-bold text-lg ${theme.text_main}`}>❤️</span>
             </div>
@@ -2491,17 +2466,6 @@ Focus on creating a beautiful, functional website that matches the user's vision
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Day/Night Mode Toggle - NEW */}
-          <Button 
-            variant="code"
-            onClick={toggleTheme}
-            size="sm"
-            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
-            className={`${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'} transition-colors duration-200`}
-          >
-            {isDarkMode ? <FaSun className="w-4 h-4 text-yellow-300" /> : <FaMoon className="w-4 h-4 text-gray-600" />}
-          </Button>
-
           <UserButton />
           {/* Model Selector - Left side */}
           <select
@@ -2517,10 +2481,10 @@ Focus on creating a beautiful, functional website that matches the user's vision
   }
               router.push(`/?${params.toString()}`);
   }}
-            className={`px-3 py-1.5 text-sm ${isDarkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'} border rounded-[10px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-colors duration-200`}
+            className={`px-3 py-1.5 text-sm bg-gray-800 text-white border-gray-700 border rounded-[10px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-colors duration-200`}
           >
             {appConfig.ai.availableModels.map(model => (
-              <option key={model} value={model} className={isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}>
+              <option key={model} value={model} className="bg-gray-900 text-white">
                 {(appConfig.ai.modelDisplayNames as any)[model] || model}
               </option>
     
@@ -2531,7 +2495,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             onClick={() => createSandbox()}
             size="sm"
             title="Create new sandbox"
-            className={`${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'} transition-colors duration-200`}
+            className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200"
           >
          
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2546,7 +2510,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             title="Re-apply last generation"
             disabled={!conversationContext.lastGeneratedCode ||
   !sandboxData}
-            className={`${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700 disabled:bg-gray-900/50' : 'bg-gray-100 text-gray-800 hover:bg-gray-200 disabled:bg-gray-100/50'} transition-colors duration-200`}
+            className="bg-gray-800 text-white hover:bg-gray-700 disabled:bg-gray-900/50 transition-colors duration-200"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -2559,7 +2523,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             disabled={!sandboxData}
             size="sm"
             title="Download your Vite app as ZIP"
-            className={`${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700 disabled:bg-gray-900/50' : 'bg-gray-100 text-gray-800 hover:bg-gray-200 disabled:bg-gray-100/50'} transition-colors duration-200`}
+            className="bg-gray-800 text-white hover:bg-gray-700 disabled:bg-gray-900/50 transition-colors duration-200"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           
@@ -2599,16 +2563,16 @@ Focus on creating a beautiful, functional website that matches the user's vision
                     <div className="block">
                       <div className={`block rounded-[10px] px-4 py-2 ${
                         msg.type === 'user' ?
-  `${theme.chat_user_bg} text-white ml-auto max-w-[80%]` :
+  `bg-blue-600 text-white ml-auto max-w-[80%]` :
                         msg.type === 'ai' ?
-  `${theme.chat_ai_bg} ${theme.text_main} mr-auto max-w-[80%]` :
+  `bg-gray-700 text-white mr-auto max-w-[80%]` :
                         msg.type === 'system' ?
-  `${theme.chat_user_bg} text-white text-sm` :
+  `bg-gray-800 text-gray-300 text-sm` :
                         msg.type === 'command' ?
-  `${theme.chat_user_bg} text-white font-mono text-sm` :
+  `bg-gray-800 text-gray-300 font-mono text-sm` :
                         msg.type === 'error' ?
   'bg-red-800 text-red-100 text-sm border border-red-700' :
-  `${theme.chat_user_bg} text-white text-sm`
+  `bg-gray-800 text-gray-300 text-sm`
                       }`}>
                     {msg.type === 'command' ?
   (
@@ -2836,8 +2800,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
             <div className="relative">
               <Textarea
          
-                className={`min-h-[60px] pr-12 resize-y border-2 ${theme.border_color} focus:outline-none ${theme.bg_card} ${theme.text_main}`}
-                placeholder=""
+                className={`min-h-[60px] pr-12 resize-y border-2 ${theme.border_color} focus:outline-none ${theme.bg_card} ${theme.text_main} bg-gray-800 text-white placeholder-gray-400`}
+                placeholder="Ask me to do something..."
                 value={aiChatInput}
                 onChange={(e) => setAiChatInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -2851,7 +2815,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
               />
               <button
                 onClick={sendChatMessage}
-                className={`absolute right-2 bottom-2 p-2 ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-800 hover:bg-gray-900'} text-white rounded-[10px] 
+                className={`absolute right-2 bottom-2 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[10px]
   [box-shadow:none] transition-all duration-200`}
                 title="Send message (Enter)"
               >
@@ -2869,15 +2833,15 @@ Focus on creating a beautiful, functional website that matches the user's vision
           <div className={`px-4 py-2 ${theme.bg_card} border-b ${theme.border_color} flex 
   justify-between items-center`}>
             <div className="flex items-center gap-4">
-              <div className={`flex ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} rounded-lg p-1`}>
+              <div className={`flex bg-gray-800 rounded-lg p-1`}>
                 <button
                   onClick={() => setActiveTab('generation')}
                   className={`p-2 rounded-md transition-all ${
          
                     activeTab === 'generation' 
                       ?
-  `${theme.bg_main} text-white` 
-                      : `${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-300'}`
+  `bg-blue-600 text-white`
+                      : `text-gray-400 hover:text-white hover:bg-gray-700`
                   }`}
                   title="Code"
                 >
@@ -2892,8 +2856,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   className={`p-2 rounded-md transition-all ${
                     activeTab === 'preview' 
                       ?
-  `${theme.bg_main} text-white` 
-                      : `${isDarkMode ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-300'}`
+  `bg-blue-600 text-white`
+                      : `text-gray-400 hover:text-white hover:bg-gray-700`
                   }`}
                   title="Preview"
                 >

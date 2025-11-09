@@ -35,7 +35,12 @@ export const appConfig = {
       'openai/gpt-5',
       'moonshotai/kimi-k2-instruct',
       'anthropic/claude-sonnet-4-20250514',
-      'google/gemini-2.5-pro'
+      'google/gemini-2.5-pro',
+      'minimax/minimax-m2:free',
+      'tng/deepseek-r1t2-chimera:free',
+      'z-ai/glm-4-5-air:free',
+      'tng/deepseek-r1t-chimera:free',
+      'deepseek/deepseek-v3-0324:free'
     ],
     
     // Model display names
@@ -43,7 +48,12 @@ export const appConfig = {
       'openai/gpt-5': 'GPT-5',
       'moonshotai/kimi-k2-instruct': 'Kimi K2 Instruct',
       'anthropic/claude-sonnet-4-20250514': 'Sonnet 4',
-      'google/gemini-2.5-pro': 'Gemini 2.5 Pro'
+      'google/gemini-2.5-pro': 'Gemini 2.5 Pro',
+      'minimax/minimax-m2:free': 'MiniMax M2 (Free)',
+      'tng/deepseek-r1t2-chimera:free': 'DeepSeek R1T2 Chimera (Free)',
+      'z-ai/glm-4-5-air:free': 'GLM 4.5 Air (Free)',
+      'tng/deepseek-r1t-chimera:free': 'DeepSeek R1T Chimera (Free)',
+      'deepseek/deepseek-v3-0324:free': 'DeepSeek V3 0324 (Free)'
     },
     
     // Temperature settings for non-reasoning models
