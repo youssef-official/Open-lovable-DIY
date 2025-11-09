@@ -2006,8 +2006,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   }));
                 if (data.projectId) {
                   setActiveProjectId(data.projectId);
-                } else if (projectIdOverride ?? activeProjectId) {
-                  setActiveProjectId(projectIdOverride ?? activeProjectId);
+                } else if (fallbackProjectId) {
+                  setActiveProjectId(fallbackProjectId);
                 }
   // Clear thinking state when generation completes
                   setGenerationProgress(prev => ({
@@ -2325,6 +2325,8 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   return;
     }
 
+      const fallbackProjectId = projectIdOverride ?? activeProjectId;
+
     addChatMessage(`Creating website: ${description}`, 'system');
 
     setConversationContext(prev => ({
@@ -2398,7 +2400,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             conversationContext: conversationContext
           },
         isEdit: false,
-          projectId: projectIdOverride ?? activeProjectId
+          projectId: fallbackProjectId
         });
   if (!response.ok) {
         throw new Error(`Generation failed: ${response.status}`);
@@ -2454,11 +2456,11 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   
   status: 'Generation complete!'
                   }));
-            if (data.projectId) {
-              setActiveProjectId(data.projectId);
-            } else if (projectIdOverride ?? activeProjectId) {
-              setActiveProjectId(projectIdOverride ?? activeProjectId);
-            }
+              if (data.projectId) {
+                setActiveProjectId(data.projectId);
+              } else if (fallbackProjectId) {
+                setActiveProjectId(fallbackProjectId);
+              }
   break;
                 } else if (data.type === 'error') {
                   throw new Error(data.error);
