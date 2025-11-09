@@ -82,6 +82,7 @@ function AISandboxPage() {
   const [loadingStage, setLoadingStage] = useState<'planning' | 'generating' | null>(null);
   const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
   const [fileStructure, setFileStructure] = useState<string>('');
+  const [isDarkMode, setIsDarkMode] = useState(true);
   
   const [conversationContext, setConversationContext] = useState<{
     generatedComponents: Array<{ name: string; path: string;
@@ -130,7 +131,7 @@ function AISandboxPage() {
   });
 
   // Theme based on the provided image
-  const theme = {
+  const theme = isDarkMode ? {
     bg_main: 'bg-[#0A0D1B]',
     text_main: 'text-gray-200',
     bg_card: 'bg-[#181C2A]',
@@ -138,6 +139,14 @@ function AISandboxPage() {
     chat_user_bg: 'bg-gray-700',
     chat_ai_bg: 'bg-gray-800',
     code_bg: 'bg-gray-900',
+  } : {
+    bg_main: 'bg-white',
+    text_main: 'text-gray-900',
+    bg_card: 'bg-gray-100',
+    border_color: 'border-gray-200',
+    chat_user_bg: 'bg-blue-500',
+    chat_ai_bg: 'bg-gray-200',
+    code_bg: 'bg-gray-50',
   };
 
   // Clear old conversation data on component mount and create/restore sandbox
@@ -1110,7 +1119,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 </div>
                 {generationProgress.thinkingText && (
      
-                  <div className={`bg-gray-900 border border-gray-700 rounded-lg p-4 max-h-48 overflow-y-auto scrollbar-hide`}>
+                  <div className={`${theme.code_bg} border ${theme.border_color} rounded-lg p-4 max-h-48 overflow-y-auto scrollbar-hide`}>
                     <pre className="text-xs font-mono text-gray-300 whitespace-pre-wrap">
                       {generationProgress.thinkingText}
                     </pre>
@@ -1128,7 +1137,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 {selectedFile ?
   (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className={`bg-gray-900 border ${theme.border_color} rounded-lg overflow-hidden shadow-sm`}>
+                    <div className={`${theme.code_bg} border ${theme.border_color} rounded-lg overflow-hidden shadow-sm`}>
                       <div className="px-4 py-2 bg-gray-800 text-white flex items-center justify-between">
                        
                         <div className="flex items-center gap-2">
@@ -1202,7 +1211,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     </div>
                   ) : (
           
-                    <div className={`bg-gray-900 border ${theme.border_color} rounded-lg overflow-hidden`}>
+                    <div className={`${theme.code_bg} border ${theme.border_color} rounded-lg overflow-hidden`}>
                       <div className="px-4 py-2 bg-gray-800 text-white flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 
@@ -1239,7 +1248,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                     {/* Show current file being generated */}
                     
   {generationProgress.currentFile && (
-                      <div className={`bg-gray-900 border-2 border-gray-400 rounded-lg overflow-hidden shadow-sm`}>
+                      <div className={`${theme.code_bg} border-2 border-gray-400 rounded-lg overflow-hidden shadow-sm`}>
                         <div className="px-4 py-2 bg-gray-800 text-white flex items-center justify-between">
                           <div className="flex items-center gap-2">
           
@@ -1295,7 +1304,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
      
                     {/* Show completed files */}
                     {generationProgress.files.map((file, idx) => (
-                      <div key={idx} className={`bg-gray-900 border ${theme.border_color} rounded-lg overflow-hidden`}>
+                      <div key={idx} className={`${theme.code_bg} border ${theme.border_color} rounded-lg overflow-hidden`}>
                         <div className={`px-4 py-2 ${theme.code_bg} text-white flex 
   items-center justify-between`}>
                           <div className="flex items-center gap-2">
@@ -1351,7 +1360,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
            
                     {/* Show remaining raw stream if there's content after the last file */}
                     {!generationProgress.currentFile && generationProgress.streamedCode.length > 0 && (
-                      <div className={`bg-gray-900 border ${theme.border_color} rounded-lg overflow-hidden`}>
+                      <div className={`${theme.code_bg} border ${theme.border_color} rounded-lg overflow-hidden`}>
                         <div className={`px-4 
   py-2 ${theme.code_bg} text-white flex items-center justify-between`}>
                           <div className="flex items-center gap-2">
@@ -1425,7 +1434,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       // Don't show loading overlay for edits
       if (loadingStage || (generationProgress.isGenerating && !generationProgress.isEdit)) {
         return (
-          <div className="relative w-full h-full bg-gray-900 flex items-center justify-center">
+          <div className={`relative w-full h-full ${theme.bg_main} flex items-center justify-center`}>
             <div className="text-center">
               <div className="mb-8">
  
@@ -2441,7 +2450,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   className="px-6 py-3 text-sm bg-white/10 backdrop-blur-md text-white border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-200 hover:bg-white/15 cursor-pointer"
                 >
                   {appConfig.ai.availableModels.map(model => (
-                    <option key={model} value={model} className="bg-gray-900 text-white">
+                    <option key={model} value={model} className={`${theme.code_bg} text-white`}>
       
                       {(appConfig.ai.modelDisplayNames as any)[model] || model}
                     </option>
@@ -2484,12 +2493,21 @@ Focus on creating a beautiful, functional website that matches the user's vision
             className={`px-3 py-1.5 text-sm bg-gray-800 text-white border-gray-700 border rounded-[10px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-colors duration-200`}
           >
             {appConfig.ai.availableModels.map(model => (
-              <option key={model} value={model} className="bg-gray-900 text-white">
+              <option key={model} value={model} className={`${theme.code_bg} text-white`}>
                 {(appConfig.ai.modelDisplayNames as any)[model] || model}
               </option>
     
           ))}
           </select>
+          <Button
+            variant="code"
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            size="sm"
+            title="Toggle Theme"
+            className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200"
+          >
+            {isDarkMode ? <FaSun /> : <FaMoon />}
+          </Button>
           <Button 
             variant="code"
             onClick={() => createSandbox()}
@@ -2510,7 +2528,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             title="Re-apply last generation"
             disabled={!conversationContext.lastGeneratedCode ||
   !sandboxData}
-            className="bg-gray-800 text-white hover:bg-gray-700 disabled:bg-gray-900/50 transition-colors duration-200"
+            className={`bg-gray-800 text-white hover:bg-gray-700 disabled:${theme.code_bg}/50 transition-colors duration-200`}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -2523,7 +2541,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             disabled={!sandboxData}
             size="sm"
             title="Download your Vite app as ZIP"
-            className="bg-gray-800 text-white hover:bg-gray-700 disabled:bg-gray-900/50 transition-colors duration-200"
+            className={`bg-gray-800 text-white hover:bg-gray-700 disabled:${theme.code_bg}/50 transition-colors duration-200`}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           
@@ -2762,7 +2780,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
                 
                       <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent" />
                     </div>
-                    <div className={`bg-gray-900 border border-gray-700 rounded max-h-32 overflow-y-auto scrollbar-hide`}>
+                    <div className={`${theme.code_bg} border ${theme.border_color} rounded max-h-32 overflow-y-auto scrollbar-hide`}>
                       <SyntaxHighlighter
                    
                         language="jsx"
@@ -2943,7 +2961,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
 
 export default function Page() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center min-h-screen bg-gray-900 text-white">Loading...</div>}>
+    <Suspense fallback={<div className={`flex items-center justify-center min-h-screen ${theme.bg_main} ${theme.text_main}`}>Loading...</div>}>
       <AISandboxPage />
     </Suspense>
   );
