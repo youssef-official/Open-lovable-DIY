@@ -28,6 +28,8 @@ import { UserButton } from '@/components/UserButton';
 import { useApiRequest } from '@/hooks/useApiRequest';
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
+import ApiKeysSettings from '@/components/ApiKeysSettings';
+import { ApiKeysProvider } from '@/contexts/ApiKeysContext';
 
 
 
@@ -82,6 +84,7 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
   const [loadingStage, setLoadingStage] = useState<'planning' | 'generating' | null>(null);
   const [sandboxFiles, setSandboxFiles] = useState<Record<string, string>>({});
   const [fileStructure, setFileStructure] = useState<string>('');
+  const [showApiKeysSettings, setShowApiKeysSettings] = useState(false);
   
   const [conversationContext, setConversationContext] = useState<{
     generatedComponents: Array<{ name: string; path: string;
@@ -2261,6 +2264,25 @@ Focus on creating a beautiful, functional website that matches the user's vision
   return (
     // Top-level container uses theme variables
     <div className={`font-sans ${theme.bg_main} ${theme.text_main} h-screen flex flex-col`}>
+      {/* API Keys Settings Modal */}
+      {showApiKeysSettings && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className={`${theme.bg_card} rounded-lg shadow-lg p-6 w-full max-w-md`}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">API Keys</h3>
+              <button
+                onClick={() => setShowApiKeysSettings(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <ApiKeysSettings />
+          </div>
+        </div>
+      )}
       {/* Home Screen Overlay */}
       {showHomeScreen && (
         <div className={`fixed inset-0 z-50 transition-opacity duration-500 ${homeScreenFading ? 'opacity-0' : 'opacity-100'}`}>
@@ -2487,6 +2509,21 @@ Focus on creating a beautiful, functional website that matches the user's vision
             className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200"
           >
             {isDarkMode ? <FaSun /> : <FaMoon />}
+          </Button>
+          <Button
+            variant="code"
+            onClick={() => setShowApiKeysSettings(true)}
+            size="sm"
+            title="API Keys"
+            className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+              <path d="M12 1.5L21.5 6.5V17.5L12 22.5L2.5 17.5V6.5L12 1.5Z" />
+              <path d="M12 1.5L2.5 6.5L12 11.5L21.5 6.5L12 1.5Z" />
+              <path d="M12 11.5V22.5" />
+              <path d="M2.5 6.5L12 11.5" />
+              <path d="M21.5 6.5L12 11.5" />
+            </svg>
           </Button>
           <Button 
             variant="code"
@@ -2960,8 +2997,10 @@ export default function Page() {
   };
 
   return (
-    <Suspense fallback={<div className={`flex items-center justify-center min-h-screen ${theme.bg_main} ${theme.text_main}`}>Loading...</div>}>
-      <AISandboxPage isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} theme={theme} />
-    </Suspense>
+    <ApiKeysProvider>
+      <Suspense fallback={<div className={`flex items-center justify-center min-h-screen ${theme.bg_main} ${theme.text_main}`}>Loading...</div>}>
+        <AISandboxPage isDarkMode={isDarkMode} setIsDarkMode={setIsDarkMode} theme={theme} />
+      </Suspense>
+    </ApiKeysProvider>
   );
 }
