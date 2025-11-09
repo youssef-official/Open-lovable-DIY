@@ -2318,29 +2318,31 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }, 800);
   };
 
-  // Add the generateWebsiteFromDescription function here
-    const generateWebsiteFromDescription = async (description: string, projectIdOverride?: string | null) => {
-    if (!description.trim()) {
-      addChatMessage('Please provide a description of the website you want to create.', 'system');
-  return;
-    }
-
-      const fallbackProjectId = projectIdOverride ?? activeProjectId;
-
-    addChatMessage(`Creating website: ${description}`, 'system');
-
-    setConversationContext(prev => ({
-      ...prev,
-      currentProject: `Website: ${description}`
-    }));
-  // Start sandbox creation in parallel with code generation
-    let sandboxPromise: Promise<void> | null = null;
-  if (!sandboxData) {
-      addChatMessage('Creating sandbox while generating your React app...', 'system');
-      sandboxPromise = createSandbox(true);
+// Add the generateWebsiteFromDescription function here
+const generateWebsiteFromDescription = async (description: string, projectIdOverride?: string | null) => {
+  if (!description.trim()) {
+    addChatMessage('Please provide a description of the website you want to create.', 'system');
+    return;
   }
 
-    addChatMessage('Generating your custom React application...', 'system');
+  const fallbackProjectId = projectIdOverride ?? activeProjectId;
+
+  addChatMessage(`Creating website: ${description}`, 'system');
+
+  setConversationContext(prev => ({
+    ...prev,
+    currentProject: `Website: ${description}`
+  }));
+
+  // Start sandbox creation in parallel with code generation
+  let sandboxPromise: Promise<void> | null = null;
+  if (!sandboxData) {
+    addChatMessage('Creating sandbox while generating your React app...', 'system');
+    sandboxPromise = createSandbox(true);
+  }
+
+  addChatMessage('Generating your custom React application...', 'system');
+
   const generatePrompt = `Create a complete, modern React application based on this description:
 
 "${description}"
@@ -2359,8 +2361,7 @@ REQUIREMENTS:
 
 DESIGN GUIDELINES:
 - Use a modern color scheme with excellent contrast
-- 
-  Choose appropriate fonts and typography
+- Choose appropriate fonts and typography
 - Include proper spacing and visual hierarchy
 - Add subtle animations and micro-interactions
 - Ensure the design feels professional and polished
@@ -2373,155 +2374,154 @@ TECHNICAL REQUIREMENTS:
 - Include realistic content that matches the description
 
 Focus on creating a beautiful, functional website that matches the user's vision.`;
+
   setGenerationProgress(prev => ({
-      ...prev,
-      isGenerating: true,
-      isStreaming: true,
-      status: 'Generating React application...',
-      components: [],
-      currentComponent: 0,
-      streamedCode: '',
-      isThinking: false,
-      thinkingText: undefined,
-      thinkingDuration: undefined,
-      files: prev.files || [],
-      currentFile: undefined,
-      lastProcessedPosition: 0,
-    
-      isEdit: false
-    }));
+    ...prev,
+    isGenerating: true,
+    isStreaming: true,
+    status: 'Generating React application...',
+    components: [],
+    currentComponent: 0,
+    streamedCode: '',
+    isThinking: false,
+    thinkingText: undefined,
+    thinkingDuration: undefined,
+    files: prev.files || [],
+    currentFile: undefined,
+    lastProcessedPosition: 0,
+    isEdit: false
+  }));
 
-      try {
-        const response = await makeRequestWithBody('/api/generate-ai-code-stream', {
-          prompt: generatePrompt,
-          model: aiModel,
-          context: {
-            sandboxId: sandboxData?.sandboxId,
-            conversationContext: conversationContext
-          },
-        isEdit: false,
-          projectId: fallbackProjectId
-        });
-  if (!response.ok) {
-        throw new Error(`Generation failed: ${response.status}`);
-  }
-
-      const reader = response.body?.getReader();
-  if (!reader) {
-        throw new Error('No response body');
-  }
-
-      let generatedCode = '';
-      const decoder = new TextDecoder();
   try {
-        while (true) {
-          const { done, value } = await reader.read();
-  if (done) break;
+    const response = await makeRequestWithBody('/api/generate-ai-code-stream', {
+      prompt: generatePrompt,
+      model: aiModel,
+      context: {
+        sandboxId: sandboxData?.sandboxId,
+        conversationContext: conversationContext
+      },
+      isEdit: false,
+      projectId: fallbackProjectId
+    });
 
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
-  for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-  if (data.type === 'status') {
-                  setGenerationProgress(prev => ({
-                    ...prev,
-                    status: data.message
-                  }));
-  } else if (data.type === 'stream') {
-                  generatedCode += data.text;
-  setResponseArea(prev => [...prev, data.text]);
-                } else if (data.type === 'component') {
-                  setGenerationProgress(prev => ({
-                    ...prev,
-                    status: `Generated ${data.name}`,
-                    components: [...prev.components, {
-      
-                      name: data.name,
-                      path: data.path,
-                      completed: true
-                    }],
-                 
-  currentComponent: prev.currentComponent + 1
-                  }));
+    if (!response.ok) {
+      throw new Error(`Generation failed: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('No response body');
+    }
+
+    let generatedCode = '';
+    const decoder = new TextDecoder();
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+
+          try {
+            const data = JSON.parse(line.slice(6));
+
+            if (data.type === 'status') {
+              setGenerationProgress(prev => ({ ...prev, status: data.message }));
+            } else if (data.type === 'stream') {
+              generatedCode += data.text;
+              setResponseArea(prev => [...prev, data.text]);
+            } else if (data.type === 'component') {
+              setGenerationProgress(prev => ({
+                ...prev,
+                status: `Generated ${data.name}`,
+                components: [
+                  ...prev.components,
+                  { name: data.name, path: data.path, completed: true }
+                ],
+                currentComponent: prev.currentComponent + 1
+              }));
             } else if (data.type === 'complete') {
-                  if (data.generatedCode) {
-                    generatedCode = data.generatedCode;
-  }
-                  setGenerationProgress(prev => ({
-                    ...prev,
-                    isGenerating: false,
-                    isStreaming: false,
-                  
-  status: 'Generation complete!'
-                  }));
+              if (data.generatedCode) {
+                generatedCode = data.generatedCode;
+              }
+
+              setGenerationProgress(prev => ({
+                ...prev,
+                isGenerating: false,
+                isStreaming: false,
+                status: 'Generation complete!'
+              }));
+
               if (data.projectId) {
                 setActiveProjectId(data.projectId);
               } else if (fallbackProjectId) {
                 setActiveProjectId(fallbackProjectId);
               }
-  break;
-                } else if (data.type === 'error') {
-                  throw new Error(data.error);
-  }
-              } catch (e) {
-                console.error('Error parsing SSE data:', e);
-  }
+
+              break;
+            } else if (data.type === 'error') {
+              throw new Error(data.error);
             }
+          } catch (e) {
+            console.error('Error parsing SSE data:', e);
           }
         }
-      } finally {
-        reader.releaseLock();
-  }
+      }
+    } finally {
+      reader.releaseLock();
+    }
 
-      if (generatedCode.trim()) {
-        if (session?.user?.id) {
-          loadProjects();
+    if (generatedCode.trim()) {
+      if (session?.user?.id) {
+        loadProjects();
+      }
+
+      if (sandboxPromise) {
+        await sandboxPromise;
+      }
+
+      await applyGeneratedCode(generatedCode, false);
+
+      addChatMessage(
+        `Successfully created your website! I've built a modern React application based on your description: "${description}". You can now ask me to modify specific sections, add features, or make any other changes.`,
+        'ai',
+        {
+          websiteDescription: description,
+          generatedCode
         }
-        // Wait for sandbox to be ready if it was being created
-        if (sandboxPromise) {
-          await sandboxPromise;
-  }
-
-        await applyGeneratedCode(generatedCode, false);
-  addChatMessage(
-          `Successfully created your website! I've built a modern React application based on your description: "${description}". You can now ask me to modify specific sections, add features, or make any other changes.`,
-          'ai',
-          {
-            websiteDescription: description,
-            generatedCode: generatedCode
-          }
-    
       );
 
-        // Clear generation progress
-        setGenerationProgress(prev => ({
-          ...prev,
-          isGenerating: false,
-          isStreaming: false,
-          status: 'Generation complete!'
-        }));
-  setLoadingStage(null);
-
-        setTimeout(() => {
-          setActiveTab('preview');
-        }, 100);
-  } else {
-        throw new Error('No code was generated');
-  }
-    } catch (error: any) {
-      addChatMessage(`Failed to generate website: ${error.message}`, 'system');
-  setLoadingStage(null);
       setGenerationProgress(prev => ({
         ...prev,
         isGenerating: false,
         isStreaming: false,
-        status: 'Generation failed'
+        status: 'Generation complete!'
       }));
-  setActiveTab('preview');
+
+      setLoadingStage(null);
+
+      setTimeout(() => setActiveTab('preview'), 100);
+    } else {
+      throw new Error('No code was generated');
     }
-  };
+  } catch (error: any) {
+    addChatMessage(`Failed to generate website: ${error.message}`, 'system');
+
+    setLoadingStage(null);
+    setGenerationProgress(prev => ({
+      ...prev,
+      isGenerating: false,
+      isStreaming: false,
+      status: 'Generation failed'
+    }));
+    setActiveTab('preview');
+  }
+};
 
   return (
     // Top-level container uses theme variables
