@@ -28,7 +28,7 @@ import { UserButton } from '@/components/UserButton';
 import { useApiRequest } from '@/hooks/useApiRequest';
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
-import ApiKeysSettings from '@/components/ApiKeysSettings';
+import ApiKeySettings from '@/components/ApiKeySettings';
 import { ApiKeysProvider } from '@/contexts/ApiKeysContext';
 
 
@@ -52,7 +52,7 @@ interface ChatMessage {
 }
 
 function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boolean, setIsDarkMode: (value: boolean) => void, theme: any }) {
-  const { makeRequest, makeRequestWithBody, hasRequiredKeys } = useApiRequest();
+  const { makeRequest, makeRequestWithBody } = useApiRequest();
   const [sandboxData, setSandboxData] = useState<SandboxData | null>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ text: 'Not connected', active: false });
@@ -2279,7 +2279,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
                 </svg>
               </button>
             </div>
-            <ApiKeysSettings />
+            <ApiKeySettings onClose={() => setShowApiKeysSettings(false)} />
           </div>
         </div>
       )}

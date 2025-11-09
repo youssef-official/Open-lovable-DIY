@@ -162,12 +162,3 @@ export class UserDatabase {
 
 // Export the pool for direct queries if needed
 export { pool };
-
-// Graceful shutdown
-process.on('SIGINT', () => {
-  pool.end();
-});
-
-process.on('SIGTERM', () => {
-  pool.end();
-});

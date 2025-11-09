@@ -1,18 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { appConfig } from '@/config/app.config';
 import { useApiKeys } from '@/contexts/ApiKeysContext';
 
-const ApiKeysSettings = () => {
+const ApiKeySettings = ({ onClose }: { onClose: () => void }) => {
   const { apiKeys, setApiKeys } = useApiKeys();
   const [localKeys, setLocalKeys] = useState(apiKeys);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    setLocalKeys(apiKeys);
+  }, [apiKeys]);
 
   const handleInputChange = (service: string, value: string) => {
     setLocalKeys(prev => ({ ...prev, [service]: value }));
@@ -25,7 +29,10 @@ const ApiKeysSettings = () => {
     try {
       setApiKeys(localKeys);
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+      }, 1000);
     } catch (err) {
       setError('Failed to save API keys.');
     } finally {
@@ -45,7 +52,7 @@ const ApiKeysSettings = () => {
               <Input
                 id={service}
                 type="password"
-                value={apiKeys[service] || ''}
+                value={localKeys[service] || ''}
                 onChange={(e) => handleInputChange(service, e.target.value)}
               />
             </div>
@@ -63,4 +70,4 @@ const ApiKeysSettings = () => {
   );
 };
 
-export default ApiKeysSettings;
+export default ApiKeySettings;

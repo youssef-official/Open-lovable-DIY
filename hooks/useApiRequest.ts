@@ -61,6 +61,5 @@ export function useApiRequest() {
   return {
     makeRequest,
     makeRequestWithBody,
-    hasRequiredKeys: !!(apiKeys.groq && apiKeys.e2b)
   };
 }

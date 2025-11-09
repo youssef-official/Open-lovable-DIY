@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useApiKeys } from '@/contexts/ApiKeysContext';
-import { ApiKeysSettings } from '@/components/ApiKeysSettings';
+import ApiKeySettings from '@/components/ApiKeySettings';
 import { Button } from '@/components/ui/button';
 import { X, Settings } from 'lucide-react';
 
@@ -37,7 +37,7 @@ export function ApiKeysModal({ isOpen, onClose }: ApiKeysModalProps) {
         </div>
         
         <div className="p-4 overflow-y-auto max-h-[calc(90vh-80px)]">
-          <ApiKeysSettings onClose={onClose} />
+          <ApiKeySettings onClose={onClose} />
         </div>
       </div>
     </div>

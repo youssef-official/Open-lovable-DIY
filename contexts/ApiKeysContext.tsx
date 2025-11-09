@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 
 interface ApiKeys {
   groq?: string;
@@ -14,11 +14,15 @@ interface ApiKeys {
 interface ApiKeysContextType {
   apiKeys: ApiKeys;
   setApiKeys: (keys: ApiKeys) => void;
+  hasRequiredKeys: boolean;
+  missingKeys: string[];
 }
 
 const ApiKeysContext = createContext<ApiKeysContextType>({
   apiKeys: {},
   setApiKeys: () => {},
+  hasRequiredKeys: false,
+  missingKeys: [],
 });
 
 export function useApiKeys() {
@@ -41,8 +45,17 @@ export function ApiKeysProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('apiKeys', JSON.stringify(keys));
   };
 
+  const { hasRequiredKeys, missingKeys } = useMemo(() => {
+    const requiredKeys = ['groq', 'e2b'];
+    const missingKeys = requiredKeys.filter(key => !apiKeys[key]);
+    return {
+      hasRequiredKeys: missingKeys.length === 0,
+      missingKeys,
+    };
+  }, [apiKeys]);
+
   return (
-    <ApiKeysContext.Provider value={{ apiKeys, setApiKeys: handleSetApiKeys }}>
+    <ApiKeysContext.Provider value={{ apiKeys, setApiKeys: handleSetApiKeys, hasRequiredKeys, missingKeys }}>
       {children}
     </ApiKeysContext.Provider>
   );

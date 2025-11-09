@@ -44,6 +44,7 @@
     "@anthropic-ai/sdk": "^0.57.0",
     "@auth/prisma-adapter": "^2.10.0",
     "@e2b/code-interpreter": "^1.5.1",
+    "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-switch": "^1.2.5",
     "@types/pg": "^8.15.5",
