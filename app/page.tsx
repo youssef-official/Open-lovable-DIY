@@ -157,11 +157,23 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
   );
 
   const hydrateFromState = useCallback((state: ConversationState) => {
+    const mapMetadata = (
+      metadata: ConversationMessage['metadata']
+    ): ChatMessage['metadata'] | undefined => {
+      if (!metadata) return undefined;
+      return {
+        editedFiles: metadata.editedFiles,
+        addedPackages: metadata.addedPackages,
+        editType: metadata.editType,
+        sandboxId: metadata.sandboxId,
+      } as ChatMessage['metadata'];
+    };
+
     const mappedMessages: ChatMessage[] = (state.context.messages || []).map(msg => ({
       content: msg.content,
       type: msg.role === 'assistant' ? 'ai' : 'user',
       timestamp: new Date(msg.timestamp),
-      metadata: msg.metadata,
+      metadata: mapMetadata(msg.metadata),
     }));
 
     setChatMessages(mappedMessages);
