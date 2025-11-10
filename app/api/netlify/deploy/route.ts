@@ -81,10 +81,31 @@ export async function POST(request: NextRequest) {
       console.log(`[netlify] ✓ ${cleanPath}`);
     }
     
-    // Step 3: Ensure index.html exists
+    // Step 3: Check if this is a React/Vite app and create proper index.html
+    const isReactApp = deployFiles['src/App.jsx'] || deployFiles['src/main.jsx'] || 
+                       deployFiles['src/App.tsx'] || deployFiles['src/main.tsx'];
+    
     if (!deployFiles['index.html']) {
       console.log('[netlify] 📝 Creating index.html...');
-      deployFiles['index.html'] = `<!DOCTYPE html>
+      
+      if (isReactApp) {
+        // Create proper index.html for React/Vite app
+        deployFiles['index.html'] = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Youssef AI Generated Site</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>`;
+      } else {
+        // Static HTML page
+        deployFiles['index.html'] = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -153,6 +174,23 @@ export async function POST(request: NextRequest) {
   </div>
 </body>
 </html>`;
+      }
+    }
+    
+    // Add netlify.toml for build configuration
+    if (isReactApp && !deployFiles['netlify.toml']) {
+      console.log('[netlify] ⚙️ Creating netlify.toml for React/Vite app...');
+      deployFiles['netlify.toml'] = `[build]
+  command = "npm install && npm run build"
+  publish = "dist"
+  
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200`;
     }
     
     // Step 4: Create file hashes and prepare for upload

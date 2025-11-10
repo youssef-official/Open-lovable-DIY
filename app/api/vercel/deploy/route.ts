@@ -36,11 +36,36 @@ export async function POST(request: NextRequest) {
       console.log(`[vercel] ✓ ${cleanPath}`);
     }
     
+    // Check if this is a React/Vite app
+    const isReactApp = deployFiles.some(f => 
+      f.file === 'src/App.jsx' || f.file === 'src/main.jsx' ||
+      f.file === 'src/App.tsx' || f.file === 'src/main.tsx'
+    );
+    
     // Ensure index.html exists
     const hasIndex = deployFiles.some(f => f.file === 'index.html');
     if (!hasIndex) {
       console.log('[vercel] 📝 Creating index.html...');
-      const indexHtml = `<!DOCTYPE html>
+      
+      let indexHtml;
+      if (isReactApp) {
+        // React/Vite index.html
+        indexHtml = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Youssef AI Generated Site</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>`;
+      } else {
+        // Static HTML
+        indexHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -112,9 +137,28 @@ export async function POST(request: NextRequest) {
   </div>
 </body>
 </html>`;
+      }
       deployFiles.push({
         file: 'index.html',
         data: indexHtml,
+      });
+    }
+    
+    // Add vercel.json for build configuration if React/Vite
+    if (isReactApp && !deployFiles.some(f => f.file === 'vercel.json')) {
+      console.log('[vercel] ⚙️ Creating vercel.json for React/Vite app...');
+      deployFiles.push({
+        file: 'vercel.json',
+        data: JSON.stringify({
+          "buildCommand": "npm install && npm run build",
+          "outputDirectory": "dist",
+          "devCommand": "npm run dev",
+          "installCommand": "npm install",
+          "framework": "vite",
+          "rewrites": [
+            { "source": "/(.*)", "destination": "/index.html" }
+          ]
+        }, null, 2)
       });
     }
     
