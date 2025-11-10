@@ -1237,7 +1237,7 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
         <div className="absolute inset-0 flex overflow-hidden">
           {/* File Explorer - Hide during edits and collapsible on mobile */}
           {!generationProgress.isEdit && (
-            <div className={`hidden md:flex w-[220px] lg:w-[250px] border-r ${theme.border_color} ${theme.bg_card} 
+            <div className={`hidden lg:flex w-[220px] xl:w-[250px] border-r ${theme.border_color} ${theme.bg_card} 
   flex-col flex-shrink-0 ${theme.text_main}`}>
             <div className={`p-2.5 lg:p-3 bg-gray-800/50 backdrop-blur-sm text-white flex items-center justify-between border-b border-gray-700/50`}>
               <div className="flex items-center gap-2">
@@ -2415,8 +2415,10 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
       addLog('🔄 Processing deployment...');
       addChatMessage('🔄 Netlify is building your site...', 'system');
 
-      addLog('🎉 Deployment completed!');
-      addLog(`🌐 Live URL: ${data.url}`);
+      addLog('✅ Files uploaded successfully!');
+      addLog('🚧 Netlify is building your site...');
+      addLog(`🌐 Your site will be live at: ${data.url}`);
+      addLog('⏱️ Please wait 1-2 minutes for deployment to complete');
       addLog(`📊 Site ID: ${data.siteId}`);
       addLog(`🚀 Deployment ID: ${data.deploymentId}`);
       
@@ -2434,7 +2436,7 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
       setShowDeploymentSuccess(true);
       
       addChatMessage(
-        `✅ Successfully deployed to Netlify!\n\n🌐 Your site is live at:\n${data.url}\n\n🎉 Share this link with anyone!\n\n📝 Deployment Details:\n• Site ID: ${data.siteId}\n• Deployment ID: ${data.deploymentId}\n• Files deployed: ${fileCount}`,
+        `✅ Successfully uploaded to Netlify!\n\n🚧 Your site is being built...\n\n🌐 URL: ${data.url}\n\n⏱️ Please wait 1-2 minutes, then open the link!\n\n📝 Deployment Details:\n• Site ID: ${data.siteId}\n• Deployment ID: ${data.deploymentId}\n• Files deployed: ${fileCount}\n\n🔄 Tip: You can check your site at Netlify dashboard`,
         'system'
       );
     } catch (error: any) {
@@ -3728,8 +3730,9 @@ Focus on creating an enterprise-grade application.`;
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">🎉 نُشر بنجاح!</h2>
-              <p className="text-gray-400 text-sm sm:text-base">Your website is now live on the internet</p>
+              <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">🎉 نُشر بنجاح!</h2>
+              <p className="text-gray-400 text-xs sm:text-sm md:text-base">Your website is being deployed to Netlify</p>
+              <p className="text-gray-500 text-[10px] sm:text-xs mt-1">Please wait 1-2 minutes for it to be fully live</p>
             </div>
 
             <div className="bg-gray-800/50 rounded-xl p-4 mb-6">

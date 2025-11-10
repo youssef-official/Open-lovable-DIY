@@ -592,6 +592,20 @@ Remember: You are a SURGEON making a precise incision, not an artist repainting 
         const systemPrompt = `You are an expert React developer with perfect memory of the conversation. You maintain context across messages and remember scraped websites, generated components, and applied code. Generate clean, modern React code for Vite applications.
 ${conversationContext}
 
+📸 IMAGE SUPPORT:
+You have access to FREE, high-quality images from Unsplash! Use these patterns:
+- Random photo: https://source.unsplash.com/800x600/?{keyword}
+- Examples:
+  * Hero image: https://source.unsplash.com/1920x1080/?hero,landscape
+  * Product: https://source.unsplash.com/800x600/?product,tech
+  * People: https://source.unsplash.com/800x600/?people,business
+  * Food: https://source.unsplash.com/800x600/?food,restaurant
+  * Travel: https://source.unsplash.com/800x600/?travel,city
+  * Nature: https://source.unsplash.com/800x600/?nature,mountain
+- Replace {keyword} with relevant terms
+- ALWAYS use real images, NEVER use placeholder.com
+- Use multiple keywords separated by commas for better results
+
 🚨 CRITICAL RULES - YOUR MOST IMPORTANT INSTRUCTIONS:
 1. **DO EXACTLY WHAT IS ASKED - NOTHING MORE, NOTHING LESS**
    - Don't add features not requested

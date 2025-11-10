@@ -6,47 +6,22 @@ function createSHA1(content: string): string {
   return createHash('sha1').update(content).digest('hex');
 }
 
-// Helper function to check deployment status
-async function waitForDeployment(
+// Helper function to check deployment status (quick check only)
+async function checkDeploymentStatus(
   deployId: string, 
-  netlifyToken: string,
-  onProgress?: (status: string) => void
+  netlifyToken: string
 ): Promise<any> {
-  const maxAttempts = 60; // 5 minutes max
-  const pollInterval = 5000; // 5 seconds
+  const response = await fetch(`https://api.netlify.com/api/v1/deploys/${deployId}`, {
+    headers: {
+      'Authorization': `Bearer ${netlifyToken}`,
+    },
+  });
   
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const response = await fetch(`https://api.netlify.com/api/v1/deploys/${deployId}`, {
-      headers: {
-        'Authorization': `Bearer ${netlifyToken}`,
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to check deployment status');
-    }
-    
-    const deploy = await response.json();
-    console.log(`[netlify-deploy] Status: ${deploy.state}`);
-    
-    if (onProgress) {
-      onProgress(deploy.state);
-    }
-    
-    // Deployment states: "uploading", "uploaded", "processing", "ready", "error"
-    if (deploy.state === 'ready') {
-      return deploy;
-    }
-    
-    if (deploy.state === 'error') {
-      throw new Error(`Deployment failed: ${deploy.error_message || 'Unknown error'}`);
-    }
-    
-    // Wait before next check
-    await new Promise(resolve => setTimeout(resolve, pollInterval));
+  if (!response.ok) {
+    throw new Error('Failed to check deployment status');
   }
   
-  throw new Error('Deployment timeout - took too long to complete');
+  return await response.json();
 }
 
 export async function POST(request: NextRequest) {
@@ -308,30 +283,26 @@ export async function POST(request: NextRequest) {
       console.log('[netlify-deploy] ℹ️ No new files to upload (using cached versions)');
     }
     
-    // Step 5: Wait for deployment to complete
-    console.log('[netlify-deploy] ⏳ Waiting for deployment to complete...');
+    // Step 5: Quick status check (don't wait for full deployment)
+    console.log('[netlify-deploy] 📊 Checking initial deployment status...');
     
-    const completedDeploy = await waitForDeployment(
-      deployId,
-      netlifyToken,
-      (status) => {
-        console.log(`[netlify-deploy] 📊 Status: ${status}`);
-      }
-    );
+    const deployStatus = await checkDeploymentStatus(deployId, netlifyToken);
     
-    const finalUrl = completedDeploy.ssl_url || completedDeploy.url || siteUrl;
+    const finalUrl = deployStatus.ssl_url || deployStatus.url || siteUrl;
     
-    console.log('[netlify-deploy] ✅ Deployment completed successfully!');
-    console.log('[netlify-deploy] 🌐 Live URL:', finalUrl);
+    console.log('[netlify-deploy] ✅ Deployment initiated successfully!');
+    console.log('[netlify-deploy] 🌐 URL:', finalUrl);
+    console.log('[netlify-deploy] 📊 Status:', deployStatus.state);
     
     return NextResponse.json({
       success: true,
       deploymentId: deployId,
       siteId: siteId,
       url: finalUrl,
-      adminUrl: completedDeploy.admin_url,
-      state: completedDeploy.state,
-      createdAt: completedDeploy.created_at,
+      adminUrl: deployStatus.admin_url,
+      state: deployStatus.state,
+      createdAt: deployStatus.created_at,
+      message: 'Deployment in progress. Your site will be live in 1-2 minutes at: ' + finalUrl
     });
     
   } catch (error) {
