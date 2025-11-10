@@ -2588,135 +2588,169 @@ const generateWebsiteFromDescription = async (description: string, projectIdOver
   let generatePrompt = '';
   
   if (techStack === 'html') {
-    generatePrompt = `Create a complete, modern website using pure HTML, CSS, and JavaScript based on this description:
+    generatePrompt = `Create a complete, modern website using ONLY pure HTML, CSS, and JavaScript based on this description:
 
 "${description}"
 
-REQUIREMENTS:
+🚫 STRICT RULES - NO FRAMEWORKS ALLOWED:
+- DO NOT use React, Vue, Angular, or any framework
+- DO NOT use JSX syntax
+- DO NOT use import/export statements
+- ONLY use vanilla HTML, CSS, and JavaScript
+
+🎯 REQUIREMENTS:
 1. Create a single HTML file (index.html) with embedded CSS and JavaScript
 2. Use semantic HTML5 elements (header, nav, main, section, footer, article)
 3. Build all sections and features described by the user
 4. Use modern, vanilla JavaScript for any interactivity (NO frameworks)
 5. Implement responsive design with mobile-first approach
-6. Include smooth animations and transitions
-7. Use CSS Grid and Flexbox for layouts
-8. Ensure excellent accessibility
+6. Use CSS Grid and Flexbox for layouts
 
-DESIGN GUIDELINES:
-- Modern color scheme with excellent contrast
-- Professional typography
-- Proper spacing and visual hierarchy
-- Smooth hover effects
-- Professional and polished look
+📸 IMAGES:
+- Use Unsplash images: https://source.unsplash.com/1920x1080/?{keyword}
+- Add relevant keywords based on content
+- Example: https://source.unsplash.com/1920x1080/?restaurant,food
 
-TECHNICAL REQUIREMENTS:
-- Single HTML file with <style> and <script> tags
-- Modern CSS features (variables, grid, flexbox)
-- Vanilla JavaScript for interactivity
-- Use CDN for any icons (Font Awesome, etc.)
-- Optimized for performance
-- Mobile responsive
+🎨 DESIGN:
+- Modern, professional look
+- Smooth animations with CSS only
+- Mobile-first responsive design
+- Excellent accessibility
 
-Focus on creating a fast, beautiful, functional website.`;
+Focus on creating a fast, beautiful, functional website using ONLY HTML, CSS, and JavaScript.`;
   } else if (techStack === 'react') {
-    generatePrompt = `Create a complete, modern React application based on this description:
+    generatePrompt = `Create a complete, modern React + Vite application based on this description:
 
 "${description}"
 
-REQUIREMENTS:
+🚫 STRICT RULES - REACT ONLY:
+- Use ONLY React with Vite
+- DO NOT use Next.js features (no getServerSideProps, getStaticProps, etc.)
+- DO NOT use server components
+- Use standard React components with .jsx extension
+- Use Tailwind CSS for styling
+
+🎯 REQUIREMENTS:
 1. Create a COMPLETE React application with App.jsx as the main component
 2. App.jsx MUST import and render all other components
 3. Build all sections and features described by the user
 4. Use a modern, professional design with excellent UX
-5. Use semantic HTML elements (header, nav, main, section, footer)
-6. Implement responsive design with mobile-first approach
-7. Include hover effects and smooth transitions
-8. Use modern CSS Grid and Flexbox for layouts
-9. Ensure excellent accessibility (ARIA labels, semantic markup)
-10. Create reusable components for repeated elements
+5. Implement responsive design with mobile-first approach
+6. Create reusable components for repeated elements
 
-DESIGN GUIDELINES:
-- Use a modern color scheme with excellent contrast
-- Choose appropriate fonts and typography
-- Include proper spacing and visual hierarchy
-- Add subtle animations and micro-interactions
-- Ensure the design feels professional and polished
+📸 IMAGES - USE UNSPLASH:
+- Always use real images from Unsplash CDN
+- Format: https://source.unsplash.com/{width}x{height}/?{keywords}
+- Examples:
+  * Hero: https://source.unsplash.com/1920x1080/?${description.split(' ').slice(0, 2).join(',')}
+  * Products: https://source.unsplash.com/800x600/?product,${description.split(' ')[0]}
+  * People: https://source.unsplash.com/800x600/?people,business
+- Use multiple relevant keywords for better results
+- NEVER use placeholder.com or fake images
+
+🎨 DESIGN:
+- Use Tailwind CSS for ALL styling
+- Mobile-first responsive design
+- Smooth animations and transitions
+- Professional and polished look
 
 TECHNICAL REQUIREMENTS:
 - Use Tailwind CSS for ALL styling (no custom CSS files)
-- Make sure the app actually renders visible content
 - Create ALL components that you reference in imports
-- Use placeholder images from Unsplash or similar services when needed
+- Use Unsplash images with relevant keywords
 - Include realistic content that matches the description
 - Use React hooks (useState, useEffect) where appropriate
 
 Focus on creating a beautiful, functional website that matches the user's vision.`;
   } else if (techStack === 'nextjs') {
-    generatePrompt = `Create a complete, modern Next.js application based on this description:
+    generatePrompt = `Create a complete, modern Next.js 14+ App Router application based on this description:
 
 "${description}"
 
-REQUIREMENTS:
-1. Use Next.js App Router with proper page.tsx structure
-2. Create server and client components appropriately
-3. Build all sections and features described by the user
-4. Optimize for SEO with metadata and proper structure
-5. Use semantic HTML elements
-6. Implement responsive design with mobile-first approach
-7. Include hover effects and smooth transitions
-8. Use TypeScript for type safety
-9. Ensure excellent accessibility
-10. Use Next.js Image component for optimized images
+🚫 STRICT RULES - NEXT.JS ONLY:
+- Use ONLY Next.js 14+ with App Router
+- DO NOT use React Router or other routers
+- DO NOT use Pages Router (old Next.js)
+- Use 'use client' directive when needed
+- Use proper Next.js file structure (app directory)
 
-DESIGN GUIDELINES:
-- Modern color scheme with excellent contrast
-- Professional typography
-- Proper spacing and visual hierarchy
+🎯 REQUIREMENTS:
+1. Use Next.js App Router with proper page.tsx/page.jsx structure
+2. Create client components with 'use client' directive when using hooks
+3. Build all sections and features described by the user
+4. Optimize for SEO with metadata
+5. Implement responsive design with mobile-first approach
+
+📸 IMAGES - USE UNSPLASH:
+- Use Unsplash CDN for all images
+- Format: https://source.unsplash.com/{width}x{height}/?{keywords}
+- Examples:
+  * Hero: https://source.unsplash.com/1920x1080/?${description.split(' ').slice(0, 2).join(',')}
+  * Feature: https://source.unsplash.com/800x600/?${description.split(' ')[0]},modern
+  * Gallery: https://source.unsplash.com/600x400/?${description.split(' ')[0]},design
+- Use relevant keywords from the description
+- NEVER use placeholder images
+
+🎨 DESIGN:
+- Use Tailwind CSS for ALL styling
+- Mobile-first responsive design
+- Professional and modern look
 - Smooth animations
-- Professional and polished look
 
 TECHNICAL REQUIREMENTS:
-- Use Tailwind CSS for ALL styling
-- Proper Next.js file structure
-- Server and client components
-- Optimized for performance
-- SEO-friendly
-- Use Unsplash for placeholder images
+- Use Tailwind CSS for styling
+- Proper Next.js App Router structure
+- Client components with 'use client' when using hooks
+- SEO-friendly with metadata
+- Unsplash images with relevant keywords
 
-Focus on creating a high-performance, SEO-optimized website.`;
+Focus on creating a high-performance, SEO-optimized Next.js application.`;
   } else {
     // Angular
-    generatePrompt = `Create a complete, modern Angular application based on this description:
+    generatePrompt = `Create a complete, modern Angular 17+ application based on this description:
 
 "${description}"
 
-REQUIREMENTS:
-1. Create proper Angular components with TypeScript
-2. Use Angular CLI structure
+🚫 STRICT RULES - ANGULAR ONLY:
+- Use ONLY Angular 17+ with standalone components
+- DO NOT use React, Vue, or other frameworks
+- Use TypeScript for all components
+- Use Angular decorators (@Component, @Injectable, etc.)
+- Follow Angular best practices
+
+🎯 REQUIREMENTS:
+1. Create standalone Angular components with TypeScript
+2. Use modern Angular features (signals, standalone components)
 3. Build all sections and features described by the user
 4. Use Angular Material for UI components
-5. Implement responsive design
-6. Use Angular services for data management
-7. Include proper routing
-8. Ensure excellent accessibility
-9. Use TypeScript best practices
-10. Create reusable components
+5. Implement responsive design with mobile-first approach
+6. Create reusable components
 
-DESIGN GUIDELINES:
-- Modern color scheme
-- Professional typography
-- Proper spacing
-- Smooth animations
-- Professional look
+📸 IMAGES - USE UNSPLASH:
+- Use Unsplash CDN for all images
+- Format: https://source.unsplash.com/{width}x{height}/?{keywords}
+- Examples:
+  * Hero: https://source.unsplash.com/1920x1080/?${description.split(' ').slice(0, 2).join(',')}
+  * Card: https://source.unsplash.com/600x400/?${description.split(' ')[0]},modern
+  * Background: https://source.unsplash.com/1200x800/?${description.split(' ')[0]},abstract
+- Use relevant keywords from the description
+- NEVER use placeholder images
+
+🎨 DESIGN:
+- Use Angular Material + Tailwind CSS
+- Mobile-first responsive design
+- Professional enterprise look
+- Smooth Material animations
 
 TECHNICAL REQUIREMENTS:
-- Use Angular Material and Tailwind CSS
-- Proper component structure
-- Type-safe code
-- Optimized for performance
-- Use Unsplash for images
+- Standalone components (no NgModule)
+- TypeScript with strict type checking
+- Angular Material for UI
+- Tailwind CSS for custom styling
+- Unsplash images with relevant keywords
+- Proper Angular services and dependency injection
 
-Focus on creating an enterprise-grade application.`;
+Focus on creating an enterprise-grade Angular application.`;
   }
 
   setGenerationProgress(prev => ({
@@ -2931,19 +2965,19 @@ Focus on creating an enterprise-grade application.`;
           </button>
           
             {/* Header */}
-            <div className="absolute top-0 left-0 right-0 z-20 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between animate-[fadeIn_0.8s_ease-out]">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="relative w-8 h-8 sm:w-9 sm:h-9 bg-white/10 rounded-lg border border-white/20 overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 z-20 px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between animate-[fadeIn_0.8s_ease-out]">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className="relative w-9 h-9 sm:w-10 sm:h-10 bg-white/10 rounded-lg sm:rounded-xl border border-white/20 overflow-hidden">
                   <Image
                     src="/youssef-logo.png"
                     alt="Youssef AI logo"
                     fill
                     priority
-                    sizes="36px"
+                    sizes="40px"
                     className="object-contain"
                   />
                 </div>
-                <span className="text-white font-semibold text-base sm:text-lg">Youssef AI</span>
+                <span className="text-white font-semibold text-lg sm:text-xl">Youssef AI</span>
               </div>
 
               <div className="flex items-center gap-2 sm:gap-3">
@@ -2956,22 +2990,22 @@ Focus on creating an enterprise-grade application.`;
             <div className="text-center max-w-4xl w-full mx-auto">
               {/* Enhanced Lovable-style Header */}
               
-  <div className="text-center">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl text-center text-white font-bold tracking-tight leading-[1.2] animate-[fadeIn_0.8s_ease-out] px-3 sm:px-4">
+              <div className="text-center">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl text-center text-white font-bold tracking-tight leading-[1.15] animate-[fadeIn_0.8s_ease-out] px-4 sm:px-6">
                   <span className="block sm:inline">Build something </span>
                     <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-gradient-x">
                       unforgettable with Youssef AI
                     </span>
                 </h1>
                 <motion.p
-                  className="text-sm sm:text-base md:text-lg lg:text-xl max-w-2xl mx-auto mt-4 sm:mt-6 lg:mt-8 text-white/90 text-center text-balance px-3 sm:px-4"
+                  className="text-base sm:text-lg md:text-xl lg:text-2xl max-w-2xl mx-auto mt-5 sm:mt-7 lg:mt-9 text-white/90 text-center text-balance px-4 sm:px-6"
                   transition={{ duration: 0.3, ease: "easeOut" }}
       
                   >
                   Create beautiful apps and websites by chatting with AI
                 </motion.p>
                 <motion.p
-                  className="text-xs sm:text-sm lg:text-base max-w-xl mx-auto mt-2 sm:mt-3 lg:mt-4 text-white/60 text-center px-3 sm:px-4"
+                  className="text-sm sm:text-base lg:text-lg max-w-xl mx-auto mt-3 sm:mt-4 lg:mt-5 text-white/60 text-center px-4 sm:px-6"
        
                   transition={{ duration: 0.3, ease: "easeOut", delay: 0.2 }}
                 >
@@ -2992,17 +3026,17 @@ Focus on creating an enterprise-grade application.`;
   setHomeDescriptionInput(value);
                       }}
                       placeholder="Describe your dream app or website..."
-                      className="h-12 sm:h-14 md:h-16 w-full bg-transparent text-white placeholder-white/50 px-3 sm:px-4 md:px-6 pr-12 sm:pr-14 md:pr-16 focus:outline-none text-sm sm:text-base transition-all duration-200 focus:placeholder-white/70"
+                      className="h-14 sm:h-16 md:h-18 lg:h-20 w-full bg-transparent text-white placeholder-white/50 px-4 sm:px-5 md:px-7 pr-14 sm:pr-16 md:pr-18 focus:outline-none text-base sm:text-lg md:text-xl transition-all duration-200 focus:placeholder-white/70"
                       autoFocus
                  
     />
                     <button
                       type="submit"
                       disabled={!homeDescriptionInput.trim()}
-                      className="absolute top-1/2 transform -translate-y-1/2 right-1.5 sm:right-2 md:right-4 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-white/20 hover:bg-white/30 disabled:bg-gray-700/50 rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-200 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:opacity-50"
+                      className="absolute top-1/2 transform -translate-y-1/2 right-2 sm:right-3 md:right-5 w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 bg-white/20 hover:bg-white/30 disabled:bg-gray-700/50 rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-200 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:opacity-50"
                       title="Create with AI"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sm:w-[18px] sm:h-[18px] text-white">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sm:w-[20px] sm:h-[20px] md:w-[22px] md:h-[22px] text-white">
          
                         <path d="M5 12h14M12 5l7 7-7 7"></path>
                       </svg>
@@ -3015,7 +3049,7 @@ Focus on creating an enterprise-grade application.`;
                 </div>
 
                 {/* Example prompts */}
-                <div className="mt-3 sm:mt-4 md:mt-6 flex flex-wrap justify-center gap-1.5 sm:gap-2 px-3 sm:px-4">
+                <div className="mt-4 sm:mt-5 md:mt-7 flex flex-wrap justify-center gap-2 sm:gap-2.5 px-4 sm:px-6">
          
                   {[
                     "A modern portfolio website",
@@ -3028,7 +3062,7 @@ Focus on creating an enterprise-grade application.`;
                       key={example}
                       onClick={() => setHomeDescriptionInput(example)}
               
-                      className="px-2.5 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 text-[11px] sm:text-xs md:text-sm text-white/70 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:text-white/90 transition-all duration-200 hover:scale-105"
+                      className="px-3.5 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 text-xs sm:text-sm md:text-base text-white/70 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:text-white/90 transition-all duration-200 hover:scale-105"
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
                       {example}
@@ -3038,49 +3072,50 @@ Focus on creating an enterprise-grade application.`;
                 </div>
               </form>
 
-                  {session?.user?.id && (
-                  <div className="mt-6 sm:mt-8 lg:mt-10 max-w-3xl mx-auto px-3 sm:px-4 mb-safe">
-                    <div className="text-left text-white/70 text-[10px] sm:text-[0.65rem] md:text-[0.7rem] uppercase tracking-[0.25em] sm:tracking-[0.3em] md:tracking-[0.4em] mb-2 sm:mb-3 md:mb-4 font-medium">
-                      📁 Recent Projects
-                    </div>
-                    {projectsLoading ? (
-                      <div className="flex items-center gap-2 text-white/70 text-sm">
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        <span>Loading projects...</span>
-                      </div>
-                    ) : projects.length === 0 ? (
-                      <p className="text-white/60 text-xs sm:text-sm py-3">
-                        No saved projects yet. Describe an idea above to start building.
-                      </p>
-                    ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4 max-h-[35vh] sm:max-h-[40vh] overflow-y-auto scrollbar-hide pb-3 sm:pb-4">
+                  {session?.user?.id && projects.length > 0 && (
+                  <div className="mt-6 sm:mt-8 lg:mt-10 max-w-3xl mx-auto px-3 sm:px-4 mb-4 sm:mb-6">
+                    <details className="group" open={false}>
+                      <summary className="text-left text-white/70 text-[10px] sm:text-[0.65rem] md:text-[0.7rem] uppercase tracking-[0.25em] sm:tracking-[0.3em] md:tracking-[0.4em] mb-2 sm:mb-3 md:mb-4 font-medium cursor-pointer hover:text-white/90 transition-colors list-none flex items-center gap-2">
+                        <svg className="w-3 h-3 sm:w-4 sm:h-4 transform transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                        <span>📁 Recent Projects ({projects.length})</span>
+                      </summary>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-h-[35vh] sm:max-h-[40vh] overflow-y-auto scrollbar-hide pb-3 sm:pb-4 mt-2">
+                      {projectsLoading ? (
+                        <div className="flex items-center gap-2 text-white/70 text-base">
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>Loading projects...</span>
+                        </div>
+                      ) : (
+                        <>
                         {projects.map(project => (
                           <div
                             key={project.id}
-                            className={`relative group rounded-lg sm:rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 shadow-lg hover:shadow-xl ${activeProjectId === project.id ? 'ring-2 ring-blue-400/60 bg-white/10 shadow-blue-500/30' : ''}`}
+                            className={`relative group rounded-xl sm:rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 shadow-lg hover:shadow-xl ${activeProjectId === project.id ? 'ring-2 ring-blue-400/60 bg-white/10 shadow-blue-500/30' : ''}`}
                           >
                             <button
                               type="button"
                               onClick={() => handleProjectSelect(project)}
-                              className="w-full text-left px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 md:py-4"
+                              className="w-full text-left px-4 sm:px-5 md:px-6 py-3 sm:py-4 md:py-5"
                             >
-                              <div className="flex items-start gap-3">
-                                <div className="flex-shrink-0 mt-1">
-                                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                                    <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <div className="flex items-start gap-3 sm:gap-4">
+                                <div className="flex-shrink-0 mt-0.5">
+                                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-blue-500/20 flex items-center justify-center">
+                                    <svg className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                                     </svg>
                                   </div>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                <div className="text-white font-semibold text-sm sm:text-base md:text-lg truncate pr-8 sm:pr-10">
+                                <div className="text-white font-semibold text-base sm:text-lg md:text-xl truncate pr-10 sm:pr-12">
                                   {project.name}
                                 </div>
-                                <div className="text-white/60 text-[11px] sm:text-xs md:text-sm mt-1 sm:mt-1.5 line-clamp-2 leading-relaxed">
+                                <div className="text-white/60 text-xs sm:text-sm md:text-base mt-1.5 sm:mt-2 line-clamp-2 leading-relaxed">
                                   {project.last_prompt || 'No description'}
                                 </div>
-                                <div className="flex items-center gap-1.5 sm:gap-2 text-white/40 text-[10px] sm:text-[11px] md:text-xs mt-1.5 sm:mt-2">
-                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <div className="flex items-center gap-2 text-white/40 text-xs sm:text-sm mt-2 sm:mt-2.5">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     {formatRelativeTime(project.updated_at)}
@@ -3109,18 +3144,20 @@ Focus on creating an enterprise-grade application.`;
                                   addChatMessage('Failed to delete project. Please try again.', 'system');
                                 }
                               }}
-                              className="absolute top-2 sm:top-3 md:top-4 right-2 sm:right-3 md:right-4 opacity-0 group-hover:opacity-100 md:opacity-70 md:hover:opacity-100 touch-manipulation p-1.5 sm:p-2 rounded-md sm:rounded-lg bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30 text-red-400 hover:text-red-300 transition-all duration-200 shadow-lg z-10"
+                              className="absolute top-3 sm:top-4 md:top-5 right-3 sm:right-4 md:right-5 opacity-0 group-hover:opacity-100 md:opacity-70 md:hover:opacity-100 touch-manipulation p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30 text-red-400 hover:text-red-300 transition-all duration-200 shadow-lg z-10"
                               title="Delete project"
                               aria-label="Delete project"
                             >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg className="w-5 h-5 sm:w-5.5 sm:h-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>
                           </div>
                         ))}
-                      </div>
-                    )}
+                        </>
+                      )}
+                    </div>
+                    </details>
                     {projectsError && (
                       <p className="text-red-300 text-sm mt-2">{projectsError}</p>
                     )}
@@ -3162,18 +3199,18 @@ Focus on creating an enterprise-grade application.`;
       
       {/* Main Header with gradient */}
       <div className={`px-2 sm:px-3 md:px-4 py-2 sm:py-3 md:py-4 border-b ${theme.border_color} flex items-center justify-between ${theme.bg_card} bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900`}>
-        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4">
-          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
-            <div className={`relative w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-md sm:rounded-lg overflow-hidden border ${theme.border_color}`}>
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+          <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
+            <div className={`relative w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-lg sm:rounded-xl overflow-hidden border ${theme.border_color}`}>
               <Image
                 src="/youssef-logo.png"
                 alt="Youssef AI logo"
                 fill
-                sizes="32px"
+                sizes="40px"
                 className="object-contain"
               />
             </div>
-            <span className={`font-semibold text-sm sm:text-base md:text-lg ${theme.text_main} hidden xs:inline`}>Youssef AI</span>
+            <span className={`font-semibold text-base sm:text-lg md:text-xl ${theme.text_main}`}>Youssef AI</span>
           </div>
         </div>
         <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
