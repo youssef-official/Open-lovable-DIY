@@ -205,6 +205,12 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
   const [deploymentLoading, setDeploymentLoading] = useState(false);
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
   const [deploymentLogs, setDeploymentLogs] = useState<string[]>([]);
+  const [showDeploymentSuccess, setShowDeploymentSuccess] = useState(false);
+  const [deploymentData, setDeploymentData] = useState<{
+    url: string;
+    siteId: string;
+    deploymentId: string;
+  } | null>(null);
 
   // Sandbox confirmation states
   const [showSandboxConfirmation, setShowSandboxConfirmation] = useState(false);
@@ -2388,16 +2394,27 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
         setDeploymentUrl(data.url);
         setSandboxFiles(filesToDeploy);
         
-        setDeploymentLogs(prev => [
-          ...prev,
+        const logs = [
           '✅ Deployment successful!',
           `🌐 Live at: ${data.url}`,
           `📊 Site ID: ${data.siteId}`,
           `🚀 Deployment ID: ${data.deploymentId}`
-        ]);
+        ];
+        
+        setDeploymentLogs(prev => [...prev, ...logs]);
+        
+        // Store deployment data for sharing
+        setDeploymentData({
+          url: data.url,
+          siteId: data.siteId,
+          deploymentId: data.deploymentId
+        });
+        
+        // Show success modal with sharing options
+        setShowDeploymentSuccess(true);
         
         addChatMessage(
-          `✅ Successfully published to Netlify!\n\n🌐 Live URL: ${data.url}\n\n🎉 Your app is now live on the internet! Share this link with anyone.\n\n📝 Deployment Logs:\n${deploymentLogs.join('\n')}`,
+          `✅ Successfully published to Netlify!\n\n🌐 Live URL: ${data.url}\n\n🎉 Your app is now live on the internet! Share this link with anyone.\n\n📝 Deployment Logs:\n${logs.join('\n')}`,
           'system'
         );
       } else {
@@ -2896,9 +2913,9 @@ Focus on creating an enterprise-grade application.`;
           </button>
           
             {/* Header */}
-            <div className="absolute top-0 left-0 right-0 z-20 px-6 py-4 flex items-center justify-between animate-[fadeIn_0.8s_ease-out]">
-              <div className="flex items-center gap-3">
-                <div className="relative w-9 h-9 bg-white/10 rounded-lg border border-white/20 overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 z-20 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between animate-[fadeIn_0.8s_ease-out]">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="relative w-8 h-8 sm:w-9 sm:h-9 bg-white/10 rounded-lg border border-white/20 overflow-hidden">
                   <Image
                     src="/youssef-logo.png"
                     alt="Youssef AI logo"
@@ -2908,10 +2925,10 @@ Focus on creating an enterprise-grade application.`;
                     className="object-contain"
                   />
                 </div>
-                <span className="text-white font-semibold text-lg">Youssef AI</span>
+                <span className="text-white font-semibold text-base sm:text-lg">Youssef AI</span>
               </div>
 
-              <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <UserButton />
           </div>
             </div>
@@ -2922,21 +2939,21 @@ Focus on creating an enterprise-grade application.`;
               {/* Enhanced Lovable-style Header */}
               
   <div className="text-center">
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center text-white font-bold tracking-tight leading-[1.1] animate-[fadeIn_0.8s_ease-out] px-4">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl text-center text-white font-bold tracking-tight leading-[1.2] animate-[fadeIn_0.8s_ease-out] px-3 sm:px-4">
                   <span className="block sm:inline">Build something </span>
-                    <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent whitespace-nowrap animate-gradient-x">
+                    <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-gradient-x">
                       unforgettable with Youssef AI
                     </span>
                 </h1>
                 <motion.p
-                  className="text-base sm:text-lg lg:text-xl max-w-2xl mx-auto mt-6 sm:mt-8 text-white/90 text-center text-balance px-4"
+                  className="text-sm sm:text-base md:text-lg lg:text-xl max-w-2xl mx-auto mt-4 sm:mt-6 lg:mt-8 text-white/90 text-center text-balance px-3 sm:px-4"
                   transition={{ duration: 0.3, ease: "easeOut" }}
       
                   >
                   Create beautiful apps and websites by chatting with AI
                 </motion.p>
                 <motion.p
-                  className="text-xs sm:text-sm lg:text-base max-w-xl mx-auto mt-3 sm:mt-4 text-white/60 text-center px-4"
+                  className="text-xs sm:text-sm lg:text-base max-w-xl mx-auto mt-2 sm:mt-3 lg:mt-4 text-white/60 text-center px-3 sm:px-4"
        
                   transition={{ duration: 0.3, ease: "easeOut", delay: 0.2 }}
                 >
@@ -2945,9 +2962,9 @@ Focus on creating an enterprise-grade application.`;
               </div>
          
       
-              <form onSubmit={handleHomeScreenSubmit} className="mt-8 sm:mt-12 max-w-2xl mx-auto px-4">
+              <form onSubmit={handleHomeScreenSubmit} className="mt-6 sm:mt-8 lg:mt-12 max-w-2xl mx-auto px-3 sm:px-4">
                 <div className="w-full relative group">
-                  <div className="relative bg-black/30 backdrop-blur-md rounded-2xl border border-white/30 overflow-hidden shadow-2xl transition-all duration-300 group-hover:border-white/40 group-focus-within:border-white/50 group-focus-within:shadow-[0_0_30px_rgba(255,255,255,0.1)]">
+                  <div className="relative bg-black/30 backdrop-blur-md rounded-xl sm:rounded-2xl border border-white/30 overflow-hidden shadow-2xl transition-all duration-300 group-hover:border-white/40 group-focus-within:border-white/50 group-focus-within:shadow-[0_0_30px_rgba(255,255,255,0.1)]">
                     <input
       
                       type="text"
@@ -2957,17 +2974,17 @@ Focus on creating an enterprise-grade application.`;
   setHomeDescriptionInput(value);
                       }}
                       placeholder="Describe your dream app or website..."
-                      className="h-14 sm:h-16 w-full bg-transparent text-white placeholder-white/50 px-4 sm:px-6 pr-14 sm:pr-16 focus:outline-none text-sm sm:text-base transition-all duration-200 focus:placeholder-white/70"
+                      className="h-12 sm:h-14 md:h-16 w-full bg-transparent text-white placeholder-white/50 px-3 sm:px-4 md:px-6 pr-12 sm:pr-14 md:pr-16 focus:outline-none text-sm sm:text-base transition-all duration-200 focus:placeholder-white/70"
                       autoFocus
                  
     />
                     <button
                       type="submit"
                       disabled={!homeDescriptionInput.trim()}
-                      className="absolute top-1/2 transform -translate-y-1/2 right-2 sm:right-4 w-9 h-9 sm:w-10 sm:h-10 bg-white/20 hover:bg-white/30 disabled:bg-gray-700/50 rounded-xl flex items-center justify-center transition-all duration-200 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:opacity-50"
+                      className="absolute top-1/2 transform -translate-y-1/2 right-1.5 sm:right-2 md:right-4 w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 bg-white/20 hover:bg-white/30 disabled:bg-gray-700/50 rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-200 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:opacity-50"
                       title="Create with AI"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sm:w-[18px] sm:h-[18px] text-white">
          
                         <path d="M5 12h14M12 5l7 7-7 7"></path>
                       </svg>
@@ -2980,7 +2997,7 @@ Focus on creating an enterprise-grade application.`;
                 </div>
 
                 {/* Example prompts */}
-                <div className="mt-4 sm:mt-6 flex flex-wrap justify-center gap-2 px-4">
+                <div className="mt-3 sm:mt-4 md:mt-6 flex flex-wrap justify-center gap-1.5 sm:gap-2 px-3 sm:px-4">
          
                   {[
                     "A modern portfolio website",
@@ -2993,7 +3010,7 @@ Focus on creating an enterprise-grade application.`;
                       key={example}
                       onClick={() => setHomeDescriptionInput(example)}
               
-                      className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-white/70 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:text-white/90 transition-all duration-200 hover:scale-105"
+                      className="px-2.5 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 text-[11px] sm:text-xs md:text-sm text-white/70 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:text-white/90 transition-all duration-200 hover:scale-105"
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
                       {example}
@@ -3004,8 +3021,8 @@ Focus on creating an enterprise-grade application.`;
               </form>
 
                   {session?.user?.id && (
-                  <div className="mt-8 sm:mt-10 max-w-3xl mx-auto px-4 mb-safe">
-                    <div className="text-left text-white/70 text-[0.65rem] sm:text-[0.7rem] uppercase tracking-[0.3em] sm:tracking-[0.4em] mb-3 sm:mb-4 font-medium">
+                  <div className="mt-6 sm:mt-8 lg:mt-10 max-w-3xl mx-auto px-3 sm:px-4 mb-safe">
+                    <div className="text-left text-white/70 text-[10px] sm:text-[0.65rem] md:text-[0.7rem] uppercase tracking-[0.25em] sm:tracking-[0.3em] md:tracking-[0.4em] mb-2 sm:mb-3 md:mb-4 font-medium">
                       📁 Recent Projects
                     </div>
                     {projectsLoading ? (
@@ -3018,16 +3035,16 @@ Focus on creating an enterprise-grade application.`;
                         No saved projects yet. Describe an idea above to start building.
                       </p>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-h-[40vh] overflow-y-auto scrollbar-hide pb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4 max-h-[35vh] sm:max-h-[40vh] overflow-y-auto scrollbar-hide pb-3 sm:pb-4">
                         {projects.map(project => (
                           <div
                             key={project.id}
-                            className={`relative group rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 shadow-lg hover:shadow-xl ${activeProjectId === project.id ? 'ring-2 ring-blue-400/60 bg-white/10 shadow-blue-500/30' : ''}`}
+                            className={`relative group rounded-lg sm:rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 shadow-lg hover:shadow-xl ${activeProjectId === project.id ? 'ring-2 ring-blue-400/60 bg-white/10 shadow-blue-500/30' : ''}`}
                           >
                             <button
                               type="button"
                               onClick={() => handleProjectSelect(project)}
-                              className="w-full text-left px-4 sm:px-5 py-3 sm:py-4"
+                              className="w-full text-left px-3 sm:px-4 md:px-5 py-2.5 sm:py-3 md:py-4"
                             >
                               <div className="flex items-start gap-3">
                                 <div className="flex-shrink-0 mt-1">
@@ -3038,13 +3055,13 @@ Focus on creating an enterprise-grade application.`;
                                   </div>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-white font-semibold text-base sm:text-lg truncate pr-10">
-                                    {project.name}
-                                  </div>
-                                  <div className="text-white/60 text-xs sm:text-sm mt-1.5 line-clamp-2 leading-relaxed">
-                                    {project.last_prompt || 'No description'}
-                                  </div>
-                                  <div className="flex items-center gap-2 text-white/40 text-[11px] sm:text-xs mt-2">
+                                <div className="text-white font-semibold text-sm sm:text-base md:text-lg truncate pr-8 sm:pr-10">
+                                  {project.name}
+                                </div>
+                                <div className="text-white/60 text-[11px] sm:text-xs md:text-sm mt-1 sm:mt-1.5 line-clamp-2 leading-relaxed">
+                                  {project.last_prompt || 'No description'}
+                                </div>
+                                <div className="flex items-center gap-1.5 sm:gap-2 text-white/40 text-[10px] sm:text-[11px] md:text-xs mt-1.5 sm:mt-2">
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
@@ -3074,7 +3091,7 @@ Focus on creating an enterprise-grade application.`;
                                   addChatMessage('Failed to delete project. Please try again.', 'system');
                                 }
                               }}
-                              className="absolute top-3 sm:top-4 right-3 sm:right-4 opacity-0 group-hover:opacity-100 md:opacity-70 md:hover:opacity-100 touch-manipulation p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30 text-red-400 hover:text-red-300 transition-all duration-200 shadow-lg z-10"
+                              className="absolute top-2 sm:top-3 md:top-4 right-2 sm:right-3 md:right-4 opacity-0 group-hover:opacity-100 md:opacity-70 md:hover:opacity-100 touch-manipulation p-1.5 sm:p-2 rounded-md sm:rounded-lg bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30 text-red-400 hover:text-red-300 transition-all duration-200 shadow-lg z-10"
                               title="Delete project"
                               aria-label="Delete project"
                             >
@@ -3126,10 +3143,10 @@ Focus on creating an enterprise-grade application.`;
       )}
       
       {/* Main Header with gradient */}
-      <div className={`px-2 sm:px-4 py-3 sm:py-4 border-b ${theme.border_color} flex items-center justify-between ${theme.bg_card} bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900`}>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className={`relative w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden border ${theme.border_color}`}>
+      <div className={`px-2 sm:px-3 md:px-4 py-2 sm:py-3 md:py-4 border-b ${theme.border_color} flex items-center justify-between ${theme.bg_card} bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900`}>
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4">
+          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2">
+            <div className={`relative w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-md sm:rounded-lg overflow-hidden border ${theme.border_color}`}>
               <Image
                 src="/youssef-logo.png"
                 alt="Youssef AI logo"
@@ -3138,10 +3155,10 @@ Focus on creating an enterprise-grade application.`;
                 className="object-contain"
               />
             </div>
-            <span className={`font-semibold text-base sm:text-lg ${theme.text_main} hidden xs:inline`}>Youssef AI</span>
+            <span className={`font-semibold text-sm sm:text-base md:text-lg ${theme.text_main} hidden xs:inline`}>Youssef AI</span>
           </div>
         </div>
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
           <UserButton />
           {/* Model Selector - Left side */}
           <select
@@ -3157,7 +3174,7 @@ Focus on creating an enterprise-grade application.`;
   }
               router.push(`/?${params.toString()}`);
   }}
-            className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-800 text-white border-gray-700 border rounded-[10px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-colors duration-200 max-w-[120px] sm:max-w-none`}
+            className={`px-1.5 sm:px-2 md:px-3 py-0.5 sm:py-1 md:py-1.5 text-[10px] sm:text-xs md:text-sm bg-gray-800 text-white border-gray-700 border rounded-md sm:rounded-lg md:rounded-[10px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-colors duration-200 max-w-[90px] sm:max-w-[120px] md:max-w-none`}
           >
             {appConfig.ai.availableModels.map(model => (
               <option key={model} value={model} className={`${theme.code_bg} text-white`}>
@@ -3180,9 +3197,9 @@ Focus on creating an enterprise-grade application.`;
             onClick={() => setShowApiKeysSettings(true)}
             size="sm"
             title="API Keys"
-            className="bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-500 hover:to-purple-400 transition-all duration-200 p-2 sm:p-2.5 shadow-lg hover:shadow-purple-500/50"
+            className="bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-500 hover:to-purple-400 transition-all duration-200 p-1.5 sm:p-2 md:p-2.5 shadow-lg hover:shadow-purple-500/50"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sm:w-[16px] sm:h-[16px] md:w-[18px] md:h-[18px] text-white">
               <path d="M12 1.5L21.5 6.5V17.5L12 22.5L2.5 17.5V6.5L12 1.5Z" />
               <path d="M12 1.5L2.5 6.5L12 11.5L21.5 6.5L12 1.5Z" />
               <path d="M12 11.5V22.5" />
@@ -3236,19 +3253,19 @@ Focus on creating an enterprise-grade application.`;
             disabled={deploymentLoading}
             size="sm"
             title="Publish to Netlify"
-            className="bg-gradient-to-r from-[#00C7B7] to-[#00A896] text-white hover:opacity-90 transition-all duration-200 flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-2 shadow-lg hover:shadow-xl"
+            className="bg-gradient-to-r from-[#00C7B7] to-[#00A896] text-white hover:opacity-90 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 px-1.5 py-1.5 sm:px-2 md:px-3 sm:py-1.5 md:py-2 shadow-lg hover:shadow-xl"
           >
             {deploymentLoading ? (
-              <svg className="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg className="animate-spin h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
             ) : (
               <>
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12.001 2L2.001 19.5h20L12.001 2z"/>
                 </svg>
-                <span className="text-xs sm:text-sm font-medium hidden xl:inline">
+                <span className="text-[10px] sm:text-xs md:text-sm font-medium hidden lg:inline">
                   {netlifyConnected ? 'Publish' : 'Connect'}
                 </span>
               </>
@@ -3264,10 +3281,10 @@ Focus on creating an enterprise-grade application.`;
 
       <div className="flex-1 flex overflow-hidden">
         {/* Center Panel - AI Chat (1/3 of remaining width) */}
-        <div className={`flex-1 w-full sm:max-w-[350px] md:max-w-[400px] flex flex-col border-r ${theme.border_color} ${theme.bg_card}`}>
+        <div className={`flex-1 w-full sm:max-w-[300px] md:max-w-[350px] lg:max-w-[400px] flex flex-col border-r ${theme.border_color} ${theme.bg_card}`}>
 
 
-          <div className="flex-1 overflow-y-auto p-2 sm:p-4 flex flex-col gap-1 scrollbar-hide" ref={chatMessagesRef}>
+          <div className="flex-1 overflow-y-auto p-1.5 sm:p-2 md:p-4 flex flex-col gap-1 scrollbar-hide" ref={chatMessagesRef}>
             {chatMessages.map((msg, 
   idx) => {
               // Check if this message is from a successful generation
@@ -3285,7 +3302,7 @@ Focus on creating an enterprise-grade application.`;
                   <div className={`flex ${msg.type === 'user' ?
   'justify-end' : 'justify-start'} mb-1`}>
                     <div className="block">
-                      <div className={`block rounded-[10px] px-3 sm:px-4 py-2 text-sm sm:text-base shadow-lg ${
+                      <div className={`block rounded-lg sm:rounded-[10px] px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm md:text-base shadow-lg ${
                         msg.type === 'user' ?
   `bg-gradient-to-r from-blue-600 to-blue-500 text-white ml-auto max-w-[85%] sm:max-w-[80%]` :
                         msg.type === 'ai' ?
@@ -3520,11 +3537,11 @@ Focus on creating an enterprise-grade application.`;
             )}
           </div>
 
-          <div className={`p-2 sm:p-4 border-t ${theme.border_color} ${theme.bg_card}`}>
+          <div className={`p-1.5 sm:p-2 md:p-4 border-t ${theme.border_color} ${theme.bg_card}`}>
             <div className="relative">
               <Textarea
          
-                className={`min-h-[50px] sm:min-h-[60px] pr-10 sm:pr-12 resize-y border-2 ${theme.border_color} focus:outline-none ${theme.bg_card} ${theme.text_main} bg-gray-800 text-white placeholder-gray-400 text-sm sm:text-base`}
+                className={`min-h-[45px] sm:min-h-[50px] md:min-h-[60px] pr-9 sm:pr-10 md:pr-12 resize-y border-2 ${theme.border_color} focus:outline-none ${theme.bg_card} ${theme.text_main} bg-gray-800 text-white placeholder-gray-400 text-xs sm:text-sm md:text-base`}
                 placeholder="Ask me to do something..."
                 value={aiChatInput}
                 onChange={(e) => setAiChatInput(e.target.value)}
@@ -3539,11 +3556,11 @@ Focus on creating an enterprise-grade application.`;
               />
               <button
                 onClick={sendChatMessage}
-                className={`absolute right-2 bottom-2 p-1.5 sm:p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[10px]
+                className={`absolute right-1.5 sm:right-2 bottom-1.5 sm:bottom-2 p-1 sm:p-1.5 md:p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg sm:rounded-[10px]
   [box-shadow:none] transition-all duration-200`}
                 title="Send message (Enter)"
               >
-                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
         
   </svg>
@@ -3659,6 +3676,117 @@ Focus on creating an enterprise-grade application.`;
 
 
 
+
+      {/* Deployment Success Modal */}
+      {showDeploymentSuccess && deploymentData && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-[fadeIn_0.2s_ease-out]">
+          <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700 max-w-2xl w-full p-6 sm:p-8 animate-[fadeIn_0.3s_ease-out]">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-green-500/20 flex items-center justify-center">
+                <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">🎉 نُشر بنجاح!</h2>
+              <p className="text-gray-400 text-sm sm:text-base">Your website is now live on the internet</p>
+            </div>
+
+            <div className="bg-gray-800/50 rounded-xl p-4 mb-6">
+              <label className="block text-sm font-medium text-gray-400 mb-2">🌐 Live URL</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={deploymentData.url}
+                  readOnly
+                  className="flex-1 bg-gray-900 text-white px-4 py-3 rounded-lg text-sm font-mono border border-gray-700"
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(deploymentData.url);
+                    addChatMessage('✅ Link copied to clipboard!', 'system');
+                  }}
+                  className="px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  title="Copy link"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-400 mb-3">📱 Share on Social Media</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <button
+                  onClick={() => {
+                    const text = encodeURIComponent('Check out my new website created with Youssef AI!');
+                    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(deploymentData.url)}`, '_blank');
+                  }}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1DA1F2] hover:bg-[#1a8cd8] text-white rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/>
+                  </svg>
+                  <span className="text-sm font-medium hidden sm:inline">Twitter</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(deploymentData.url)}`, '_blank');
+                  }}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#4267B2] hover:bg-[#365899] text-white rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  </svg>
+                  <span className="text-sm font-medium hidden sm:inline">Facebook</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(deploymentData.url)}`, '_blank');
+                  }}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#0077b5] hover:bg-[#006399] text-white rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                  </svg>
+                  <span className="text-sm font-medium hidden sm:inline">LinkedIn</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    const text = encodeURIComponent('Check out my new website created with Youssef AI!');
+                    window.open(`https://wa.me/?text=${text}%20${encodeURIComponent(deploymentData.url)}`, '_blank');
+                  }}
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#25D366] hover:bg-[#20BA5A] text-white rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                  </svg>
+                  <span className="text-sm font-medium hidden sm:inline">WhatsApp</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => window.open(deploymentData.url, '_blank')}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-lg font-medium transition-all"
+              >
+                Open Website
+              </button>
+              <button
+                onClick={() => setShowDeploymentSuccess(false)}
+                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tech Stack Selector Dialog */}
       {showTechStackSelector && (
