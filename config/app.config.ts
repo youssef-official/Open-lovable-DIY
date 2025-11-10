@@ -4,8 +4,8 @@
 export const appConfig = {
   // E2B Sandbox Configuration
   e2b: {
-    // Sandbox timeout in minutes
-    timeoutMinutes: 15,
+    // Sandbox timeout in minutes (increased to prevent premature closing)
+    timeoutMinutes: 60,
     
     // Convert to milliseconds for E2B API
     get timeoutMs() {
@@ -23,6 +23,12 @@ export const appConfig = {
     
     // Default sandbox template (if using templates)
     defaultTemplate: undefined, // or specify a template ID
+    
+    // Keep-alive check interval (milliseconds)
+    keepAliveInterval: 30000, // Check every 30 seconds
+    
+    // Auto-reconnect if connection lost
+    autoReconnect: true,
   },
   
   // AI Model Configuration

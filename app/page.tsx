@@ -348,6 +348,39 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showHomeScreen]);
+  // Keep-alive mechanism to prevent sandbox from closing
+  useEffect(() => {
+    if (!sandboxData?.sandboxId) return;
+
+    console.log('[keep-alive] Starting keep-alive mechanism for sandbox:', sandboxData.sandboxId);
+
+    // Check sandbox status every 30 seconds to keep it alive
+    const keepAliveInterval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/sandbox-status');
+        const data = await response.json();
+        
+        if (data.active && data.healthy) {
+          console.log('[keep-alive] Sandbox is healthy');
+          updateStatus('Sandbox active', true);
+        } else if (data.active && !data.healthy) {
+          console.warn('[keep-alive] Sandbox is not responding, attempting to recover...');
+          updateStatus('Reconnecting...', false);
+        } else {
+          console.error('[keep-alive] Sandbox is not active');
+          updateStatus('Sandbox disconnected', false);
+        }
+      } catch (error) {
+        console.error('[keep-alive] Health check failed:', error);
+      }
+    }, 30000); // Every 30 seconds
+
+    return () => {
+      console.log('[keep-alive] Stopping keep-alive mechanism');
+      clearInterval(keepAliveInterval);
+    };
+  }, [sandboxData?.sandboxId]);
+
   useEffect(() => {
     // Only check sandbox status on mount and when user navigates to the page
     checkSandboxStatus();
@@ -2722,7 +2755,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
   <div className="text-center">
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center text-white font-bold tracking-tight leading-[1.1] animate-[fadeIn_0.8s_ease-out] px-4">
                   <span className="block sm:inline">Build something </span>
-                    <span className="bg-gradient-to-r from-gray-300 via-white to-gray-400 bg-clip-text text-transparent whitespace-nowrap">
+                    <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent whitespace-nowrap animate-gradient-x">
                       unforgettable with Youssef AI
                     </span>
                 </h1>
@@ -2921,8 +2954,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
         </div>
       )}
       
-      {/* Main Header */}
-      <div className={`px-2 sm:px-4 py-3 sm:py-4 border-b ${theme.border_color} flex items-center justify-between ${theme.bg_card}`}>
+      {/* Main Header with gradient */}
+      <div className={`px-2 sm:px-4 py-3 sm:py-4 border-b ${theme.border_color} flex items-center justify-between ${theme.bg_card} bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900`}>
         <div className="flex items-center gap-2 sm:gap-4">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <div className={`relative w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden border ${theme.border_color}`}>
@@ -2967,7 +3000,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             onClick={() => setIsDarkMode(!isDarkMode)}
             size="sm"
             title="Toggle Theme"
-            className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200 hidden sm:flex"
+            className="bg-gradient-to-r from-gray-800 to-gray-700 text-white hover:from-gray-700 hover:to-gray-600 transition-all duration-200 hidden sm:flex shadow-lg hover:shadow-xl"
           >
             {isDarkMode ? <FaSun /> : <FaMoon />}
           </Button>
@@ -2976,7 +3009,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             onClick={() => setShowApiKeysSettings(true)}
             size="sm"
             title="API Keys"
-            className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200 p-2 sm:p-2.5"
+            className="bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-500 hover:to-purple-400 transition-all duration-200 p-2 sm:p-2.5 shadow-lg hover:shadow-purple-500/50"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
               <path d="M12 1.5L21.5 6.5V17.5L12 22.5L2.5 17.5V6.5L12 1.5Z" />
@@ -2991,7 +3024,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             onClick={() => createSandbox()}
             size="sm"
             title="Create new sandbox"
-            className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200 hidden md:flex p-2 sm:p-2.5"
+            className="bg-gradient-to-r from-green-600 to-green-500 text-white hover:from-green-500 hover:to-green-400 transition-all duration-200 hidden md:flex p-2 sm:p-2.5 shadow-lg hover:shadow-green-500/50"
           >
          
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -3006,7 +3039,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             title="Re-apply last generation"
             disabled={!conversationContext.lastGeneratedCode ||
   !sandboxData}
-            className={`bg-gray-800 text-white hover:bg-gray-700 disabled:${theme.code_bg}/50 transition-colors duration-200 hidden lg:flex p-2 sm:p-2.5`}
+            className={`bg-gradient-to-r from-orange-600 to-orange-500 text-white hover:from-orange-500 hover:to-orange-400 disabled:from-gray-700 disabled:to-gray-600 transition-all duration-200 hidden lg:flex p-2 sm:p-2.5 shadow-lg hover:shadow-orange-500/50`}
           >
             <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -3081,18 +3114,18 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   <div className={`flex ${msg.type === 'user' ?
   'justify-end' : 'justify-start'} mb-1`}>
                     <div className="block">
-                      <div className={`block rounded-[10px] px-3 sm:px-4 py-2 text-sm sm:text-base ${
+                      <div className={`block rounded-[10px] px-3 sm:px-4 py-2 text-sm sm:text-base shadow-lg ${
                         msg.type === 'user' ?
-  `bg-blue-600 text-white ml-auto max-w-[85%] sm:max-w-[80%]` :
+  `bg-gradient-to-r from-blue-600 to-blue-500 text-white ml-auto max-w-[85%] sm:max-w-[80%]` :
                         msg.type === 'ai' ?
-  `bg-gray-700 text-white mr-auto max-w-[85%] sm:max-w-[80%]` :
+  `bg-gradient-to-r from-gray-700 to-gray-600 text-white mr-auto max-w-[85%] sm:max-w-[80%]` :
                         msg.type === 'system' ?
-  `bg-gray-800 text-gray-300 text-xs sm:text-sm` :
+  `bg-gray-800/80 backdrop-blur-sm text-gray-300 text-xs sm:text-sm border border-gray-700/50` :
                         msg.type === 'command' ?
-  `bg-gray-800 text-gray-300 font-mono text-xs sm:text-sm` :
+  `bg-gray-900/80 backdrop-blur-sm text-gray-300 font-mono text-xs sm:text-sm border border-gray-700/50` :
                         msg.type === 'error' ?
-  'bg-red-800 text-red-100 text-xs sm:text-sm border border-red-700' :
-  `bg-gray-800 text-gray-300 text-xs sm:text-sm`
+  'bg-red-900/80 backdrop-blur-sm text-red-100 text-xs sm:text-sm border border-red-700/50' :
+  `bg-gray-800/80 backdrop-blur-sm text-gray-300 text-xs sm:text-sm border border-gray-700/50`
                       }`}>
                     {msg.type === 'command' ?
   (
