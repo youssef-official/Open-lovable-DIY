@@ -2315,22 +2315,53 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       return;
     }
 
-    if (!sandboxData || Object.keys(sandboxFiles).length === 0) {
-      addChatMessage('No files to deploy. Generate or edit some code first!', 'system');
+    if (!sandboxData) {
+      addChatMessage('Please create a sandbox first!', 'system');
       return;
     }
 
     setDeploymentLoading(true);
-    addChatMessage('Publishing your app to Netlify...', 'system');
+    addChatMessage('📦 Preparing files for deployment...', 'system');
 
     try {
+      // Fetch latest files from sandbox before deploying
+      console.log('[deploy] Fetching latest files from sandbox...');
+      const filesResponse = await fetch('/api/get-sandbox-files', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!filesResponse.ok) {
+        throw new Error('Failed to fetch sandbox files');
+      }
+
+      const filesData = await filesResponse.json();
+      
+      if (!filesData.success || !filesData.files) {
+        throw new Error('No files available in sandbox');
+      }
+
+      const filesToDeploy = filesData.files;
+      const fileCount = Object.keys(filesToDeploy).length;
+
+      console.log('[deploy] Files to deploy:', fileCount, 'files');
+      console.log('[deploy] File list:', Object.keys(filesToDeploy));
+
+      if (fileCount === 0) {
+        addChatMessage('No files found in sandbox. Please generate or edit some code first!', 'system');
+        setDeploymentLoading(false);
+        return;
+      }
+
+      addChatMessage(`📝 Found ${fileCount} files, uploading to Netlify...`, 'system');
+
       const siteName = `youssef-ai-${Date.now()}`;
       const response = await fetch('/api/netlify/deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           siteName,
-          files: sandboxFiles,
+          files: filesToDeploy,
         }),
       });
 
@@ -2338,8 +2369,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
       if (response.ok && data.success) {
         setDeploymentUrl(data.url);
+        // Update local sandboxFiles state
+        setSandboxFiles(filesToDeploy);
+        
         addChatMessage(
-          `✅ Successfully published to Netlify!\n\n🌐 Live URL: ${data.url}\n\nYour app is now live on the internet!`,
+          `✅ Successfully published to Netlify!\n\n🌐 Live URL: ${data.url}\n\n🎉 Your app is now live on the internet! Share this link with anyone.`,
           'system'
         );
       } else {
