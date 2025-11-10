@@ -1855,19 +1855,27 @@ Tip: I automatically detect and install npm packages from your code imports (lik
           
                   }));
                 } else if (data.type === 'conversation') {
-                  // Add conversational text to chat only if it's not code
-                  let text = data.text ||
-  '';
+                  // DON'T add code to chat - only show in code editor
+                  // This prevents code from appearing in chat messages
+                  let text = data.text || '';
                   
-                  // Remove package tags from the text
+                  // Remove package tags and XML tags
                   text = text.replace(/<package>[^<]*<\/package>/g, '');
-  text = text.replace(/<packages>[^<]*<\/packages>/g, '');
+                  text = text.replace(/<packages>[^<]*<\/packages>/g, '');
+                  text = text.replace(/<file[^>]*>[\s\S]*?<\/file>/g, '');
                   
-                  // Filter out any XML tags and file content that slipped through
-                  if (!text.includes('<file') && !text.includes('import React') && 
-                      !text.includes('export default') && !text.includes('className=') &&
-                      text.trim().length > 0) {
-          
+                  // STRICT filter: Only allow non-code conversational text
+                  // Don't show if it contains ANY code-like content
+                  const hasCodeContent = text.includes('<file') || 
+                                       text.includes('import ') || 
+                                       text.includes('export ') || 
+                                       text.includes('className') ||
+                                       text.includes('function ') ||
+                                       text.includes('const ') ||
+                                       text.includes('return (') ||
+                                       text.includes('```');
+                  
+                  if (!hasCodeContent && text.trim().length > 0 && text.trim().length < 500) {
                       addChatMessage(text.trim(), 'ai');
   }
                 } else if (data.type === 'stream' && data.raw) {
@@ -2706,44 +2714,59 @@ Focus on creating a beautiful, functional website that matches the user's vision
                 </div>
               </form>
 
-                {session?.user?.id && (
-                  <div className="mt-10 max-w-3xl mx-auto px-4">
-                    <div className="text-left text-white/70 text-[0.7rem] uppercase tracking-[0.4em] mb-3">
-                      Recent projects
+                  {session?.user?.id && (
+                  <div className="mt-8 sm:mt-10 max-w-3xl mx-auto px-4">
+                    <div className="text-left text-white/70 text-[0.65rem] sm:text-[0.7rem] uppercase tracking-[0.3em] sm:tracking-[0.4em] mb-2 sm:mb-3 font-medium">
+                      📁 Recent Projects
                     </div>
                     {projectsLoading ? (
-                      <p className="text-white/70 text-sm">Loading your projects…</p>
+                      <div className="flex items-center gap-2 text-white/70 text-sm">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Loading projects...</span>
+                      </div>
                     ) : projects.length === 0 ? (
-                      <p className="text-white/60 text-sm">
+                      <p className="text-white/60 text-xs sm:text-sm py-3">
                         No saved projects yet. Describe an idea above to start building.
                       </p>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                         {projects.map(project => (
                           <div
                             key={project.id}
-                            className={`relative group rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 ${activeProjectId === project.id ? 'ring-2 ring-white/70' : ''}`}
+                            className={`relative group rounded-lg sm:rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 ${activeProjectId === project.id ? 'ring-2 ring-blue-400/60 bg-white/10' : ''}`}
                           >
                             <button
                               type="button"
                               onClick={() => handleProjectSelect(project)}
-                              className="w-full text-left px-4 py-3"
+                              className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3"
                             >
-                              <div className="text-white font-semibold truncate pr-8">
-                                {project.name}
-                              </div>
-                              <div className="text-white/60 text-xs mt-1 line-clamp-2">
-                                {project.last_prompt || 'No prompt yet'}
-                              </div>
-                              <div className="text-white/40 text-xs mt-2">
-                                {formatRelativeTime(project.updated_at)}
+                              <div className="flex items-start gap-2">
+                                <div className="flex-shrink-0 mt-0.5">
+                                  <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                  </svg>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-white font-semibold text-sm sm:text-base truncate pr-8">
+                                    {project.name}
+                                  </div>
+                                  <div className="text-white/60 text-[11px] sm:text-xs mt-1 line-clamp-2">
+                                    {project.last_prompt || 'No description'}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 text-white/40 text-[10px] sm:text-xs mt-1.5">
+                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    {formatRelativeTime(project.updated_at)}
+                                  </div>
+                                </div>
                               </div>
                             </button>
                             <button
                               type="button"
                               onClick={async (e) => {
                                 e.stopPropagation();
-                                if (!confirm(`Delete "${project.name}"?`)) return;
+                                if (!confirm(`\u274c Delete "${project.name}"?\n\nThis action cannot be undone.`)) return;
                                 try {
                                   const response = await fetch(`/api/projects?projectId=${project.id}`, {
                                     method: 'DELETE',
@@ -2753,15 +2776,18 @@ Focus on creating a beautiful, functional website that matches the user's vision
                                     if (activeProjectId === project.id) {
                                       setActiveProjectId(null);
                                     }
+                                    addChatMessage(`Project "${project.name}" deleted successfully.`, 'system');
                                   }
                                 } catch (error) {
                                   console.error('Failed to delete project:', error);
+                                  addChatMessage('Failed to delete project. Please try again.', 'system');
                                 }
                               }}
-                              className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all duration-200"
+                              className="absolute top-2 sm:top-3 right-2 sm:right-3 opacity-0 group-hover:opacity-100 touch-manipulation p-1.5 sm:p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30 text-red-400 hover:text-red-300 transition-all duration-200 shadow-lg"
                               title="Delete project"
+                              aria-label="Delete project"
                             >
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>

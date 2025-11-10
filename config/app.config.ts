@@ -28,38 +28,18 @@ export const appConfig = {
   // AI Model Configuration
   ai: {
     // Default AI model
-    defaultModel: 'deepseek/deepseek-chat:free',
+    defaultModel: 'minimax/minimax-m2:free',
     
     // Available models
     availableModels: [
-      'deepseek/deepseek-chat:free',
-      'moonshotai/kimi-k2-instruct',
-      'anthropic/claude-sonnet-4-20250514',
-      'google/gemini-2.5-pro',
-      'meta-llama/llama-3.1-8b-instruct:free',
-      'mistralai/mistral-7b-instruct:free',
-      'qwen/qwen2.5-coder-32b-instruct:free',
       'minimax/minimax-m2:free',
-      'tng/deepseek-r1t2-chimera:free',
-      'tng/deepseek-r1t-chimera:free',
-      'z-ai/glm-4-5-air:free',
-      'deepseek/deepseek-v3-0324:free'
+      'mistralai/mistral-7b-instruct:free'
     ],
     
     // Model display names
     modelDisplayNames: {
-      'deepseek/deepseek-chat:free': 'DeepSeek Chat (Free)',
-      'moonshotai/kimi-k2-instruct': 'Kimi K2 Instruct',
-      'anthropic/claude-sonnet-4-20250514': 'Sonnet 4',
-      'google/gemini-2.5-pro': 'Gemini 2.5 Pro',
-      'meta-llama/llama-3.1-8b-instruct:free': 'Llama 3.1 8B Instruct (Free)',
-      'mistralai/mistral-7b-instruct:free': 'Mistral 7B Instruct (Free)',
-      'qwen/qwen2.5-coder-32b-instruct:free': 'Qwen 2.5 Coder 32B (Free)',
-      'minimax/minimax-m2:free': 'MiniMax M2 (Free)',
-      'tng/deepseek-r1t2-chimera:free': 'DeepSeek R1T2 Chimera (Free)',
-      'z-ai/glm-4-5-air:free': 'GLM 4.5 Air (Free)',
-      'tng/deepseek-r1t-chimera:free': 'DeepSeek R1T Chimera (Free)',
-      'deepseek/deepseek-v3-0324:free': 'DeepSeek V3 0324 (Free)'
+      'minimax/minimax-m2:free': 'MiniMax M2',
+      'mistralai/mistral-7b-instruct:free': 'Mistral 7B Instruct'
     },
     
     // Temperature settings for non-reasoning models
