@@ -199,6 +199,12 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
     currentProject: '',
     lastGeneratedCode: undefined
   });
+
+  // Netlify deployment states
+  const [netlifyConnected, setNetlifyConnected] = useState(false);
+  const [deploymentLoading, setDeploymentLoading] = useState(false);
+  const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   const codeDisplayRef = useRef<HTMLDivElement>(null);
@@ -296,6 +302,36 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
   }, []);
   // Run only on mount
   
+  // Check for Netlify connection status
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('netlify_connected') === 'true') {
+      setNetlifyConnected(true);
+      addChatMessage('✅ Successfully connected to Netlify! You can now publish your apps.', 'system');
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    } else if (params.get('netlify_error')) {
+      addChatMessage(`❌ Failed to connect to Netlify: ${params.get('netlify_error')}`, 'system');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    // Check if user already has Netlify token in cookies
+    const checkNetlifyConnection = async () => {
+      try {
+        const response = await fetch('/api/netlify/deploy', {
+          method: 'HEAD',
+        });
+        // If we get a non-401, user is connected
+        if (response.status !== 401) {
+          setNetlifyConnected(true);
+        }
+      } catch (error) {
+        // Ignore errors
+      }
+    };
+    checkNetlifyConnection();
+  }, []);
+
   useEffect(() => {
     // Handle Escape key for home screen
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -2233,6 +2269,57 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       setLoading(false);
     }
   };
+
+  // Netlify deployment functions
+  const connectNetlify = () => {
+    window.location.href = '/api/netlify/auth';
+  };
+
+  const deployToNetlify = async () => {
+    if (!netlifyConnected) {
+      addChatMessage('Please connect your Netlify account first!', 'system');
+      connectNetlify();
+      return;
+    }
+
+    if (!sandboxData || Object.keys(sandboxFiles).length === 0) {
+      addChatMessage('No files to deploy. Generate or edit some code first!', 'system');
+      return;
+    }
+
+    setDeploymentLoading(true);
+    addChatMessage('Publishing your app to Netlify...', 'system');
+
+    try {
+      const siteName = `youssef-ai-${Date.now()}`;
+      const response = await fetch('/api/netlify/deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          siteName,
+          files: sandboxFiles,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setDeploymentUrl(data.url);
+        addChatMessage(
+          `✅ Successfully published to Netlify!\n\n🌐 Live URL: ${data.url}\n\nYour app is now live on the internet!`,
+          'system'
+        );
+      } else {
+        throw new Error(data.error || 'Deployment failed');
+      }
+    } catch (error: any) {
+      addChatMessage(`❌ Failed to publish: ${error.message}`, 'system');
+      console.error('[netlify-deploy] Error:', error);
+    } finally {
+      setDeploymentLoading(false);
+    }
+  };
+
   const reapplyLastGeneration = async () => {
     if (!conversationContext.lastGeneratedCode) {
       addChatMessage('No previous generation to re-apply', 'system');
@@ -2938,6 +3025,30 @@ Focus on creating a beautiful, functional website that matches the user's vision
           
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
             </svg>
+          </Button>
+          <Button 
+            variant="code"
+            onClick={netlifyConnected ? deployToNetlify : connectNetlify}
+            disabled={deploymentLoading}
+            size="sm"
+            title={netlifyConnected ? "Publish to Netlify" : "Connect Netlify"}
+            className={`${netlifyConnected ? 'bg-[#00C7B7]' : 'bg-gray-800'} text-white hover:opacity-90 transition-all duration-200 hidden lg:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2`}
+          >
+            {deploymentLoading ? (
+              <svg className="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12.001 2L2.001 19.5h20L12.001 2z"/>
+                </svg>
+                <span className="text-xs sm:text-sm font-medium hidden xl:inline">
+                  {netlifyConnected ? 'Publish' : 'Connect'}
+                </span>
+              </>
+            )}
           </Button>
           <div className={`hidden sm:inline-flex items-center gap-2 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-900'} px-2 sm:px-3 py-1 sm:py-1.5 rounded-[10px] text-xs sm:text-sm font-medium [box-shadow:none]`}>
             <span id="status-text">{status.text}</span>
