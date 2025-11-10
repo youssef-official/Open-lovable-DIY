@@ -95,6 +95,40 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function DELETE(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    return unauthorizedResponse();
+  }
+
+  try {
+    const { searchParams } = request.nextUrl;
+    const projectId = searchParams.get('projectId');
+
+    if (!projectId) {
+      return NextResponse.json(
+        { success: false, error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
+
+    await ProjectRepository.deleteProject(userId, projectId);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Project deleted successfully',
+    });
+  } catch (error) {
+    console.error('[projects] DELETE error:', error);
+    return NextResponse.json(
+      { success: false, error: (error as Error).message },
+      { status: 500 }
+    );
+  }
+}
+
 function generateProjectNameFromPrompt(prompt: string) {
   const sentence = prompt.split(/[.!?]/)[0] || prompt;
   const truncated = sentence.trim().slice(0, 60);

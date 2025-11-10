@@ -13,7 +13,6 @@ import {
   FiFile,
   FiChevronRight,
   FiChevronDown,
-  FiGithub,
   BsFolderFill,
   BsFolder2Open,
   SiJavascript,
@@ -1158,14 +1157,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       return (
         /* Generation Tab Content */
         <div className="absolute inset-0 flex overflow-hidden">
-          {/* File Explorer - Hide during edits */}
+          {/* File Explorer - Hide during edits and collapsible on mobile */}
           {!generationProgress.isEdit && (
-            <div className={`w-[250px] border-r ${theme.border_color} ${theme.bg_card} 
-  flex flex-col flex-shrink-0 ${theme.text_main}`}>
-            <div className={`p-3 bg-gray-800 text-white flex items-center justify-between`}>
+            <div className={`hidden md:flex w-[220px] lg:w-[250px] border-r ${theme.border_color} ${theme.bg_card} 
+  flex-col flex-shrink-0 ${theme.text_main}`}>
+            <div className={`p-2.5 lg:p-3 bg-gray-800/50 backdrop-blur-sm text-white flex items-center justify-between border-b border-gray-700/50`}>
               <div className="flex items-center gap-2">
-                <BsFolderFill className="w-4 h-4" />
-                <span className="text-sm font-medium">Explorer</span>
+                <BsFolderFill className="w-3.5 h-3.5 lg:w-4 lg:h-4 text-blue-400" />
+                <span className="text-xs lg:text-sm font-semibold tracking-wide">FILES</span>
               </div>
             
   </div>
@@ -1176,23 +1175,23 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                 {/* Root app folder */}
                 <div 
      
-                  className={`flex items-center gap-1 py-1 px-2 hover:bg-gray-800 rounded cursor-pointer ${theme.text_main}`}
+                  className={`flex items-center gap-1.5 py-1.5 px-2 hover:bg-gray-800/70 rounded-md cursor-pointer transition-colors group ${theme.text_main}`}
                   onClick={() => toggleFolder('app')}
                 >
                   {expandedFolders.has('app') ?
   (
-                    <FiChevronDown className={`w-4 h-4 text-gray-400`} />
+                    <FiChevronDown className={`w-3.5 h-3.5 text-gray-500 group-hover:text-gray-400`} />
                   ) : (
-                    <FiChevronRight className={`w-4 h-4 text-gray-400`} />
+                    <FiChevronRight className={`w-3.5 h-3.5 text-gray-500 group-hover:text-gray-400`} />
                   )}
               
                   {expandedFolders.has('app') ? (
-                    <BsFolder2Open className="w-4 h-4 text-blue-400" />
+                    <BsFolder2Open className="w-3.5 h-3.5 text-blue-400" />
                   ) : (
-                    <BsFolderFill className="w-4 h-4 text-blue-400" />
+                    <BsFolderFill className="w-3.5 h-3.5 text-blue-500" />
                   )}
         
-                  <span className={`font-medium ${theme.text_main}`}>app</span>
+                  <span className={`text-xs lg:text-sm font-medium ${theme.text_main} group-hover:text-white`}>app</span>
                 </div>
                 
                 {expandedFolders.has('app') && (
@@ -1229,24 +1228,24 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                           {dir && (
                             <div 
             
-                              className={`flex items-center gap-1 py-1 px-2 hover:${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} rounded cursor-pointer ${theme.text_main}`}
+                              className={`flex items-center gap-1.5 py-1.5 px-2 hover:bg-gray-800/70 rounded-md cursor-pointer transition-colors group ${theme.text_main}`}
                               onClick={() => toggleFolder(dir)}
                             >
               
                               {expandedFolders.has(dir) ? (
-                                <FiChevronDown className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                                <FiChevronDown className={`w-3 h-3 ${isDarkMode ? 'text-gray-500 group-hover:text-gray-400' : 'text-gray-600'}`} />
                               ) : (
               
-                                <FiChevronRight className={`w-4 h-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                                <FiChevronRight className={`w-3 h-3 ${isDarkMode ? 'text-gray-500 group-hover:text-gray-400' : 'text-gray-600'}`} />
                               )}
                               {expandedFolders.has(dir) ? (
                 
-                                <BsFolder2Open className="w-4 h-4 text-yellow-500" />
+                                <BsFolder2Open className="w-3.5 h-3.5 text-yellow-400" />
                               ) : (
-                                <BsFolderFill className="w-4 h-4 text-yellow-500" />
+                                <BsFolderFill className="w-3.5 h-3.5 text-yellow-500" />
             
                               )}
-                              <span className={`${theme.text_main}`}>{dir.split('/').pop()}</span>
+                              <span className={`text-xs lg:text-sm ${theme.text_main} group-hover:text-white`}>{dir.split('/').pop()}</span>
                             </div>
                        
                           )}
@@ -1263,26 +1262,29 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                                   <div 
                                     key={fullPath} 
                  
-                                    className={`flex items-center gap-2 py-1 px-2 rounded cursor-pointer transition-all ${
+                                    className={`flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer transition-all group ${
                                       isSelected 
                                   
-  ? 'bg-blue-600 text-white' 
-                                        : `${theme.text_main} hover:${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'}`
+  ? 'bg-blue-600/90 text-white shadow-sm' 
+                                        : `${theme.text_main} hover:bg-gray-800/70`
                                     }`}
              
                                     onClick={() => handleFileClick(fullPath)}
                                   >
-                                    {getFileIcon(fileInfo.name)}
+                                    <div className={`flex-shrink-0 ${isSelected ? '' : 'group-hover:scale-110 transition-transform'}`}>
+                                      {getFileIcon(fileInfo.name)}
+                                    </div>
      
-                                     <span className={`text-xs flex items-center gap-1 ${isSelected ?
-  'font-medium' : ''}`}>
-                                      {fileInfo.name}
+                                     <span className={`text-xs flex-1 flex items-center gap-1.5 truncate ${
+                                       isSelected ? 'font-semibold' : 'font-normal group-hover:font-medium'
+                                     }`}>
+                                      <span className="truncate">{fileInfo.name}</span>
                                       {fileInfo.edited && (
                     
-                                         <span className={`text-[10px] px-1 rounded ${
-                                          isSelected ? 'bg-blue-400' : 'bg-orange-500 text-white'
+                                         <span className={`flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded-full font-semibold ${
+                                          isSelected ? 'bg-blue-400/30 text-blue-100' : 'bg-orange-500/90 text-white'
                              
-  }`}>✓</span>
+  }`}>M</span>
                                       )}
                                     </span>
                
@@ -1340,33 +1342,37 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             )}
             
             {/* Live Code Display */}
-            <div className="flex-1 rounded-lg p-6 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex-1 p-2 sm:p-4 lg:p-6 flex flex-col min-h-0 overflow-hidden">
       
               <div className="flex-1 overflow-y-auto min-h-0 scrollbar-hide" ref={codeDisplayRef}>
                 {/* Show selected file if one is selected */}
                 {selectedFile ?
   (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <div className={`${theme.code_bg} border ${theme.border_color} rounded-lg overflow-hidden shadow-sm`}>
-                      <div className="px-4 py-2 bg-gray-800 text-white flex items-center justify-between">
+                    <div className={`${theme.code_bg} border ${theme.border_color} rounded-xl overflow-hidden shadow-lg`}>
+                      {/* File Tab */}
+                      <div className="px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-800/90 backdrop-blur-sm border-b border-gray-700/50 text-white flex items-center justify-between">
                        
-                        <div className="flex items-center gap-2">
-                          {getFileIcon(selectedFile)}
-                          <span className="font-mono text-sm">{selectedFile}</span>
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <div className="flex-shrink-0">{getFileIcon(selectedFile)}</div>
+                          <span className="font-mono text-xs sm:text-sm truncate font-medium">{selectedFile}</span>
+                          <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" title="Active file" />
                         </div>
                   
                         <button
                           onClick={() => setSelectedFile(null)}
-                          className="hover:bg-gray-700/50 p-1 rounded transition-colors"
+                          className="flex-shrink-0 hover:bg-gray-700/70 p-1.5 rounded-md transition-all hover:scale-110 ml-2"
+                          title="Close file"
                         >
              
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                 
                         </button>
                       </div>
-                      <div className={`bg-gray-950 border ${theme.border_color} rounded`}>
+                      {/* Code Content */}
+                      <div className={`bg-gray-950`}>
                         <SyntaxHighlighter
                     
                           language={(() => {
@@ -1377,6 +1383,16 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                             return 'jsx';
   })()}
                           style={vscDarkPlus}
+                          showLineNumbers={true}
+                          wrapLines={true}
+                          lineNumberStyle={{
+                            minWidth: '3em',
+                            paddingRight: '1em',
+                            color: '#6B7280',
+                            textAlign: 'right',
+                            userSelect: 'none',
+                            fontSize: '11px'
+                          }}
                           customStyle={{
                             margin: 0,
                    
@@ -1384,8 +1400,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                             fontSize: '0.875rem',
                             background: 'transparent',
                           }}
-      
-                          showLineNumbers={true}
                         >
                           {(() => {
                             
@@ -2602,15 +2616,6 @@ Focus on creating a beautiful, functional website that matches the user's vision
 
               <div className="flex items-center gap-3 sm:gap-4">
                 <UserButton />
-                <a
-                  href="https://github.com/youssef-official/Open-lovable-DIY.git"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 sm:gap-3 bg-white/10 backdrop-blur-sm text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-sm sm:text-base font-semibold border border-white/30 hover:bg-white/20 transition-all duration-300 hover:scale-105 hover:shadow-xl min-w-[100px] sm:min-w-[120px] justify-center"
-                >
-                  <FiGithub className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span>GitHub</span>
-                </a>
           </div>
             </div>
           
@@ -2715,22 +2720,52 @@ Focus on creating a beautiful, functional website that matches the user's vision
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {projects.map(project => (
-                          <button
+                          <div
                             key={project.id}
-                            type="button"
-                            onClick={() => handleProjectSelect(project)}
-                            className={`group text-left px-4 py-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 ${activeProjectId === project.id ? 'ring-2 ring-white/70' : ''}`}
+                            className={`relative group rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 ${activeProjectId === project.id ? 'ring-2 ring-white/70' : ''}`}
                           >
-                            <div className="text-white font-semibold truncate">
-                              {project.name}
-                            </div>
-                            <div className="text-white/60 text-xs mt-1 line-clamp-2">
-                              {project.last_prompt || 'No prompt yet'}
-                            </div>
-                            <div className="text-white/40 text-xs mt-2">
-                              {formatRelativeTime(project.updated_at)}
-                            </div>
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => handleProjectSelect(project)}
+                              className="w-full text-left px-4 py-3"
+                            >
+                              <div className="text-white font-semibold truncate pr-8">
+                                {project.name}
+                              </div>
+                              <div className="text-white/60 text-xs mt-1 line-clamp-2">
+                                {project.last_prompt || 'No prompt yet'}
+                              </div>
+                              <div className="text-white/40 text-xs mt-2">
+                                {formatRelativeTime(project.updated_at)}
+                              </div>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!confirm(`Delete "${project.name}"?`)) return;
+                                try {
+                                  const response = await fetch(`/api/projects?projectId=${project.id}`, {
+                                    method: 'DELETE',
+                                  });
+                                  if (response.ok) {
+                                    setProjects(prev => prev.filter(p => p.id !== project.id));
+                                    if (activeProjectId === project.id) {
+                                      setActiveProjectId(null);
+                                    }
+                                  }
+                                } catch (error) {
+                                  console.error('Failed to delete project:', error);
+                                }
+                              }}
+                              className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-all duration-200"
+                              title="Delete project"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
                         ))}
                       </div>
                     )}
