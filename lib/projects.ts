@@ -26,7 +26,7 @@ export class ProjectRepository {
     const now = new Date().toISOString();
 
     const { data, error } = await supabase
-      .from<ProjectRecord>('projects')
+      .from('projects')
       .insert({
         user_id: params.userId,
         name: params.name,
@@ -51,8 +51,8 @@ export class ProjectRepository {
     const supabase = ensureSupabase();
 
     const { data, error } = await supabase
-      .from<ProjectRecord>('projects')
-      .select('id, user_id, name, description, updated_at, last_opened_at, last_prompt, sandbox_id')
+      .from('projects')
+      .select('id, user_id, name, description, created_at, updated_at, last_opened_at, last_prompt, sandbox_id')
       .eq('user_id', userId)
       .order('last_opened_at', { ascending: false, nullsFirst: false })
       .limit(limit);
@@ -68,7 +68,7 @@ export class ProjectRepository {
     const supabase = ensureSupabase();
 
     const { data, error } = await supabase
-      .from<ProjectRecord>('projects')
+      .from('projects')
       .select('*')
       .eq('user_id', userId)
       .eq('id', projectId)
@@ -92,7 +92,7 @@ export class ProjectRepository {
     const now = new Date().toISOString();
 
     const { data, error } = await supabase
-      .from<ProjectRecord>('projects')
+      .from('projects')
       .update({
         last_state: params.state,
         last_prompt: params.lastPrompt || null,
@@ -133,7 +133,7 @@ export class ProjectRepository {
     }
 
     const { data, error } = await supabase
-      .from<ProjectRecord>('projects')
+      .from('projects')
       .update(payload)
       .eq('user_id', params.userId)
       .eq('id', params.projectId)

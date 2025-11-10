@@ -23,7 +23,7 @@ export class UserDatabase {
     const now = new Date().toISOString();
 
     const existingRes = await supabase
-      .from<User>('users')
+      .from('users')
       .select('*')
       .eq('google_id', userData.google_id)
       .maybeSingle();
@@ -34,7 +34,7 @@ export class UserDatabase {
 
     if (existingRes.data) {
       const updateRes = await supabase
-        .from<User>('users')
+        .from('users')
         .update({
           email: userData.email,
           name: userData.name || null,
@@ -55,7 +55,7 @@ export class UserDatabase {
     }
 
     const insertRes = await supabase
-      .from<User>('users')
+      .from('users')
       .insert({
         google_id: userData.google_id,
         email: userData.email,
@@ -83,7 +83,7 @@ export class UserDatabase {
     const supabase = ensureSupabase();
 
     const { data, error, count } = await supabase
-      .from<User>('users')
+      .from('users')
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1);
@@ -102,7 +102,7 @@ export class UserDatabase {
     const supabase = ensureSupabase();
 
     const { data, error } = await supabase
-      .from<User>('users')
+      .from('users')
       .select('*')
       .eq('google_id', googleId)
       .maybeSingle();
@@ -123,17 +123,17 @@ export class UserDatabase {
     const supabase = ensureSupabase();
 
     const [totalRes, todayRes, weekRes, monthRes] = await Promise.all([
-      supabase.from<User>('users').select('*', { count: 'exact', head: true }),
+      supabase.from('users').select('*', { count: 'exact', head: true }),
       supabase
-        .from<User>('users')
+        .from('users')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', startOfDay().toISOString()),
       supabase
-        .from<User>('users')
+        .from('users')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', daysAgoIso(7)),
       supabase
-        .from<User>('users')
+        .from('users')
         .select('*', { count: 'exact', head: true })
         .gte('created_at', daysAgoIso(30)),
     ]);
@@ -160,7 +160,7 @@ export class UserDatabase {
     try {
       ensureSupabase();
       const { error } = await ensureSupabase()
-        .from<User>('users')
+        .from('users')
         .select('id', { count: 'exact', head: true })
         .limit(1);
 

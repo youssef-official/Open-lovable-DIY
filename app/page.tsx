@@ -2006,8 +2006,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
                   }));
                 if (data.projectId) {
                   setActiveProjectId(data.projectId);
-                } else if (fallbackProjectId) {
-                  setActiveProjectId(fallbackProjectId);
                 }
   // Clear thinking state when generation completes
                   setGenerationProgress(prev => ({
