@@ -33,13 +33,22 @@ export function ApiKeysProvider({ children }: { children: React.ReactNode }) {
     // Fetch saved API keys from local storage
     const savedKeys = localStorage.getItem('apiKeys');
     if (savedKeys) {
-      setApiKeys(JSON.parse(savedKeys));
+      const keys = JSON.parse(savedKeys);
+      setApiKeys(keys);
+      // Expose on window for direct access
+      if (typeof window !== 'undefined') {
+        (window as any).apiKeys = keys;
+      }
     }
   }, []);
 
   const handleSetApiKeys = (keys: ApiKeys) => {
     setApiKeys(keys);
     localStorage.setItem('apiKeys', JSON.stringify(keys));
+    // Also expose on window for direct access
+    if (typeof window !== 'undefined') {
+      (window as any).apiKeys = keys;
+    }
   };
 
   const { hasRequiredKeys, missingKeys } = useMemo(() => {

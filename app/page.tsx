@@ -208,7 +208,10 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
 
   // Sandbox confirmation states
   const [showSandboxConfirmation, setShowSandboxConfirmation] = useState(false);
-  const [pendingGenerationRequest, setPendingGenerationRequest] = useState<(() => void) | null>(null);
+  const [pendingGenerationRequest, setPendingGenerationRequest] = useState<(() => Promise<void>) | null>(null);
+  const [pendingDescription, setPendingDescription] = useState<string | null>(null);
+  const [techStack, setTechStack] = useState<'html' | 'react' | 'nextjs' | 'angular'>('react');
+  const [showTechStackSelector, setShowTechStackSelector] = useState(false);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
@@ -641,7 +644,7 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
     }
   };
 
-  const createSandbox = async (fromHomeScreen = false) => {
+  const createSandbox = async (fromHomeScreen = false, autoStartDescription?: string) => {
     console.log('[createSandbox] Starting sandbox creation...');
   setLoading(true);
     setShowLoadingBackground(true);
@@ -698,9 +701,7 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
         }, 2000);
   // Only add welcome message if not coming from home screen
         if (!fromHomeScreen) {
-          addChatMessage(`Sandbox created! ID: ${data.sandboxId}. I now have context of your sandbox and can help you build your app. Just ask me to create components and I'll automatically apply them!
-
-Tip: I automatically detect and install npm packages from your code imports (like react-router-dom, axios, etc.)`, 'system');
+          addChatMessage(`✅ Sandbox created! ID: ${data.sandboxId}`, 'system');
   }
         
         setTimeout(() => {
@@ -708,6 +709,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             iframeRef.current.src = data.url;
           }
         }, 100);
+        
+        // If there's a description to auto-start, begin generation after sandbox is ready
+        if (autoStartDescription && fromHomeScreen) {
+          addChatMessage('🚀 Starting code generation...', 'system');
+          setTimeout(async () => {
+            await generateWebsiteFromDescription(autoStartDescription);
+          }, 2500); // Wait for sandbox to fully initialize
+        }
   } else {
         throw new Error(data.error || 'Unknown error');
   }
@@ -2527,24 +2536,55 @@ const generateWebsiteFromDescription = async (description: string, projectIdOver
 
   // Check if sandbox needs to be created
   if (!sandboxData) {
-    // Ask for user confirmation before creating sandbox
-    setShowSandboxConfirmation(true);
-    setPendingGenerationRequest(() => async () => {
-      addChatMessage('🚀 Creating sandbox for your website...', 'system');
-      await createSandbox(true);
-      // After sandbox created, regenerate
-      await generateWebsiteFromDescription(description, projectIdOverride);
-    });
+    // Store the description for later use
+    setPendingDescription(description);
     
-    addChatMessage('⚠️ A sandbox environment needs to be created to run your code. This will use E2B credits. Do you want to continue?', 'system');
-    return; // Stop and wait for confirmation
+    // Show tech stack selector first
+    setShowTechStackSelector(true);
+    return; // Stop and wait for tech stack selection
   }
 
   let sandboxPromise: Promise<void> | null = null;
 
-  addChatMessage('Generating your custom React application...', 'system');
+  // Generate message and prompt based on tech stack
+  const techName = techStack === 'html' ? 'HTML/CSS/JS' : techStack === 'react' ? 'React' : techStack === 'nextjs' ? 'Next.js' : 'Angular';
+  addChatMessage(`🚀 Generating your custom ${techName} application...`, 'system');
 
-  const generatePrompt = `Create a complete, modern React application based on this description:
+  let generatePrompt = '';
+  
+  if (techStack === 'html') {
+    generatePrompt = `Create a complete, modern website using pure HTML, CSS, and JavaScript based on this description:
+
+"${description}"
+
+REQUIREMENTS:
+1. Create a single HTML file (index.html) with embedded CSS and JavaScript
+2. Use semantic HTML5 elements (header, nav, main, section, footer, article)
+3. Build all sections and features described by the user
+4. Use modern, vanilla JavaScript for any interactivity (NO frameworks)
+5. Implement responsive design with mobile-first approach
+6. Include smooth animations and transitions
+7. Use CSS Grid and Flexbox for layouts
+8. Ensure excellent accessibility
+
+DESIGN GUIDELINES:
+- Modern color scheme with excellent contrast
+- Professional typography
+- Proper spacing and visual hierarchy
+- Smooth hover effects
+- Professional and polished look
+
+TECHNICAL REQUIREMENTS:
+- Single HTML file with <style> and <script> tags
+- Modern CSS features (variables, grid, flexbox)
+- Vanilla JavaScript for interactivity
+- Use CDN for any icons (Font Awesome, etc.)
+- Optimized for performance
+- Mobile responsive
+
+Focus on creating a fast, beautiful, functional website.`;
+  } else if (techStack === 'react') {
+    generatePrompt = `Create a complete, modern React application based on this description:
 
 "${description}"
 
@@ -2573,8 +2613,76 @@ TECHNICAL REQUIREMENTS:
 - Create ALL components that you reference in imports
 - Use placeholder images from Unsplash or similar services when needed
 - Include realistic content that matches the description
+- Use React hooks (useState, useEffect) where appropriate
 
 Focus on creating a beautiful, functional website that matches the user's vision.`;
+  } else if (techStack === 'nextjs') {
+    generatePrompt = `Create a complete, modern Next.js application based on this description:
+
+"${description}"
+
+REQUIREMENTS:
+1. Use Next.js App Router with proper page.tsx structure
+2. Create server and client components appropriately
+3. Build all sections and features described by the user
+4. Optimize for SEO with metadata and proper structure
+5. Use semantic HTML elements
+6. Implement responsive design with mobile-first approach
+7. Include hover effects and smooth transitions
+8. Use TypeScript for type safety
+9. Ensure excellent accessibility
+10. Use Next.js Image component for optimized images
+
+DESIGN GUIDELINES:
+- Modern color scheme with excellent contrast
+- Professional typography
+- Proper spacing and visual hierarchy
+- Smooth animations
+- Professional and polished look
+
+TECHNICAL REQUIREMENTS:
+- Use Tailwind CSS for ALL styling
+- Proper Next.js file structure
+- Server and client components
+- Optimized for performance
+- SEO-friendly
+- Use Unsplash for placeholder images
+
+Focus on creating a high-performance, SEO-optimized website.`;
+  } else {
+    // Angular
+    generatePrompt = `Create a complete, modern Angular application based on this description:
+
+"${description}"
+
+REQUIREMENTS:
+1. Create proper Angular components with TypeScript
+2. Use Angular CLI structure
+3. Build all sections and features described by the user
+4. Use Angular Material for UI components
+5. Implement responsive design
+6. Use Angular services for data management
+7. Include proper routing
+8. Ensure excellent accessibility
+9. Use TypeScript best practices
+10. Create reusable components
+
+DESIGN GUIDELINES:
+- Modern color scheme
+- Professional typography
+- Proper spacing
+- Smooth animations
+- Professional look
+
+TECHNICAL REQUIREMENTS:
+- Use Angular Material and Tailwind CSS
+- Proper component structure
+- Type-safe code
+- Optimized for performance
+- Use Unsplash for images
+
+Focus on creating an enterprise-grade application.`;
+  }
 
   setGenerationProgress(prev => ({
     ...prev,
@@ -3552,6 +3660,94 @@ Focus on creating a beautiful, functional website that matches the user's vision
 
 
 
+      {/* Tech Stack Selector Dialog */}
+      {showTechStackSelector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700 max-w-2xl w-full p-6 sm:p-8 animate-[fadeIn_0.3s_ease-out]">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <svg className="w-6 h-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white">اختر التكنولوجيا</h3>
+            </div>
+            
+            <p className="text-gray-300 mb-6 leading-relaxed">
+              اختر التكنولوجيا المناسبة لمشروعك:
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              {[
+                { id: 'html', name: 'HTML/CSS/JS', icon: '🌐', desc: 'الأسرع - موقع ثابت بسيط', color: 'orange', speed: '⚡⚡⚡' },
+                { id: 'react', name: 'React + Vite', icon: '⚛️', desc: 'تطبيق تفاعلي حديث', color: 'blue', speed: '⚡⚡' },
+                { id: 'nextjs', name: 'Next.js', icon: '▲', desc: 'SEO ممتاز + Server-Side', color: 'gray', speed: '⚡' },
+                { id: 'angular', name: 'Angular', icon: '🅰️', desc: 'تطبيقات مؤسسية', color: 'red', speed: '⚡' }
+              ].map((tech) => (
+                <button
+                  key={tech.id}
+                  onClick={() => setTechStack(tech.id as any)}
+                  className={`group relative p-5 rounded-xl border-2 transition-all duration-200 text-left ${
+                    techStack === tech.id
+                      ? `border-${tech.color}-500 bg-${tech.color}-500/10 shadow-lg shadow-${tech.color}-500/30`
+                      : 'border-gray-700 bg-gray-800/50 hover:border-gray-600 hover:bg-gray-800/80'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="text-3xl">{tech.icon}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-white font-bold text-lg">{tech.name}</h4>
+                        <span className="text-xs">{tech.speed}</span>
+                      </div>
+                      <p className="text-gray-400 text-sm">{tech.desc}</p>
+                    </div>
+                  </div>
+                  {techStack === tech.id && (
+                    <div className="absolute top-3 right-3">
+                      <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+            
+            <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4 mb-6">
+              <p className="text-sm text-purple-300">
+                💡 <strong>نصيحة:</strong> إذا كنت مبتدئ أو تريد موقع بسيط، اختر HTML/CSS/JS. 
+                إذا تريد تطبيق متقدم، اختر React.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowTechStackSelector(false);
+                  setPendingDescription(null);
+                  addChatMessage('❌ تم الإلغاء', 'system');
+                }}
+                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors duration-200"
+              >
+                ✖ إلغاء
+              </button>
+              <button
+                onClick={async () => {
+                  setShowTechStackSelector(false);
+                  setShowSandboxConfirmation(true);
+                }}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-purple-500/50"
+              >
+                ✓ متابعة
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sandbox Creation Confirmation Dialog */}
       {showSandboxConfirmation && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -3565,10 +3761,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
               <h3 className="text-xl font-bold text-white">تفعيل بيئة التطوير</h3>
             </div>
             
-            <p className="text-gray-300 mb-6 leading-relaxed">
-              سيتم إنشاء <span className="text-blue-400 font-semibold">Sandbox</span> جديدة لتشغيل مشروعك. 
-              هذه البيئة ستبقى نشطة لمدة <span className="text-green-400 font-semibold">ساعة كاملة</span> 
-              مع نظام Keep-Alive تلقائي.
+            <p className="text-gray-300 mb-4 leading-relaxed">
+              سيتم إنشاء <span className="text-blue-400 font-semibold">Sandbox</span> جديدة لتشغيل مشروعك باستخدام <span className="text-purple-400 font-semibold">{techStack === 'html' ? 'HTML/CSS/JS' : techStack === 'react' ? 'React' : techStack === 'nextjs' ? 'Next.js' : 'Angular'}</span>.
             </p>
             
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
@@ -3577,11 +3771,11 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-sm text-blue-300">
-                  ✨ البيئة محمية بنظام Keep-Alive ذكي يمنع الإغلاق التلقائي
+                  ✨ بيئة محمية بنظام Keep-Alive
                   <br/>
-                  🔄 مراقبة مستمرة كل 30 ثانية
+                  🔄 نشطة لمدة ساعة كاملة
                   <br/>
-                  💾 حفظ تلقائي لحالة المشروع
+                  💾 حفظ تلقائي للمشروع
                 </p>
               </div>
             </div>
@@ -3590,19 +3784,19 @@ Focus on creating a beautiful, functional website that matches the user's vision
               <button
                 onClick={() => {
                   setShowSandboxConfirmation(false);
-                  setPendingGenerationRequest(null);
-                  addChatMessage('❌ تم إلغاء إنشاء البيئة. يمكنك المحاولة مرة أخرى عندما تكون جاهزاً.', 'system');
+                  setShowTechStackSelector(true);
                 }}
                 className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors duration-200"
               >
-                ✖ إلغاء
+                ← رجوع
               </button>
               <button
                 onClick={async () => {
                   setShowSandboxConfirmation(false);
-                  if (pendingGenerationRequest) {
-                    await pendingGenerationRequest();
-                    setPendingGenerationRequest(null);
+                  if (pendingDescription) {
+                    addChatMessage(`🚀 إنشاء sandbox وبدء التوليد باستخدام ${techStack === 'html' ? 'HTML/CSS/JS' : techStack === 'react' ? 'React' : techStack === 'nextjs' ? 'Next.js' : 'Angular'}...`, 'system');
+                    await createSandbox(true, pendingDescription);
+                    setPendingDescription(null);
                   }
                 }}
                 className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-blue-500/50"
