@@ -3555,8 +3555,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
             
             <p className="text-gray-300 mb-6 leading-relaxed">
               سيتم إنشاء <span className="text-blue-400 font-semibold">Sandbox</span> جديدة لتشغيل مشروعك. 
-              هذه البيئة ستبقى نشطة لمدة <span className="text-green-400 font-semibold">ساعة واحدة</span> 
-              وستستخدم رصيد E2B الخاص بك.
+              هذه البيئة ستبقى نشطة لمدة <span className="text-green-400 font-semibold">ساعة كاملة</span> 
+              مع نظام Keep-Alive تلقائي.
             </p>
             
             <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
@@ -3565,7 +3565,11 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-sm text-blue-300">
-                  البيئة ستظل نشطة لمدة 60 دقيقة ولن يتم إغلاقها تلقائياً أثناء العمل.
+                  ✨ البيئة محمية بنظام Keep-Alive ذكي يمنع الإغلاق التلقائي
+                  <br/>
+                  🔄 مراقبة مستمرة كل 30 ثانية
+                  <br/>
+                  💾 حفظ تلقائي لحالة المشروع
                 </p>
               </div>
             </div>
