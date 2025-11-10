@@ -2335,12 +2335,20 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
 
     setDeploymentLoading(true);
     setDeploymentLogs([]);
-    addChatMessage('📦 Preparing files for deployment...', 'system');
-    setDeploymentLogs(prev => [...prev, '📦 Starting deployment process...']);
+    const logs: string[] = [];
+    
+    const addLog = (message: string) => {
+      logs.push(message);
+      setDeploymentLogs([...logs]);
+      console.log('[netlify-deploy]', message);
+    };
 
     try {
-      // Fetch latest files from sandbox before deploying
-      console.log('[deploy] Fetching latest files from sandbox...');
+      // Step 1: Fetch files
+      addLog('🚀 Starting deployment process...');
+      addChatMessage('🚀 Starting Netlify deployment...', 'system');
+      
+      addLog('📦 Fetching files from sandbox...');
       const filesResponse = await fetch('/api/get-sandbox-files', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
@@ -2359,22 +2367,29 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
       const filesToDeploy = filesData.files;
       const fileCount = Object.keys(filesToDeploy).length;
 
-      console.log('[deploy] Files to deploy:', fileCount, 'files');
-      console.log('[deploy] File list:', Object.keys(filesToDeploy));
-
       if (fileCount === 0) {
-        addChatMessage('No files found in sandbox. Please generate or edit some code first!', 'system');
-        setDeploymentLoading(false);
-        return;
+        throw new Error('No files found in sandbox. Please generate some code first!');
       }
 
-      setDeploymentLogs(prev => [...prev, `📝 Found ${fileCount} files`]);
-      addChatMessage(`📝 Found ${fileCount} files, uploading to Netlify...`, 'system');
+      addLog(`✅ Found ${fileCount} files to deploy`);
+      addChatMessage(`📝 Preparing ${fileCount} files...`, 'system');
 
-      setDeploymentLogs(prev => [...prev, '🌐 Creating Netlify site...']);
+      // List files
+      Object.keys(filesToDeploy).slice(0, 5).forEach(file => {
+        addLog(`   📄 ${file}`);
+      });
+      if (fileCount > 5) {
+        addLog(`   ... and ${fileCount - 5} more files`);
+      }
+
+      // Step 2: Create deployment
       const siteName = `youssef-ai-${Date.now()}`;
+      addLog(`🌐 Creating site: ${siteName}`);
+      addChatMessage('🌐 Creating Netlify site...', 'system');
       
-      setDeploymentLogs(prev => [...prev, '⬆️ Uploading files...']);
+      addLog('⬆️ Uploading files to Netlify...');
+      addChatMessage('⬆️ Uploading files...', 'system');
+
       const response = await fetch('/api/netlify/deploy', {
         method: 'POST',
         headers: { 
@@ -2390,40 +2405,41 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        setDeploymentUrl(data.url);
-        setSandboxFiles(filesToDeploy);
-        
-        const logs = [
-          '✅ Deployment successful!',
-          `🌐 Live at: ${data.url}`,
-          `📊 Site ID: ${data.siteId}`,
-          `🚀 Deployment ID: ${data.deploymentId}`
-        ];
-        
-        setDeploymentLogs(prev => [...prev, ...logs]);
-        
-        // Store deployment data for sharing
-        setDeploymentData({
-          url: data.url,
-          siteId: data.siteId,
-          deploymentId: data.deploymentId
-        });
-        
-        // Show success modal with sharing options
-        setShowDeploymentSuccess(true);
-        
-        addChatMessage(
-          `✅ Successfully published to Netlify!\n\n🌐 Live URL: ${data.url}\n\n🎉 Your app is now live on the internet! Share this link with anyone.\n\n📝 Deployment Logs:\n${logs.join('\n')}`,
-          'system'
-        );
-      } else {
-        setDeploymentLogs(prev => [...prev, `❌ Error: ${data.error}`]);
+      if (!response.ok || !data.success) {
+        addLog(`❌ Deployment failed: ${data.error}`);
         throw new Error(data.error || 'Deployment failed');
       }
+
+      // Step 3: Success!
+      addLog('✅ Files uploaded successfully!');
+      addLog('🔄 Processing deployment...');
+      addChatMessage('🔄 Netlify is building your site...', 'system');
+
+      addLog('🎉 Deployment completed!');
+      addLog(`🌐 Live URL: ${data.url}`);
+      addLog(`📊 Site ID: ${data.siteId}`);
+      addLog(`🚀 Deployment ID: ${data.deploymentId}`);
+      
+      setDeploymentUrl(data.url);
+      setSandboxFiles(filesToDeploy);
+      
+      // Store deployment data for sharing
+      setDeploymentData({
+        url: data.url,
+        siteId: data.siteId,
+        deploymentId: data.deploymentId
+      });
+      
+      // Show success modal with sharing options
+      setShowDeploymentSuccess(true);
+      
+      addChatMessage(
+        `✅ Successfully deployed to Netlify!\n\n🌐 Your site is live at:\n${data.url}\n\n🎉 Share this link with anyone!\n\n📝 Deployment Details:\n• Site ID: ${data.siteId}\n• Deployment ID: ${data.deploymentId}\n• Files deployed: ${fileCount}`,
+        'system'
+      );
     } catch (error: any) {
-      setDeploymentLogs(prev => [...prev, `❌ Failed: ${error.message}`]);
-      addChatMessage(`❌ Failed to publish: ${error.message}\n\n📝 Logs:\n${deploymentLogs.join('\n')}`, 'system');
+      addLog(`❌ Error: ${error.message}`);
+      addChatMessage(`❌ Deployment failed: ${error.message}\n\n📝 Check the logs for details.`, 'system');
       console.error('[netlify-deploy] Error:', error);
     } finally {
       setDeploymentLoading(false);
@@ -3676,6 +3692,31 @@ Focus on creating an enterprise-grade application.`;
 
 
 
+
+      {/* Deployment Logs Modal */}
+      {deploymentLoading && deploymentLogs.length > 0 && (
+        <div className="fixed bottom-4 right-4 z-50 max-w-md w-full">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
+                <h3 className="text-white font-semibold text-sm">Deploying to Netlify</h3>
+              </div>
+            </div>
+            <div className="p-4 max-h-64 overflow-y-auto bg-gray-950 font-mono text-xs">
+              {deploymentLogs.map((log, idx) => (
+                <div 
+                  key={idx} 
+                  className="text-gray-300 py-1 animate-[fadeIn_0.3s_ease-out]"
+                  style={{ animationDelay: `${idx * 0.05}s` }}
+                >
+                  {log}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Deployment Success Modal */}
       {showDeploymentSuccess && deploymentData && (
