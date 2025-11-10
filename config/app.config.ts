@@ -4,8 +4,8 @@
 export const appConfig = {
   // E2B Sandbox Configuration
   e2b: {
-    // Sandbox timeout in minutes (increased to prevent premature closing)
-    timeoutMinutes: 60,
+    // Sandbox timeout in minutes (increased to 2 hours for stability)
+    timeoutMinutes: 120,
     
     // Convert to milliseconds for E2B API
     get timeoutMs() {

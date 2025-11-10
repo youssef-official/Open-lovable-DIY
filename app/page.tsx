@@ -205,6 +205,10 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
   const [deploymentLoading, setDeploymentLoading] = useState(false);
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
 
+  // Sandbox confirmation states
+  const [showSandboxConfirmation, setShowSandboxConfirmation] = useState(false);
+  const [pendingGenerationRequest, setPendingGenerationRequest] = useState<(() => void) | null>(null);
+
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
   const codeDisplayRef = useRef<HTMLDivElement>(null);
@@ -249,14 +253,14 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
     loadProjects();
   }, [session?.user?.id, loadProjects]);
 
-  // Clear old conversation data on component mount and create/restore sandbox
+  // Clear old conversation data on component mount (NO AUTO-SANDBOX CREATION)
   useEffect(() => {
     let isMounted = true;
 
     const initializePage = async () => {
       // Clear old conversation
-        try {
-          await syncConversationState('clear-old');
+      try {
+        await syncConversationState('clear-old');
         console.log('[home] Cleared old conversation data on mount');
       } catch (error) {
         console.error('[ai-sandbox] Failed to clear old conversation:', error);
@@ -267,31 +271,29 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
       
       if (!isMounted) return;
 
-     
-      // Check if sandbox ID is in URL
+      // Check if sandbox ID is in URL (restore existing sandbox)
       const sandboxIdParam = searchParams.get('sandbox');
       
-      setLoading(true);
-      try {
-        if (sandboxIdParam) {
-          console.log('[home] Attempting to restore sandbox:', sandboxIdParam);
-          // For now, just create a new sandbox - you could enhance this to actually restore
-          // the specific sandbox 
-          // if your backend supports it
-          await createSandbox(true);
-      } else {
-          console.log('[home] No sandbox in URL, creating new sandbox automatically...');
-      await createSandbox(true);
+      if (sandboxIdParam) {
+        console.log('[home] Found sandbox in URL:', sandboxIdParam);
+        // Check if sandbox is still active
+        try {
+          const response = await fetch('/api/sandbox-status');
+          const data = await response.json();
+          
+          if (data.active && data.healthy) {
+            console.log('[home] Sandbox is still active');
+            // Sandbox is active, no need to create new one
+          } else {
+            console.log('[home] Sandbox is not active, user will need to create one');
+            addChatMessage('⚠️ Previous sandbox is no longer active. Please start a new project or generate code to create a sandbox.', 'system');
+          }
+        } catch (error) {
+          console.error('[home] Error checking sandbox status:', error);
         }
-      } catch (error) {
-        console.error('[ai-sandbox] Failed to create or restore sandbox:', error);
-      if (isMounted) {
-          addChatMessage('Failed to create or restore sandbox.', 'error');
-      }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-      }
+      } else {
+        console.log('[home] No sandbox in URL, waiting for user action...');
+        addChatMessage('👋 Welcome! Describe what you want to build and I\'ll create it for you. A sandbox will be created automatically when you start generating code.', 'system');
       }
     };
     
@@ -1828,19 +1830,24 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       return;
   }
     
-    // Start sandbox creation in parallel if needed
-    let sandboxPromise: Promise<void> |
-  null = null;
+    // Check if sandbox needs to be created
+    let sandboxPromise: Promise<void> | null = null;
     let sandboxCreating = false;
     
     if (!sandboxData) {
-      sandboxCreating = true;
-  addChatMessage('Creating sandbox while I plan your app...', 'system');
-      sandboxPromise = createSandbox(true).catch((error: any) => {
-        addChatMessage(`Failed to create sandbox: ${error.message}`, 'system');
-        throw error;
+      // Ask for user confirmation before creating sandbox
+      setShowSandboxConfirmation(true);
+      setPendingGenerationRequest(() => async () => {
+        sandboxCreating = true;
+        addChatMessage('🚀 Creating sandbox for your project...', 'system');
+        await createSandbox(true);
+        // After sandbox is created, continue with generation
+        // This will be called after user confirms
       });
-  }
+      
+      addChatMessage('⚠️ A sandbox environment needs to be created to run your code. This will use E2B credits. Please confirm to continue.', 'system');
+      return; // Stop here and wait for confirmation
+    }
     
     // Determine if this is an edit
     const isEdit = conversationContext.appliedCode.length > 0;
@@ -2508,12 +2515,22 @@ const generateWebsiteFromDescription = async (description: string, projectIdOver
     currentProject: `Website: ${description}`
   }));
 
-  // Start sandbox creation in parallel with code generation
-  let sandboxPromise: Promise<void> | null = null;
+  // Check if sandbox needs to be created
   if (!sandboxData) {
-    addChatMessage('Creating sandbox while generating your React app...', 'system');
-    sandboxPromise = createSandbox(true);
+    // Ask for user confirmation before creating sandbox
+    setShowSandboxConfirmation(true);
+    setPendingGenerationRequest(() => async () => {
+      addChatMessage('🚀 Creating sandbox for your website...', 'system');
+      await createSandbox(true);
+      // After sandbox created, regenerate
+      await generateWebsiteFromDescription(description, projectIdOverride);
+    });
+    
+    addChatMessage('⚠️ A sandbox environment needs to be created to run your code. This will use E2B credits. Do you want to continue?', 'system');
+    return; // Stop and wait for confirmation
   }
+
+  let sandboxPromise: Promise<void> | null = null;
 
   addChatMessage('Generating your custom React application...', 'system');
 
@@ -3099,7 +3116,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             disabled={deploymentLoading}
             size="sm"
             title={netlifyConnected ? "Publish to Netlify" : "Connect Netlify"}
-            className={`${netlifyConnected ? 'bg-[#00C7B7]' : 'bg-gray-800'} text-white hover:opacity-90 transition-all duration-200 hidden lg:flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2`}
+            className={`${netlifyConnected ? 'bg-[#00C7B7]' : 'bg-gray-800'} text-white hover:opacity-90 transition-all duration-200 flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-2`}
           >
             {deploymentLoading ? (
               <svg className="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -3523,6 +3540,63 @@ Focus on creating a beautiful, functional website that matches the user's vision
 
 
 
+      {/* Sandbox Creation Confirmation Dialog */}
+      {showSandboxConfirmation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl shadow-2xl border border-gray-700 max-w-md w-full mx-4 p-6 sm:p-8 animate-[fadeIn_0.3s_ease-out]">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold text-white">تفعيل بيئة التطوير</h3>
+            </div>
+            
+            <p className="text-gray-300 mb-6 leading-relaxed">
+              سيتم إنشاء <span className="text-blue-400 font-semibold">Sandbox</span> جديدة لتشغيل مشروعك. 
+              هذه البيئة ستبقى نشطة لمدة <span className="text-green-400 font-semibold">ساعة واحدة</span> 
+              وستستخدم رصيد E2B الخاص بك.
+            </p>
+            
+            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-blue-300">
+                  البيئة ستظل نشطة لمدة 60 دقيقة ولن يتم إغلاقها تلقائياً أثناء العمل.
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowSandboxConfirmation(false);
+                  setPendingGenerationRequest(null);
+                  addChatMessage('❌ تم إلغاء إنشاء البيئة. يمكنك المحاولة مرة أخرى عندما تكون جاهزاً.', 'system');
+                }}
+                className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors duration-200"
+              >
+                ✖ إلغاء
+              </button>
+              <button
+                onClick={async () => {
+                  setShowSandboxConfirmation(false);
+                  if (pendingGenerationRequest) {
+                    await pendingGenerationRequest();
+                    setPendingGenerationRequest(null);
+                  }
+                }}
+                className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-blue-500/50"
+              >
+                ✓ تأكيد وابدأ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
   // End of AISandboxPage
