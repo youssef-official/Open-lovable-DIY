@@ -2430,9 +2430,12 @@ Focus on creating a beautiful, functional website that matches the user's vision
 
             if (data.type === 'status') {
               setGenerationProgress(prev => ({ ...prev, status: data.message }));
+              addChatMessage(data.message, 'system');
             } else if (data.type === 'stream') {
-              generatedCode += data.text;
-              setResponseArea(prev => [...prev, data.text]);
+              // Always accumulate the streamed text
+              if (data.text) {
+                generatedCode += data.text;
+              }
             } else if (data.type === 'component') {
               setGenerationProgress(prev => ({
                 ...prev,
@@ -2444,9 +2447,12 @@ Focus on creating a beautiful, functional website that matches the user's vision
                 currentComponent: prev.currentComponent + 1
               }));
             } else if (data.type === 'complete') {
-              if (data.generatedCode) {
+              // Use the full generated code from the complete message if available
+              if (data.generatedCode && data.generatedCode.trim()) {
                 generatedCode = data.generatedCode;
               }
+              
+              console.log('[generateWebsite] Code generation complete. Code length:', generatedCode.length);
 
               setGenerationProgress(prev => ({
                 ...prev,
@@ -2610,25 +2616,25 @@ Focus on creating a beautiful, functional website that matches the user's vision
           
           {/* Main content */}
           <div className="relative z-10 h-full flex items-center justify-center px-4">
-            <div className="text-center max-w-4xl min-w-[600px] mx-auto">
+            <div className="text-center max-w-4xl w-full mx-auto">
               {/* Enhanced Lovable-style Header */}
               
   <div className="text-center">
-                <h1 className="text-[2.5rem] sm:text-[3.5rem] lg:text-[4.2rem] text-center text-white font-bold tracking-tight leading-[1.1] animate-[fadeIn_0.8s_ease-out] px-4">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-center text-white font-bold tracking-tight leading-[1.1] animate-[fadeIn_0.8s_ease-out] px-4">
                   <span className="block sm:inline">Build something </span>
                     <span className="bg-gradient-to-r from-gray-300 via-white to-gray-400 bg-clip-text text-transparent whitespace-nowrap">
                       unforgettable with Youssef AI
                     </span>
                 </h1>
                 <motion.p
-                  className="text-lg lg:text-xl max-w-2xl mx-auto mt-8 text-white/90 text-center text-balance px-4"
+                  className="text-base sm:text-lg lg:text-xl max-w-2xl mx-auto mt-6 sm:mt-8 text-white/90 text-center text-balance px-4"
                   transition={{ duration: 0.3, ease: "easeOut" }}
       
                   >
                   Create beautiful apps and websites by chatting with AI
                 </motion.p>
                 <motion.p
-                  className="text-sm lg:text-base max-w-xl mx-auto mt-4 text-white/60 text-center px-4"
+                  className="text-xs sm:text-sm lg:text-base max-w-xl mx-auto mt-3 sm:mt-4 text-white/60 text-center px-4"
        
                   transition={{ duration: 0.3, ease: "easeOut", delay: 0.2 }}
                 >
@@ -2637,7 +2643,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
               </div>
          
       
-              <form onSubmit={handleHomeScreenSubmit} className="mt-12 max-w-2xl mx-auto px-4">
+              <form onSubmit={handleHomeScreenSubmit} className="mt-8 sm:mt-12 max-w-2xl mx-auto px-4">
                 <div className="w-full relative group">
                   <div className="relative bg-black/30 backdrop-blur-md rounded-2xl border border-white/30 overflow-hidden shadow-2xl transition-all duration-300 group-hover:border-white/40 group-focus-within:border-white/50 group-focus-within:shadow-[0_0_30px_rgba(255,255,255,0.1)]">
                     <input
@@ -2649,14 +2655,14 @@ Focus on creating a beautiful, functional website that matches the user's vision
   setHomeDescriptionInput(value);
                       }}
                       placeholder="Describe your dream app or website..."
-                      className="h-16 w-full bg-transparent text-white placeholder-white/50 px-6 pr-16 focus:outline-none text-base transition-all duration-200 focus:placeholder-white/70"
+                      className="h-14 sm:h-16 w-full bg-transparent text-white placeholder-white/50 px-4 sm:px-6 pr-14 sm:pr-16 focus:outline-none text-sm sm:text-base transition-all duration-200 focus:placeholder-white/70"
                       autoFocus
                  
     />
                     <button
                       type="submit"
                       disabled={!homeDescriptionInput.trim()}
-                      className="absolute top-1/2 transform -translate-y-1/2 right-4 w-10 h-10 bg-white/20 hover:bg-white/30 disabled:bg-gray-700/50 rounded-xl flex items-center justify-center transition-all duration-200 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:opacity-50"
+                      className="absolute top-1/2 transform -translate-y-1/2 right-2 sm:right-4 w-9 h-9 sm:w-10 sm:h-10 bg-white/20 hover:bg-white/30 disabled:bg-gray-700/50 rounded-xl flex items-center justify-center transition-all duration-200 disabled:cursor-not-allowed shadow-lg hover:shadow-xl disabled:opacity-50"
                       title="Create with AI"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
@@ -2672,7 +2678,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
                 </div>
 
                 {/* Example prompts */}
-                <div className="mt-6 flex flex-wrap justify-center gap-2 px-4">
+                <div className="mt-4 sm:mt-6 flex flex-wrap justify-center gap-2 px-4">
          
                   {[
                     "A modern portfolio website",
@@ -2685,7 +2691,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
                       key={example}
                       onClick={() => setHomeDescriptionInput(example)}
               
-                      className="px-4 py-2 text-sm text-white/70 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:text-white/90 transition-all duration-200 hover:scale-105"
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm text-white/70 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full hover:bg-white/10 hover:text-white/90 transition-all duration-200 hover:scale-105"
                       style={{ animationDelay: `${index * 0.1}s` }}
                     >
                       {example}
@@ -2768,10 +2774,10 @@ Focus on creating a beautiful, functional website that matches the user's vision
       )}
       
       {/* Main Header */}
-      <div className={`px-4 py-4 border-b ${theme.border_color} flex items-center justify-between ${theme.bg_card}`}>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className={`relative w-8 h-8 rounded-lg overflow-hidden border ${theme.border_color}`}>
+      <div className={`px-2 sm:px-4 py-3 sm:py-4 border-b ${theme.border_color} flex items-center justify-between ${theme.bg_card}`}>
+        <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className={`relative w-7 h-7 sm:w-8 sm:h-8 rounded-lg overflow-hidden border ${theme.border_color}`}>
               <Image
                 src="/youssef-logo.png"
                 alt="Youssef AI logo"
@@ -2780,10 +2786,10 @@ Focus on creating a beautiful, functional website that matches the user's vision
                 className="object-contain"
               />
             </div>
-            <span className={`font-semibold text-lg ${theme.text_main}`}>Youssef AI</span>
+            <span className={`font-semibold text-base sm:text-lg ${theme.text_main} hidden xs:inline`}>Youssef AI</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <UserButton />
           {/* Model Selector - Left side */}
           <select
@@ -2799,7 +2805,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
   }
               router.push(`/?${params.toString()}`);
   }}
-            className={`px-3 py-1.5 text-sm bg-gray-800 text-white border-gray-700 border rounded-[10px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-colors duration-200`}
+            className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-gray-800 text-white border-gray-700 border rounded-[10px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-colors duration-200 max-w-[120px] sm:max-w-none`}
           >
             {appConfig.ai.availableModels.map(model => (
               <option key={model} value={model} className={`${theme.code_bg} text-white`}>
@@ -2813,7 +2819,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             onClick={() => setIsDarkMode(!isDarkMode)}
             size="sm"
             title="Toggle Theme"
-            className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200"
+            className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200 hidden sm:flex"
           >
             {isDarkMode ? <FaSun /> : <FaMoon />}
           </Button>
@@ -2822,7 +2828,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
             onClick={() => setShowApiKeysSettings(true)}
             size="sm"
             title="API Keys"
-            className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200"
+            className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200 p-2 sm:p-2.5"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
               <path d="M12 1.5L21.5 6.5V17.5L12 22.5L2.5 17.5V6.5L12 1.5Z" />
@@ -2837,10 +2843,10 @@ Focus on creating a beautiful, functional website that matches the user's vision
             onClick={() => createSandbox()}
             size="sm"
             title="Create new sandbox"
-            className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200"
+            className="bg-gray-800 text-white hover:bg-gray-700 transition-colors duration-200 hidden md:flex p-2 sm:p-2.5"
           >
          
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
           </Button>
@@ -2852,9 +2858,9 @@ Focus on creating a beautiful, functional website that matches the user's vision
             title="Re-apply last generation"
             disabled={!conversationContext.lastGeneratedCode ||
   !sandboxData}
-            className={`bg-gray-800 text-white hover:bg-gray-700 disabled:${theme.code_bg}/50 transition-colors duration-200`}
+            className={`bg-gray-800 text-white hover:bg-gray-700 disabled:${theme.code_bg}/50 transition-colors duration-200 hidden lg:flex p-2 sm:p-2.5`}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
           </Button>
@@ -2865,14 +2871,14 @@ Focus on creating a beautiful, functional website that matches the user's vision
             disabled={!sandboxData}
             size="sm"
             title="Download your Vite app as ZIP"
-            className={`bg-gray-800 text-white hover:bg-gray-700 disabled:${theme.code_bg}/50 transition-colors duration-200`}
+            className={`bg-gray-800 text-white hover:bg-gray-700 disabled:${theme.code_bg}/50 transition-colors duration-200 p-2 sm:p-2.5`}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
             </svg>
           </Button>
-          <div className={`inline-flex items-center gap-2 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-900'} px-3 py-1.5 rounded-[10px] text-sm font-medium [box-shadow:none]`}>
+          <div className={`hidden sm:inline-flex items-center gap-2 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-900'} px-2 sm:px-3 py-1 sm:py-1.5 rounded-[10px] text-xs sm:text-sm font-medium [box-shadow:none]`}>
             <span id="status-text">{status.text}</span>
             <div className={`w-2 h-2 rounded-full ${status.active ?
   'bg-green-500' : 'bg-gray-500'}`} />
@@ -2882,10 +2888,10 @@ Focus on creating a beautiful, functional website that matches the user's vision
 
       <div className="flex-1 flex overflow-hidden">
         {/* Center Panel - AI Chat (1/3 of remaining width) */}
-        <div className={`flex-1 max-w-[400px] flex flex-col border-r ${theme.border_color} ${theme.bg_card}`}>
+        <div className={`flex-1 w-full sm:max-w-[350px] md:max-w-[400px] flex flex-col border-r ${theme.border_color} ${theme.bg_card}`}>
 
 
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-1 scrollbar-hide" ref={chatMessagesRef}>
+          <div className="flex-1 overflow-y-auto p-2 sm:p-4 flex flex-col gap-1 scrollbar-hide" ref={chatMessagesRef}>
             {chatMessages.map((msg, 
   idx) => {
               // Check if this message is from a successful generation
@@ -2903,18 +2909,18 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   <div className={`flex ${msg.type === 'user' ?
   'justify-end' : 'justify-start'} mb-1`}>
                     <div className="block">
-                      <div className={`block rounded-[10px] px-4 py-2 ${
+                      <div className={`block rounded-[10px] px-3 sm:px-4 py-2 text-sm sm:text-base ${
                         msg.type === 'user' ?
-  `bg-blue-600 text-white ml-auto max-w-[80%]` :
+  `bg-blue-600 text-white ml-auto max-w-[85%] sm:max-w-[80%]` :
                         msg.type === 'ai' ?
-  `bg-gray-700 text-white mr-auto max-w-[80%]` :
+  `bg-gray-700 text-white mr-auto max-w-[85%] sm:max-w-[80%]` :
                         msg.type === 'system' ?
-  `bg-gray-800 text-gray-300 text-sm` :
+  `bg-gray-800 text-gray-300 text-xs sm:text-sm` :
                         msg.type === 'command' ?
-  `bg-gray-800 text-gray-300 font-mono text-sm` :
+  `bg-gray-800 text-gray-300 font-mono text-xs sm:text-sm` :
                         msg.type === 'error' ?
-  'bg-red-800 text-red-100 text-sm border border-red-700' :
-  `bg-gray-800 text-gray-300 text-sm`
+  'bg-red-800 text-red-100 text-xs sm:text-sm border border-red-700' :
+  `bg-gray-800 text-gray-300 text-xs sm:text-sm`
                       }`}>
                     {msg.type === 'command' ?
   (
@@ -3138,11 +3144,11 @@ Focus on creating a beautiful, functional website that matches the user's vision
             )}
           </div>
 
-          <div className={`p-4 border-t ${theme.border_color} ${theme.bg_card}`}>
+          <div className={`p-2 sm:p-4 border-t ${theme.border_color} ${theme.bg_card}`}>
             <div className="relative">
               <Textarea
          
-                className={`min-h-[60px] pr-12 resize-y border-2 ${theme.border_color} focus:outline-none ${theme.bg_card} ${theme.text_main} bg-gray-800 text-white placeholder-gray-400`}
+                className={`min-h-[50px] sm:min-h-[60px] pr-10 sm:pr-12 resize-y border-2 ${theme.border_color} focus:outline-none ${theme.bg_card} ${theme.text_main} bg-gray-800 text-white placeholder-gray-400 text-sm sm:text-base`}
                 placeholder="Ask me to do something..."
                 value={aiChatInput}
                 onChange={(e) => setAiChatInput(e.target.value)}
@@ -3153,15 +3159,15 @@ Focus on creating a beautiful, functional website that matches the user's vision
   sendChatMessage();
                   }
                 }}
-                rows={3}
+                rows={2}
               />
               <button
                 onClick={sendChatMessage}
-                className={`absolute right-2 bottom-2 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[10px]
+                className={`absolute right-2 bottom-2 p-1.5 sm:p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[10px]
   [box-shadow:none] transition-all duration-200`}
                 title="Send message (Enter)"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
         
   </svg>
@@ -3172,13 +3178,13 @@ Focus on creating a beautiful, functional website that matches the user's vision
 
         {/* Right Panel - Preview or Generation (2/3 of remaining width) */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className={`px-4 py-2 ${theme.bg_card} border-b ${theme.border_color} flex 
+          <div className={`px-2 sm:px-4 py-2 ${theme.bg_card} border-b ${theme.border_color} flex 
   justify-between items-center`}>
-            <div className="flex items-center gap-4">
-              <div className={`flex bg-gray-800 rounded-lg p-1`}>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className={`flex bg-gray-800 rounded-lg p-0.5 sm:p-1`}>
                 <button
                   onClick={() => setActiveTab('generation')}
-                  className={`p-2 rounded-md transition-all ${
+                  className={`p-1.5 sm:p-2 rounded-md transition-all ${
          
                     activeTab === 'generation' 
                       ?
@@ -3187,7 +3193,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
                   }`}
                   title="Code"
                 >
-                  <svg className="w-4 h-4" 
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" 
   fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                   </svg>
@@ -3195,7 +3201,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
                 <button
               
                   onClick={() => setActiveTab('preview')}
-                  className={`p-2 rounded-md transition-all ${
+                  className={`p-1.5 sm:p-2 rounded-md transition-all ${
                     activeTab === 'preview' 
                       ?
   `bg-blue-600 text-white`
@@ -3212,13 +3218,13 @@ Focus on creating a beautiful, functional website that matches the user's vision
                 </button>
               </div>
             </div>
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-1 sm:gap-2 items-center">
               {/* Live Code Generation Status - Moved to far right */}
               {activeTab === 'generation' && (generationProgress.isGenerating || generationProgress.files.length 
   > 0) && (
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   {!generationProgress.isEdit && (
-                    <div className="text-gray-400 text-sm">
+                    <div className="text-gray-400 text-xs sm:text-sm hidden sm:block">
                       {generationProgress.files.length} files generated
             
                       </div>
