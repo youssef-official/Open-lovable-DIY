@@ -204,6 +204,7 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
   const [netlifyConnected, setNetlifyConnected] = useState(false);
   const [deploymentLoading, setDeploymentLoading] = useState(false);
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
+  const [deploymentLogs, setDeploymentLogs] = useState<string[]>([]);
 
   // Sandbox confirmation states
   const [showSandboxConfirmation, setShowSandboxConfirmation] = useState(false);
@@ -304,35 +305,7 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
   }, []);
   // Run only on mount
   
-  // Check for Netlify connection status
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('netlify_connected') === 'true') {
-      setNetlifyConnected(true);
-      addChatMessage('✅ Successfully connected to Netlify! You can now publish your apps.', 'system');
-      // Clean up URL
-      window.history.replaceState({}, '', window.location.pathname);
-    } else if (params.get('netlify_error')) {
-      addChatMessage(`❌ Failed to connect to Netlify: ${params.get('netlify_error')}`, 'system');
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-
-    // Check if user already has Netlify token in cookies
-    const checkNetlifyConnection = async () => {
-      try {
-        const response = await fetch('/api/netlify/deploy', {
-          method: 'HEAD',
-        });
-        // If we get a non-401, user is connected
-        if (response.status !== 401) {
-          setNetlifyConnected(true);
-        }
-      } catch (error) {
-        // Ignore errors
-      }
-    };
-    checkNetlifyConnection();
-  }, []);
+  // No longer needed - using direct token from API keys
 
   useEffect(() => {
     // Handle Escape key for home screen
@@ -428,6 +401,9 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
       try {
         setProjects(prev => [project, ...prev.filter(p => p.id !== project.id)]);
         setActiveProjectId(project.id);
+        
+        // Show loading message
+        addChatMessage(`📂 Loading project: ${project.name}...`, 'system');
 
         const response = await fetch(`/api/projects?projectId=${project.id}`, {
           cache: 'no-store',
@@ -449,8 +425,23 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
           setHomeDescriptionInput(projectDetail.last_prompt);
         }
 
+        // Check if sandbox is still active
+        if (projectDetail.sandbox_id) {
+          const sandboxResponse = await fetch('/api/sandbox-status');
+          const sandboxData = await sandboxResponse.json();
+          
+          if (sandboxData.active && sandboxData.healthy) {
+            addChatMessage('✅ Sandbox is still active and ready!', 'system');
+          } else {
+            addChatMessage('⚠️ Previous sandbox is no longer active. Create a new one if needed.', 'system');
+          }
+        }
+
         if (projectDetail.last_state) {
+          // Restore conversation history
           hydrateFromState(projectDetail.last_state);
+          addChatMessage(`✅ Loaded ${projectDetail.last_state.context.messages?.length || 0} previous messages`, 'system');
+          
           await syncConversationState('hydrate', {
             projectId: projectDetail.id,
             state: projectDetail.last_state,
@@ -460,6 +451,7 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
             },
           });
         } else {
+          addChatMessage(`📝 Project loaded: ${project.name}`, 'system');
           await syncConversationState('reset', {
             projectId: projectDetail.id,
             data: {
@@ -2310,15 +2302,14 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
   };
 
-  // Netlify deployment functions
-  const connectNetlify = () => {
-    window.location.href = '/api/netlify/auth';
-  };
-
+  // Netlify deployment functions  
   const deployToNetlify = async () => {
-    if (!netlifyConnected) {
-      addChatMessage('Please connect your Netlify account first!', 'system');
-      connectNetlify();
+    // Check if Netlify token is provided in API keys
+    const netlifyToken = (window as any).apiKeys?.netlify;
+    
+    if (!netlifyToken) {
+      addChatMessage('⚠️ Please add your Netlify Personal Access Token in API Keys settings first!\n\nGet your token from: https://app.netlify.com/user/applications#personal-access-tokens', 'system');
+      setShowApiKeysSettings(true);
       return;
     }
 
@@ -2328,7 +2319,9 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     }
 
     setDeploymentLoading(true);
+    setDeploymentLogs([]);
     addChatMessage('📦 Preparing files for deployment...', 'system');
+    setDeploymentLogs(prev => [...prev, '📦 Starting deployment process...']);
 
     try {
       // Fetch latest files from sandbox before deploying
@@ -2360,15 +2353,23 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         return;
       }
 
+      setDeploymentLogs(prev => [...prev, `📝 Found ${fileCount} files`]);
       addChatMessage(`📝 Found ${fileCount} files, uploading to Netlify...`, 'system');
 
+      setDeploymentLogs(prev => [...prev, '🌐 Creating Netlify site...']);
       const siteName = `youssef-ai-${Date.now()}`;
+      
+      setDeploymentLogs(prev => [...prev, '⬆️ Uploading files...']);
       const response = await fetch('/api/netlify/deploy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Netlify-Token': netlifyToken
+        },
         body: JSON.stringify({
           siteName,
           files: filesToDeploy,
+          netlifyToken,
         }),
       });
 
@@ -2376,18 +2377,27 @@ Tip: I automatically detect and install npm packages from your code imports (lik
 
       if (response.ok && data.success) {
         setDeploymentUrl(data.url);
-        // Update local sandboxFiles state
         setSandboxFiles(filesToDeploy);
         
+        setDeploymentLogs(prev => [
+          ...prev,
+          '✅ Deployment successful!',
+          `🌐 Live at: ${data.url}`,
+          `📊 Site ID: ${data.siteId}`,
+          `🚀 Deployment ID: ${data.deploymentId}`
+        ]);
+        
         addChatMessage(
-          `✅ Successfully published to Netlify!\n\n🌐 Live URL: ${data.url}\n\n🎉 Your app is now live on the internet! Share this link with anyone.`,
+          `✅ Successfully published to Netlify!\n\n🌐 Live URL: ${data.url}\n\n🎉 Your app is now live on the internet! Share this link with anyone.\n\n📝 Deployment Logs:\n${deploymentLogs.join('\n')}`,
           'system'
         );
       } else {
+        setDeploymentLogs(prev => [...prev, `❌ Error: ${data.error}`]);
         throw new Error(data.error || 'Deployment failed');
       }
     } catch (error: any) {
-      addChatMessage(`❌ Failed to publish: ${error.message}`, 'system');
+      setDeploymentLogs(prev => [...prev, `❌ Failed: ${error.message}`]);
+      addChatMessage(`❌ Failed to publish: ${error.message}\n\n📝 Logs:\n${deploymentLogs.join('\n')}`, 'system');
       console.error('[netlify-deploy] Error:', error);
     } finally {
       setDeploymentLoading(false);
@@ -2886,8 +2896,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
               </form>
 
                   {session?.user?.id && (
-                  <div className="mt-8 sm:mt-10 max-w-3xl mx-auto px-4">
-                    <div className="text-left text-white/70 text-[0.65rem] sm:text-[0.7rem] uppercase tracking-[0.3em] sm:tracking-[0.4em] mb-2 sm:mb-3 font-medium">
+                  <div className="mt-8 sm:mt-10 max-w-3xl mx-auto px-4 mb-safe">
+                    <div className="text-left text-white/70 text-[0.65rem] sm:text-[0.7rem] uppercase tracking-[0.3em] sm:tracking-[0.4em] mb-3 sm:mb-4 font-medium">
                       📁 Recent Projects
                     </div>
                     {projectsLoading ? (
@@ -2900,32 +2910,34 @@ Focus on creating a beautiful, functional website that matches the user's vision
                         No saved projects yet. Describe an idea above to start building.
                       </p>
                     ) : (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-h-[40vh] overflow-y-auto scrollbar-hide pb-4">
                         {projects.map(project => (
                           <div
                             key={project.id}
-                            className={`relative group rounded-lg sm:rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 ${activeProjectId === project.id ? 'ring-2 ring-blue-400/60 bg-white/10' : ''}`}
+                            className={`relative group rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-300 shadow-lg hover:shadow-xl ${activeProjectId === project.id ? 'ring-2 ring-blue-400/60 bg-white/10 shadow-blue-500/30' : ''}`}
                           >
                             <button
                               type="button"
                               onClick={() => handleProjectSelect(project)}
-                              className="w-full text-left px-3 sm:px-4 py-2.5 sm:py-3"
+                              className="w-full text-left px-4 sm:px-5 py-3 sm:py-4"
                             >
-                              <div className="flex items-start gap-2">
-                                <div className="flex-shrink-0 mt-0.5">
-                                  <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                                  </svg>
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 mt-1">
+                                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                    <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                    </svg>
+                                  </div>
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-white font-semibold text-sm sm:text-base truncate pr-8">
+                                  <div className="text-white font-semibold text-base sm:text-lg truncate pr-10">
                                     {project.name}
                                   </div>
-                                  <div className="text-white/60 text-[11px] sm:text-xs mt-1 line-clamp-2">
+                                  <div className="text-white/60 text-xs sm:text-sm mt-1.5 line-clamp-2 leading-relaxed">
                                     {project.last_prompt || 'No description'}
                                   </div>
-                                  <div className="flex items-center gap-1.5 text-white/40 text-[10px] sm:text-xs mt-1.5">
-                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <div className="flex items-center gap-2 text-white/40 text-[11px] sm:text-xs mt-2">
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                     </svg>
                                     {formatRelativeTime(project.updated_at)}
@@ -2954,11 +2966,11 @@ Focus on creating a beautiful, functional website that matches the user's vision
                                   addChatMessage('Failed to delete project. Please try again.', 'system');
                                 }
                               }}
-                              className="absolute top-2 sm:top-3 right-2 sm:right-3 opacity-0 group-hover:opacity-100 touch-manipulation p-1.5 sm:p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30 text-red-400 hover:text-red-300 transition-all duration-200 shadow-lg"
+                              className="absolute top-3 sm:top-4 right-3 sm:right-4 opacity-0 group-hover:opacity-100 md:opacity-70 md:hover:opacity-100 touch-manipulation p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/30 text-red-400 hover:text-red-300 transition-all duration-200 shadow-lg z-10"
                               title="Delete project"
                               aria-label="Delete project"
                             >
-                              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                               </svg>
                             </button>
@@ -3112,11 +3124,11 @@ Focus on creating a beautiful, functional website that matches the user's vision
           </Button>
           <Button 
             variant="code"
-            onClick={netlifyConnected ? deployToNetlify : connectNetlify}
+            onClick={deployToNetlify}
             disabled={deploymentLoading}
             size="sm"
-            title={netlifyConnected ? "Publish to Netlify" : "Connect Netlify"}
-            className={`${netlifyConnected ? 'bg-[#00C7B7]' : 'bg-gray-800'} text-white hover:opacity-90 transition-all duration-200 flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-2`}
+            title="Publish to Netlify"
+            className="bg-gradient-to-r from-[#00C7B7] to-[#00A896] text-white hover:opacity-90 transition-all duration-200 flex items-center gap-1.5 px-2 py-1.5 sm:px-3 sm:py-2 shadow-lg hover:shadow-xl"
           >
             {deploymentLoading ? (
               <svg className="animate-spin h-3.5 w-3.5 sm:h-4 sm:w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

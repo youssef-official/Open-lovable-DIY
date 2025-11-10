@@ -49,8 +49,9 @@ const ApiKeySettings = ({ onClose }: { onClose: () => void }) => {
         {[
           { key: 'openrouter', label: 'OpenRouter', placeholder: 'sk-or-...', required: true },
           { key: 'e2b', label: 'E2B Sandbox', placeholder: 'e2b_...', required: true },
+          { key: 'netlify', label: 'Netlify Token', placeholder: 'nfp_...', required: false, help: 'Get from: https://app.netlify.com/user/applications#personal-access-tokens' },
           { key: 'firecrawl', label: 'Firecrawl (optional)', placeholder: 'fc-...', required: false },
-        ].map(({ key, label, placeholder, required }) => (
+        ].map(({ key, label, placeholder, required, help }) => (
           <div key={key} className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor={key}>{label}</Label>
@@ -63,6 +64,7 @@ const ApiKeySettings = ({ onClose }: { onClose: () => void }) => {
               value={localKeys[key] || ''}
               onChange={(e) => handleInputChange(key, e.target.value)}
             />
+            {help && <p className="text-xs text-muted-foreground">{help}</p>}
           </div>
         ))}
       </div>

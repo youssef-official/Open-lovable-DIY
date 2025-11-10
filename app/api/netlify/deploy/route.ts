@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { siteName, files } = await request.json();
+    const { siteName, files, netlifyToken: bodyToken } = await request.json();
     
-    // Get Netlify token from cookie
-    const netlifyToken = request.cookies.get('netlify_token')?.value;
+    // Get Netlify token from request body or header
+    const netlifyToken = bodyToken || request.headers.get('X-Netlify-Token') || request.cookies.get('netlify_token')?.value;
     
     if (!netlifyToken) {
       return NextResponse.json({ 
-        error: 'Not authenticated with Netlify. Please connect your Netlify account first.' 
+        error: 'Netlify token not provided. Please add your Netlify Personal Access Token in API Keys settings.' 
       }, { status: 401 });
     }
     
