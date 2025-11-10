@@ -884,11 +884,9 @@ REQUIRED COMPONENTS for website clones:
 🎨 MANDATORY FOOTER CREDIT - MUST INCLUDE IN EVERY WEBSITE:
 **EVERY Footer component MUST include this credit line:**
 
-```jsx
 <div className="text-center text-sm text-gray-500 dark:text-gray-400 mt-8">
   <p>Powered by <a href="https://ymoo.site" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 font-medium">Youssef AI Website Builder</a></p>
 </div>
-```
 
 **Rules for Footer Credit:**
 - Must be placed at the bottom of every Footer component
@@ -896,27 +894,7 @@ REQUIRED COMPONENTS for website clones:
 - Must link to https://ymoo.site
 - Can be styled to match the site theme but must remain visible
 - Text color should contrast with background
-- Example placement in Footer.jsx:
-
-```jsx
-export default function Footer() {
-  return (
-    <footer className="bg-gray-900 text-white">
-      {/* Your footer content */}
-      <div className="container mx-auto px-4 py-8">
-        {/* Links, contact, etc. */}
-      </div>
-      
-      {/* MANDATORY CREDIT - DO NOT REMOVE */}
-      <div className="border-t border-gray-800 py-4">
-        <div className="text-center text-sm text-gray-400">
-          <p>Powered by <a href="https://ymoo.site" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 font-medium">Youssef AI Website Builder</a></p>
-        </div>
-      </div>
-    </footer>
-  );
-}
-```
+- Example: Add this at the bottom of Footer component before closing tag
 
 🎯 PROFESSIONAL DESIGN REQUIREMENTS:
 1. **Modern & Clean Design:**
