@@ -49,7 +49,8 @@ const ApiKeySettings = ({ onClose }: { onClose: () => void }) => {
         {[
           { key: 'openrouter', label: 'OpenRouter', placeholder: 'sk-or-...', required: true },
           { key: 'e2b', label: 'E2B Sandbox', placeholder: 'e2b_...', required: true },
-          { key: 'netlify', label: 'Netlify Token', placeholder: 'nfp_...', required: false, help: 'Get from: https://app.netlify.com/user/applications#personal-access-tokens' },
+          { key: 'netlify', label: 'Netlify Token', placeholder: 'nfp_...', required: false, help: '🌐 Get from: https://app.netlify.com/user/applications#personal-access-tokens' },
+          { key: 'vercel', label: 'Vercel Token', placeholder: 'vercel_...', required: false, help: '▲ Get from: https://vercel.com/account/tokens' },
           { key: 'firecrawl', label: 'Firecrawl (optional)', placeholder: 'fc-...', required: false },
         ].map(({ key, label, placeholder, required, help }) => (
           <div key={key} className="space-y-2">

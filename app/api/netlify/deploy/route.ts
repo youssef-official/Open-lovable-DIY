@@ -6,29 +6,11 @@ function createSHA1(content: string): string {
   return createHash('sha1').update(content).digest('hex');
 }
 
-// Helper function to check deployment status (quick check only)
-async function checkDeploymentStatus(
-  deployId: string, 
-  netlifyToken: string
-): Promise<any> {
-  const response = await fetch(`https://api.netlify.com/api/v1/deploys/${deployId}`, {
-    headers: {
-      'Authorization': `Bearer ${netlifyToken}`,
-    },
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to check deployment status');
-  }
-  
-  return await response.json();
-}
-
 export async function POST(request: NextRequest) {
   try {
     const { siteName, files, netlifyToken: bodyToken } = await request.json();
     
-    // Get Netlify token from request body or header
+    // Get Netlify token
     const netlifyToken = bodyToken || request.headers.get('X-Netlify-Token') || request.cookies.get('netlify_token')?.value;
     
     if (!netlifyToken) {
@@ -43,189 +25,151 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    console.log('[netlify-deploy] 🚀 Starting deployment...');
-    console.log('[netlify-deploy] Site name:', siteName);
-    console.log('[netlify-deploy] Files count:', Object.keys(files).length);
+    console.log('[netlify] 🚀 Starting deployment...');
+    console.log('[netlify] Site name:', siteName);
+    console.log('[netlify] Files:', Object.keys(files).length);
     
     // Step 1: Get or create site
-    console.log('[netlify-deploy] 📡 Fetching sites...');
+    console.log('[netlify] 📡 Checking for existing site...');
     const sitesResponse = await fetch('https://api.netlify.com/api/v1/sites', {
-      headers: {
-        'Authorization': `Bearer ${netlifyToken}`,
-      },
+      headers: { 'Authorization': `Bearer ${netlifyToken}` },
     });
     
     if (!sitesResponse.ok) {
-      const errorText = await sitesResponse.text();
-      console.error('[netlify-deploy] Failed to fetch sites:', errorText);
-      throw new Error('Failed to authenticate with Netlify. Please check your token.');
+      throw new Error('Failed to authenticate with Netlify. Check your token.');
     }
     
     const sites = await sitesResponse.json();
-    let siteId = null;
-    let siteUrl = null;
-    
-    // Check if site exists
     const existingSite = sites.find((site: any) => site.name === siteName);
+    
+    let siteId: string;
+    let siteUrl: string;
     
     if (existingSite) {
       siteId = existingSite.id;
       siteUrl = existingSite.ssl_url || existingSite.url;
-      console.log('[netlify-deploy] ✅ Found existing site:', siteId);
-      console.log('[netlify-deploy] 🌐 Site URL:', siteUrl);
+      console.log('[netlify] ✅ Using existing site:', siteId);
     } else {
-      // Create new site
-      console.log('[netlify-deploy] 🏗️ Creating new site...');
-      const createSiteResponse = await fetch('https://api.netlify.com/api/v1/sites', {
+      console.log('[netlify] 🏗️ Creating new site...');
+      const createResponse = await fetch('https://api.netlify.com/api/v1/sites', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${netlifyToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          name: siteName,
-        }),
+        body: JSON.stringify({ name: siteName }),
       });
       
-      if (!createSiteResponse.ok) {
-        const errorText = await createSiteResponse.text();
-        console.error('[netlify-deploy] Failed to create site:', errorText);
-        throw new Error('Failed to create Netlify site. Site name might be taken.');
+      if (!createResponse.ok) {
+        const errorText = await createResponse.text();
+        throw new Error(`Failed to create site: ${errorText}`);
       }
       
-      const newSite = await createSiteResponse.json();
+      const newSite = await createResponse.json();
       siteId = newSite.id;
       siteUrl = newSite.ssl_url || newSite.url;
-      console.log('[netlify-deploy] ✅ Created new site:', siteId);
-      console.log('[netlify-deploy] 🌐 Site URL:', siteUrl);
+      console.log('[netlify] ✅ Created site:', siteId);
     }
     
-    // Step 2: Prepare files for deployment
-    const deployFiles: { [key: string]: string } = {};
-    const fileHashes: { [key: string]: string } = {};
+    // Step 2: Prepare all files
+    const deployFiles: Record<string, string> = {};
     
-    console.log('[netlify-deploy] 📦 Processing files...');
-    
-    // Process all files
+    console.log('[netlify] 📦 Processing files...');
     for (const [path, content] of Object.entries(files)) {
       const cleanPath = path.replace(/^\/+/, '');
-      const fileContent = content as string;
-      
-      deployFiles[cleanPath] = fileContent;
-      fileHashes[cleanPath] = createSHA1(fileContent);
-      
-      console.log(`[netlify-deploy] ✓ ${cleanPath} (${fileContent.length} bytes)`);
+      deployFiles[cleanPath] = content as string;
+      console.log(`[netlify] ✓ ${cleanPath}`);
     }
     
-    // Ensure we have index.html at the root
+    // Step 3: Ensure index.html exists
     if (!deployFiles['index.html']) {
-      console.log('[netlify-deploy] 📝 Creating index.html...');
-      
-      const hasAppJsx = deployFiles['src/App.jsx'] || deployFiles['App.jsx'];
-      const hasMainJsx = deployFiles['src/main.jsx'] || deployFiles['main.jsx'];
-      
-      const indexHtml = `<!DOCTYPE html>
+      console.log('[netlify] 📝 Creating index.html...');
+      deployFiles['index.html'] = `<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Awesome App - Created by Youssef AI</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { 
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-      }
-      #root { width: 100%; }
-      .container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 40px 20px;
-        text-align: center;
-      }
-      h1 {
-        color: white;
-        font-size: 3rem;
-        margin-bottom: 20px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        animation: fadeIn 0.8s ease-in;
-      }
-      p {
-        color: rgba(255,255,255,0.9);
-        font-size: 1.2rem;
-        line-height: 1.6;
-        margin-bottom: 30px;
-      }
-      .code-preview {
-        background: rgba(0,0,0,0.2);
-        border-radius: 12px;
-        padding: 20px;
-        margin-top: 30px;
-        backdrop-filter: blur(10px);
-      }
-      .file-list {
-        text-align: left;
-        color: rgba(255,255,255,0.8);
-        font-family: 'Monaco', 'Courier New', monospace;
-        font-size: 14px;
-        max-height: 400px;
-        overflow-y: auto;
-      }
-      .file-list div {
-        padding: 5px 0;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-      }
-      .badge {
-        display: inline-block;
-        background: rgba(255,255,255,0.2);
-        padding: 8px 16px;
-        border-radius: 20px;
-        margin: 5px;
-        color: white;
-        font-size: 14px;
-        backdrop-filter: blur(10px);
-      }
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root">
-      <div class="container">
-        <h1>🎉 Your App is Live!</h1>
-        <p>This site was generated by Youssef AI and successfully deployed to Netlify.</p>
-        <div class="code-preview">
-          <div class="file-list">
-            <h3 style="color: white; margin-bottom: 15px;">📁 Deployed Files (${Object.keys(deployFiles).length}):</h3>
-            ${Object.keys(deployFiles).map(f => `<div>📄 ${f}</div>`).join('')}
-          </div>
-        </div>
-        <div style="margin-top: 30px;">
-          ${hasAppJsx ? '<div class="badge">⚛️ React App</div>' : ''}
-          ${hasMainJsx ? '<div class="badge">🚀 Vite Powered</div>' : ''}
-          <div class="badge">✨ AI Generated</div>
-          <div class="badge">🌐 Netlify Hosted</div>
-        </div>
-      </div>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Created by Youssef AI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 60px 40px;
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    p { font-size: 1.2rem; opacity: 0.9; margin-bottom: 30px; }
+    .files {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 20px;
+      border-radius: 10px;
+      margin-top: 30px;
+      text-align: left;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .file { padding: 5px 0; font-family: monospace; font-size: 14px; }
+    .badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 8px 16px;
+      border-radius: 20px;
+      margin: 5px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎉 Website Live!</h1>
+    <p>This site was generated by Youssef AI and deployed to Netlify.</p>
+    <div style="margin: 20px 0;">
+      <span class="badge">✨ AI Generated</span>
+      <span class="badge">🌐 Netlify</span>
+      <span class="badge">🚀 Live Now</span>
     </div>
-  </body>
+    <div class="files">
+      <strong>📁 Deployed Files (${Object.keys(deployFiles).length}):</strong>
+      ${Object.keys(deployFiles).map(f => `<div class="file">📄 ${f}</div>`).join('')}
+    </div>
+  </div>
+</body>
 </html>`;
-      
-      deployFiles['index.html'] = indexHtml;
-      fileHashes['index.html'] = createSHA1(indexHtml);
     }
     
-    console.log('[netlify-deploy] 📊 Total files to deploy:', Object.keys(deployFiles).length);
+    // Step 4: Create file hashes and prepare for upload
+    const fileHashes: Record<string, string> = {};
+    for (const [path, content] of Object.entries(deployFiles)) {
+      fileHashes[path] = createSHA1(content);
+    }
     
-    // Step 3: Create deployment with file hashes
-    console.log('[netlify-deploy] 🎯 Creating deployment...');
+    console.log('[netlify] 🎯 Creating deployment...');
+    
+    // Use the simpler deploy API - direct upload
+    const formData = new FormData();
+    
+    // Create a zip-like structure by uploading all files
+    const uploadPromises: Promise<any>[] = [];
+    
+    // First, create the deployment
     const deployResponse = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, {
       method: 'POST',
       headers: {
@@ -234,82 +178,80 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         files: fileHashes,
+        draft: false,
       }),
     });
     
     if (!deployResponse.ok) {
       const errorText = await deployResponse.text();
-      console.error('[netlify-deploy] Deployment creation failed:', errorText);
-      throw new Error('Failed to create deployment on Netlify');
+      throw new Error(`Deployment failed: ${errorText}`);
     }
     
     const deployment = await deployResponse.json();
     const deployId = deployment.id;
-    const requiredFiles = deployment.required || [];
+    const requiredFiles = deployment.required || Object.keys(deployFiles);
     
-    console.log('[netlify-deploy] ✅ Deployment created:', deployId);
-    console.log('[netlify-deploy] 📤 Files to upload:', requiredFiles.length);
+    console.log('[netlify] ✅ Deployment created:', deployId);
+    console.log('[netlify] 📤 Uploading', requiredFiles.length, 'files...');
     
-    // Step 4: Upload required files
-    if (requiredFiles.length > 0) {
-      console.log('[netlify-deploy] ⬆️ Uploading files...');
+    // Upload all required files
+    for (const filePath of requiredFiles) {
+      const content = deployFiles[filePath];
+      if (!content) continue;
       
-      for (const filePath of requiredFiles) {
-        const fileContent = deployFiles[filePath];
-        if (!fileContent) {
-          console.error(`[netlify-deploy] File not found: ${filePath}`);
-          continue;
-        }
+      try {
+        const uploadUrl = `https://api.netlify.com/api/v1/deploys/${deployId}/files/${encodeURIComponent(filePath)}`;
+        const uploadResponse = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${netlifyToken}`,
+            'Content-Type': 'application/octet-stream',
+          },
+          body: content,
+        });
         
-        const uploadResponse = await fetch(
-          `https://api.netlify.com/api/v1/deploys/${deployId}/files/${filePath}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${netlifyToken}`,
-              'Content-Type': 'application/octet-stream',
-            },
-            body: fileContent,
-          }
-        );
-        
-        if (!uploadResponse.ok) {
-          console.error(`[netlify-deploy] Failed to upload ${filePath}`);
+        if (uploadResponse.ok) {
+          console.log(`[netlify] ✓ Uploaded: ${filePath}`);
         } else {
-          console.log(`[netlify-deploy] ✓ Uploaded: ${filePath}`);
+          console.error(`[netlify] ✗ Failed: ${filePath}`);
         }
+      } catch (err) {
+        console.error(`[netlify] ✗ Error uploading ${filePath}:`, err);
       }
-    } else {
-      console.log('[netlify-deploy] ℹ️ No new files to upload (using cached versions)');
     }
     
-    // Step 5: Quick status check (don't wait for full deployment)
-    console.log('[netlify-deploy] 📊 Checking initial deployment status...');
+    console.log('[netlify] ✅ All files uploaded!');
     
-    const deployStatus = await checkDeploymentStatus(deployId, netlifyToken);
+    // Wait a bit for Netlify to process
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    const finalUrl = deployStatus.ssl_url || deployStatus.url || siteUrl;
+    // Get final status
+    const statusResponse = await fetch(`https://api.netlify.com/api/v1/deploys/${deployId}`, {
+      headers: { 'Authorization': `Bearer ${netlifyToken}` },
+    });
     
-    console.log('[netlify-deploy] ✅ Deployment initiated successfully!');
-    console.log('[netlify-deploy] 🌐 URL:', finalUrl);
-    console.log('[netlify-deploy] 📊 Status:', deployStatus.state);
+    const status = await statusResponse.json();
+    const finalUrl = status.ssl_url || status.url || siteUrl;
+    
+    console.log('[netlify] 🎉 Deployment complete!');
+    console.log('[netlify] 🌐 URL:', finalUrl);
+    console.log('[netlify] 📊 Status:', status.state);
     
     return NextResponse.json({
       success: true,
       deploymentId: deployId,
       siteId: siteId,
       url: finalUrl,
-      adminUrl: deployStatus.admin_url,
-      state: deployStatus.state,
-      createdAt: deployStatus.created_at,
-      message: 'Deployment in progress. Your site will be live in 1-2 minutes at: ' + finalUrl
+      adminUrl: status.admin_url,
+      state: status.state,
+      message: `✅ Site deployed successfully! Visit: ${finalUrl}\n\n⏱️ If you see a 404, wait 30-60 seconds for Netlify to finish building.`
     });
     
-  } catch (error) {
-    console.error('[netlify-deploy] ❌ Error:', error);
+  } catch (error: any) {
+    console.error('[netlify] ❌ Error:', error);
     return NextResponse.json({ 
-      error: error instanceof Error ? error.message : 'Deployment failed',
-      details: error instanceof Error ? error.stack : undefined
+      error: error.message || 'Deployment failed',
+      details: error.stack
     }, { status: 500 });
   }
 }

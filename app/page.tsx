@@ -2448,6 +2448,125 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
     }
   };
 
+  // Vercel deployment function
+  const deployToVercel = async () => {
+    const vercelToken = (window as any).apiKeys?.vercel;
+    
+    if (!vercelToken) {
+      addChatMessage('⚠️ Please add your Vercel API Token in API Keys settings first!\n\nGet your token from: https://vercel.com/account/tokens', 'system');
+      setShowApiKeysSettings(true);
+      return;
+    }
+
+    if (!sandboxData) {
+      addChatMessage('Please create a sandbox first!', 'system');
+      return;
+    }
+
+    setDeploymentLoading(true);
+    setDeploymentLogs([]);
+    const logs: string[] = [];
+    
+    const addLog = (message: string) => {
+      logs.push(message);
+      setDeploymentLogs([...logs]);
+      console.log('[vercel-deploy]', message);
+    };
+
+    try {
+      addLog('🚀 Starting Vercel deployment...');
+      addChatMessage('🚀 Starting Vercel deployment...', 'system');
+      
+      addLog('📦 Fetching files from sandbox...');
+      const filesResponse = await fetch('/api/get-sandbox-files', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!filesResponse.ok) {
+        throw new Error('Failed to fetch sandbox files');
+      }
+
+      const filesData = await filesResponse.json();
+      
+      if (!filesData.success || !filesData.files) {
+        throw new Error('No files available in sandbox');
+      }
+
+      const filesToDeploy = filesData.files;
+      const fileCount = Object.keys(filesToDeploy).length;
+
+      if (fileCount === 0) {
+        throw new Error('No files found. Please generate some code first!');
+      }
+
+      addLog(`✅ Found ${fileCount} files to deploy`);
+      addChatMessage(`📝 Preparing ${fileCount} files...`, 'system');
+
+      Object.keys(filesToDeploy).slice(0, 5).forEach(file => {
+        addLog(`   📄 ${file}`);
+      });
+      if (fileCount > 5) {
+        addLog(`   ... and ${fileCount - 5} more files`);
+      }
+
+      const projectName = `youssef-ai-${Date.now()}`;
+      addLog(`▲ Creating Vercel deployment: ${projectName}`);
+      addChatMessage('▲ Creating Vercel deployment...', 'system');
+      
+      addLog('⬆️ Uploading files to Vercel...');
+      addChatMessage('⬆️ Uploading files...', 'system');
+
+      const response = await fetch('/api/vercel/deploy', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-Vercel-Token': vercelToken
+        },
+        body: JSON.stringify({
+          projectName,
+          files: filesToDeploy,
+          vercelToken,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        addLog(`❌ Deployment failed: ${data.error}`);
+        throw new Error(data.error || 'Vercel deployment failed');
+      }
+
+      addLog('✅ Files uploaded successfully!');
+      addLog('🚧 Vercel is building your site...');
+      addLog(`🌐 Your site will be live at: ${data.url}`);
+      addLog('⏱️ Please wait 30-60 seconds');
+      addLog(`📊 Deployment ID: ${data.deploymentId}`);
+      
+      setDeploymentUrl(data.url);
+      setSandboxFiles(filesToDeploy);
+      
+      setDeploymentData({
+        url: data.url,
+        siteId: data.deploymentId,
+        deploymentId: data.deploymentId
+      });
+      
+      setShowDeploymentSuccess(true);
+      
+      addChatMessage(
+        `✅ Successfully deployed to Vercel!\n\n▲ Your site is being built...\n\n🌐 URL: ${data.url}\n\n⏱️ Please wait 30-60 seconds, then open the link!\n\n📝 Files deployed: ${fileCount}`,
+        'system'
+      );
+    } catch (error: any) {
+      addLog(`❌ Error: ${error.message}`);
+      addChatMessage(`❌ Vercel deployment failed: ${error.message}`, 'system');
+      console.error('[vercel-deploy] Error:', error);
+    } finally {
+      setDeploymentLoading(false);
+    }
+  };
+
   const reapplyLastGeneration = async () => {
     if (!conversationContext.lastGeneratedCode) {
       addChatMessage('No previous generation to re-apply', 'system');
@@ -3322,6 +3441,30 @@ Focus on creating an enterprise-grade Angular application.`;
                 </svg>
                 <span className="text-[10px] sm:text-xs md:text-sm font-medium hidden lg:inline">
                   {netlifyConnected ? 'Publish' : 'Connect'}
+                </span>
+              </>
+            )}
+          </Button>
+          <Button 
+            variant="code"
+            onClick={deployToVercel}
+            disabled={deploymentLoading}
+            size="sm"
+            title="Deploy to Vercel"
+            className="bg-black text-white hover:bg-gray-900 transition-all duration-200 flex items-center gap-1 sm:gap-1.5 px-1.5 py-1.5 sm:px-2 md:px-3 sm:py-1.5 md:py-2 shadow-lg hover:shadow-xl border border-gray-700"
+          >
+            {deploymentLoading ? (
+              <svg className="animate-spin h-3 w-3 sm:h-3.5 sm:w-3.5 md:h-4 md:w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <>
+                <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M24 22.525H0l12-21.05 12 21.05z"/>
+                </svg>
+                <span className="text-[10px] sm:text-xs md:text-sm font-medium hidden lg:inline">
+                  Vercel
                 </span>
               </>
             )}
