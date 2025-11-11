@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense, useCallback } from 'react';
+import { useState, useEffect, useRef, Suspense, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { appConfig } from '@/config/app.config';
 import { Button } from '@/components/ui/button';
@@ -214,10 +214,10 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
 
   // Sandbox confirmation states
   const [showSandboxConfirmation, setShowSandboxConfirmation] = useState(false);
-  const [pendingGenerationRequest, setPendingGenerationRequest] = useState<(() => Promise<void>) | null>(null);
   const [pendingDescription, setPendingDescription] = useState<string | null>(null);
   const [techStack, setTechStack] = useState<'html' | 'react' | 'nextjs' | 'angular'>('react');
   const [showTechStackSelector, setShowTechStackSelector] = useState(false);
+  const [pendingSandboxAction, setPendingSandboxAction] = useState<'home' | 'chat' | null>(null);
 
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const chatMessagesRef = useRef<HTMLDivElement>(null);
@@ -252,6 +252,115 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
     files: [],
     lastProcessedPosition: 0
   });
+  const techSelectorNoticeRef = useRef({
+    techPromptShown: false,
+    sandboxWarningShown: false,
+  });
+  const htmlSanitizationNotifiedRef = useRef(false);
+  const [lastEditedFile, setLastEditedFile] = useState<string | null>(null);
+  const [lastCompletedFiles, setLastCompletedFiles] = useState<Array<{
+    path: string;
+    content: string;
+    type: string;
+    completed: boolean;
+  }>>([]);
+  const filesSignature = useMemo(
+    () =>
+      generationProgress.files
+        .map(file => `${file.path}:${file.content.length}:${file.completed ? '1' : '0'}`)
+        .join('|'),
+    [generationProgress.files]
+  );
+
+  useEffect(() => {
+    if (generationProgress.currentFile?.path) {
+      setLastEditedFile(generationProgress.currentFile.path);
+    }
+  }, [generationProgress.currentFile?.path]);
+
+  useEffect(() => {
+    if (generationProgress.files.length > 0) {
+      setLastCompletedFiles(generationProgress.files.map(file => ({ ...file })));
+    }
+  }, [filesSignature, generationProgress.files.length]);
+
+  const sanitizeGeneratedOutput = useCallback(
+    (code: string) => {
+      if (techStack !== 'html' || !code) {
+        return code;
+      }
+
+      const fileRegex = /<file path="([^"]+)">([\s\S]*?)<\/file>/g;
+
+      return code.replace(fileRegex, (match, filePath, fileContent) => {
+        if (!filePath.endsWith('.html')) {
+          return match;
+        }
+
+        let sanitizedContent = fileContent;
+
+        sanitizedContent = sanitizedContent.replace(/className=/g, 'class=');
+        sanitizedContent = sanitizedContent.replace(/htmlFor=/g, 'for=');
+        sanitizedContent = sanitizedContent.replace(/tabIndex=/g, 'tabindex=');
+        sanitizedContent = sanitizedContent.replace(/<\/?(React\.)?Fragment>/g, '');
+        sanitizedContent = sanitizedContent.replace(/import\s+React[^;]*;?\s*/g, '');
+        sanitizedContent = sanitizedContent.replace(/from\s+['"]react['"];?\s*/g, '');
+        sanitizedContent = sanitizedContent.replace(/export\s+default[^;]*;?\s*/g, '');
+
+        sanitizedContent = sanitizedContent.replace(/\son[a-zA-Z]+\s*=\s*\{[^}]+\}/g, '');
+        sanitizedContent = sanitizedContent.replace(/\son[a-zA-Z]+\s*=\s*["'][^"']*["']/g, '');
+
+        sanitizedContent = sanitizedContent.replace(
+          /style=\{\s*{([^}]*)}\s*\}/g,
+          (_, styleBody: string) => {
+            const rules = styleBody
+              .split(',')
+              .map(rule => rule.trim())
+              .filter(Boolean)
+              .map(rule => {
+                const [prop, value] = rule.split(':');
+                if (!prop || !value) {
+                  return null;
+                }
+                const kebabProp = prop
+                  .trim()
+                  .replace(/[A-Z]/g, match => `-${match.toLowerCase()}`);
+                const cleanedValue = value.trim().replace(/^['"]|['"]$/g, '');
+                return `${kebabProp}: ${cleanedValue}`;
+              })
+              .filter(Boolean)
+              .join('; ');
+
+            return rules ? `style="${rules}"` : '';
+          }
+        );
+
+        sanitizedContent = sanitizedContent.replace(
+          /(\s[\w:-]+)=\{([^}]+)\}/g,
+          (_fullMatch, attrWithSpace: string, expression: string) => {
+            const attributeName = attrWithSpace.trim();
+            const cleanedExpression = expression
+              .trim()
+              .replace(/^['"]|['"]$/g, '')
+              .replace(/^`|`$/g, '');
+
+            return cleanedExpression
+              ? ` ${attributeName}="${cleanedExpression}"`
+              : ` ${attributeName}`;
+          }
+        );
+
+        sanitizedContent = sanitizedContent.replace(
+          /<script([^>]*)type=(["'])module\2([^>]*)>([\s\S]*?)<\/script>/gi,
+          (_scriptMatch, beforeType, quote, afterType, scriptBody) =>
+            `<script${beforeType}type="text/javascript"${afterType}>${scriptBody}</script>`
+        );
+
+        return `<file path="${filePath}">${sanitizedContent}</file>`;
+      });
+    },
+    [techStack]
+  );
 
   useEffect(() => {
     if (!session?.user?.id) {
@@ -664,7 +773,12 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
       
       if (data.success) {
         setSandboxData(data);
-  updateStatus('Sandbox active', true);
+        updateStatus('Sandbox active', true);
+        setPendingSandboxAction(null);
+        techSelectorNoticeRef.current = {
+          techPromptShown: false,
+          sandboxWarningShown: false,
+        };
         log('Sandbox created successfully!');
         log(`Sandbox ID: ${data.sandboxId}`);
         log(`URL: ${data.url}`);
@@ -1842,22 +1956,22 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
     let sandboxCreating = false;
     
     if (!sandboxData) {
-      // Ask for user confirmation before creating sandbox
-      setShowSandboxConfirmation(true);
-      setPendingGenerationRequest(() => async () => {
-        sandboxCreating = true;
-        addChatMessage('🚀 Creating sandbox for your project...', 'system');
-        await createSandbox(true);
-        // After sandbox is created, continue with generation
-        // This will be called after user confirms
-      });
-      
-      addChatMessage('⚠️ A sandbox environment needs to be created to run your code. This will use E2B credits. Please confirm to continue.', 'system');
+      if (!showSandboxConfirmation) {
+        setShowSandboxConfirmation(true);
+      }
+      setPendingSandboxAction('chat');
+      if (!techSelectorNoticeRef.current.sandboxWarningShown) {
+        addChatMessage('⚠️ A sandbox environment needs to be created to run your code. This will use E2B credits. Please confirm to continue.', 'system');
+        techSelectorNoticeRef.current.sandboxWarningShown = true;
+      }
       return; // Stop here and wait for confirmation
     }
     
     // Determine if this is an edit
     const isEdit = conversationContext.appliedCode.length > 0;
+    if (techStack === 'html') {
+      htmlSanitizationNotifiedRef.current = false;
+    }
   try {
       // Generation tab is already active from scraping phase
       setGenerationProgress(prev => ({
@@ -2177,6 +2291,14 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
       }
       
       if (generatedCode) {
+        const normalizedCode = sanitizeGeneratedOutput(generatedCode);
+        const sanitizedChanged = normalizedCode !== generatedCode;
+        if (sanitizedChanged && techStack === 'html' && !htmlSanitizationNotifiedRef.current) {
+          addChatMessage('✅ تم تحويل الكود إلى HTML متوافق بدون JSX لضمان عمل الموقع بشكل صحيح.', 'system');
+          htmlSanitizationNotifiedRef.current = true;
+        }
+        generatedCode = normalizedCode;
+
         // Parse files from generated code for metadata
         const fileRegex = /<file path="([^"]+)">([^]*?)<\/file>/g;
         const generatedFiles = [];
@@ -2658,7 +2780,7 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
     setHomeScreenFading(true);
   // Clear messages and show the generation message
     setChatMessages([]);
-    addChatMessage(`Creating website: ${homeDescriptionInput}`, 'system');
+    addChatMessage('🔍 جاري تحضير التفاصيل الأولية للمشروع...', 'system');
   // Set loading stage immediately before hiding home screen
     setLoadingStage('planning');
   // Also ensure we're on preview tab to show the loading overlay
@@ -2692,13 +2814,28 @@ const generateWebsiteFromDescription = async (description: string, projectIdOver
   if (!sandboxData) {
     // Store the description for later use
     setPendingDescription(description);
-    
-    // Show tech stack selector first
-    setShowTechStackSelector(true);
+    setPendingSandboxAction('home');
+
+    if (!showTechStackSelector) {
+      setShowTechStackSelector(true);
+    }
+
+    if (!techSelectorNoticeRef.current.techPromptShown) {
+      addChatMessage('🔧 اختر التقنية التي تريد أن أبني بها مشروعك، ثم أكد إنشاء الـ Sandbox للمتابعة.', 'system');
+      techSelectorNoticeRef.current.techPromptShown = true;
+    }
+    if (!techSelectorNoticeRef.current.sandboxWarningShown) {
+      addChatMessage('⚠️ سيتم إنشاء Sandbox جديدة وتشغيلها لمدة ساعة كاملة بعد اختيار التقنية والتأكيد.', 'system');
+      techSelectorNoticeRef.current.sandboxWarningShown = true;
+    }
     return; // Stop and wait for tech stack selection
   }
 
   let sandboxPromise: Promise<void> | null = null;
+
+  if (techStack === 'html') {
+    htmlSanitizationNotifiedRef.current = false;
+  }
 
   // Generate message and prompt based on tech stack
   const techName = techStack === 'html' ? 'HTML/CSS/JS' : techStack === 'react' ? 'React' : techStack === 'nextjs' ? 'Next.js' : 'Angular';
@@ -2980,6 +3117,14 @@ Focus on creating an enterprise-grade Angular application.`;
     }
 
     if (generatedCode.trim()) {
+      const normalizedCode = sanitizeGeneratedOutput(generatedCode);
+      const sanitizedChanged = normalizedCode !== generatedCode;
+      if (sanitizedChanged && techStack === 'html' && !htmlSanitizationNotifiedRef.current) {
+        addChatMessage('✅ تم تحسين الكود ليصبح HTML نظيف بدون أي JSX أو تعليمات غير مدعومة.', 'system');
+        htmlSanitizationNotifiedRef.current = true;
+      }
+      generatedCode = normalizedCode;
+
       if (session?.user?.id) {
         loadProjects();
       }
@@ -3025,6 +3170,8 @@ Focus on creating an enterprise-grade Angular application.`;
     setActiveTab('preview');
   }
 };
+
+  const editingTargetPath = generationProgress.currentFile?.path || lastEditedFile;
 
   return (
     // Top-level container uses theme variables
@@ -3680,11 +3827,11 @@ Focus on creating an enterprise-grade Angular application.`;
                       </div>
                   )}
                 </div>
-                
+
                 {/* Live streaming response display */}
                 {generationProgress.streamedCode && (
-    
-                  <motion.div 
+
+                  <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
@@ -3731,6 +3878,31 @@ Focus on creating an enterprise-grade Angular application.`;
                   </motion.div>
   
                 )}
+              </div>
+            )}
+            {!generationProgress.isGenerating && lastCompletedFiles.length > 0 && activeTab === 'generation' && (
+              <div className={`mt-3 inline-block ${theme.bg_card} border ${theme.border_color} rounded-lg p-3`}>
+                <div className={`text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  آخر تحديث: {lastCompletedFiles.length} ملف{lastCompletedFiles.length === 1 ? '' : 'ات'} جاهزة
+                </div>
+                <div className="flex flex-wrap items-start gap-1">
+                  {lastCompletedFiles.slice(0, 8).map((file, idx) => (
+                    <div
+                      key={`recent-${file.path}-${idx}`}
+                      className={`inline-flex items-center gap-1 px-2 py-1 ${theme.chat_user_bg} text-white rounded-[10px] text-xs`}
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                      {file.path.split('/').pop()}
+                    </div>
+                  ))}
+                  {lastCompletedFiles.length > 8 && (
+                    <div className="px-3 py-1 text-xs rounded-[10px] border border-dashed border-white/30 text-white/70">
+                      +{lastCompletedFiles.length - 8} أخرى
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -3811,28 +3983,31 @@ Focus on creating an enterprise-grade Angular application.`;
             </div>
             <div className="flex gap-1 sm:gap-2 items-center">
               {/* Live Code Generation Status - Moved to far right */}
-              {activeTab === 'generation' && (generationProgress.isGenerating || generationProgress.files.length 
-  > 0) && (
+              {activeTab === 'generation' && (generationProgress.isGenerating || generationProgress.files.length > 0) && (
                 <div className="flex items-center gap-2 sm:gap-3">
+                  {generationProgress.isEdit && editingTargetPath && (
+                    <div className="hidden lg:flex flex-col text-[10px] sm:text-xs text-blue-200/90 text-right leading-tight pr-2">
+                      <span className="uppercase tracking-[0.2em] text-blue-300/60">Editing</span>
+                      <span className="font-mono text-blue-100 truncate max-w-[200px]">{editingTargetPath}</span>
+                    </div>
+                  )}
                   {!generationProgress.isEdit && (
                     <div className="text-gray-400 text-xs sm:text-sm hidden sm:block">
                       {generationProgress.files.length} files generated
-            
-                      </div>
+                    </div>
                   )}
-                  <div className={`inline-flex items-center justify-center whitespace-nowrap rounded-[10px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${theme.chat_user_bg} text-white [box-shadow:none] h-8 px-3 py-1 text-sm gap-2`}>
-                    {generationProgress.isGenerating ?
-  (
+                  <div
+                    className={`inline-flex items-center justify-center whitespace-nowrap rounded-[10px] font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${theme.chat_user_bg} text-white [box-shadow:none] h-8 px-3 py-1 text-sm gap-2`}
+                  >
+                    {generationProgress.isGenerating ? (
                       <>
                         <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
                         {generationProgress.isEdit ? 'Editing code' : 'Live code generation'}
-                
                       </>
                     ) : (
                       <>
                         <div className="w-2 h-2 bg-gray-500 rounded-full" />
-                     
-  COMPLETE
+                        COMPLETE
                       </>
                     )}
                   </div>
@@ -4080,6 +4255,11 @@ Focus on creating an enterprise-grade Angular application.`;
                 onClick={() => {
                   setShowTechStackSelector(false);
                   setPendingDescription(null);
+                  setPendingSandboxAction(null);
+                  techSelectorNoticeRef.current = {
+                    techPromptShown: false,
+                    sandboxWarningShown: false,
+                  };
                   addChatMessage('❌ تم الإلغاء', 'system');
                 }}
                 className="flex-1 px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors duration-200"
@@ -4145,11 +4325,20 @@ Focus on creating an enterprise-grade Angular application.`;
               <button
                 onClick={async () => {
                   setShowSandboxConfirmation(false);
-                  if (pendingDescription) {
-                    addChatMessage(`🚀 إنشاء sandbox وبدء التوليد باستخدام ${techStack === 'html' ? 'HTML/CSS/JS' : techStack === 'react' ? 'React' : techStack === 'nextjs' ? 'Next.js' : 'Angular'}...`, 'system');
+                  const techLabel = techStack === 'html' ? 'HTML/CSS/JS' : techStack === 'react' ? 'React' : techStack === 'nextjs' ? 'Next.js' : 'Angular';
+                  if (pendingSandboxAction === 'home' && pendingDescription) {
+                    addChatMessage(`🚀 إنشاء sandbox وبدء التوليد باستخدام ${techLabel}...`, 'system');
                     await createSandbox(true, pendingDescription);
                     setPendingDescription(null);
+                  } else if (pendingSandboxAction === 'chat') {
+                    addChatMessage(`🚀 إنشاء sandbox وتشغيل بيئة ${techLabel} للمحادثة الحالية...`, 'system');
+                    await createSandbox();
                   }
+                  setPendingSandboxAction(null);
+                  techSelectorNoticeRef.current = {
+                    techPromptShown: false,
+                    sandboxWarningShown: false,
+                  };
                 }}
                 className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-blue-500/50"
               >
@@ -4183,8 +4372,7 @@ export default function Page() {
     chat_ai_bg: 'bg-gray-200',
     code_bg: 'bg-gray-50',
   };
-
-  return (
+    return (
     <ThemeProvider attribute="class">
       <ApiKeysProvider>
         <Suspense fallback={<div className={`flex items-center justify-center min-h-screen ${theme.bg_main} ${theme.text_main}`}>Loading...</div>}>
