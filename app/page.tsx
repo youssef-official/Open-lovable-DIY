@@ -312,7 +312,7 @@ function AISandboxPage({ isDarkMode, setIsDarkMode, theme }: { isDarkMode: boole
 
         sanitizedContent = sanitizedContent.replace(
           /style=\{\s*{([^}]*)}\s*\}/g,
-          (_, styleBody: string) => {
+          (_match: string, styleBody: string) => {
             const rules = styleBody
               .split(',')
               .map(rule => rule.trim())
@@ -3624,12 +3624,17 @@ Focus on creating an enterprise-grade Angular application.`;
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col xl:flex-row overflow-hidden">
         {/* Center Panel - AI Chat (1/3 of remaining width) */}
-        <div className={`flex-1 w-full sm:max-w-[300px] md:max-w-[350px] lg:max-w-[400px] flex flex-col border-r ${theme.border_color} ${theme.bg_card}`}>
+        <div
+          className={`w-full xl:max-w-[400px] flex-shrink-0 flex flex-col min-h-0 border-b xl:border-b-0 xl:border-r ${theme.border_color} ${theme.bg_card}`}
+        >
 
 
-          <div className="flex-1 overflow-y-auto p-1.5 sm:p-2 md:p-4 flex flex-col gap-1 scrollbar-hide" ref={chatMessagesRef}>
+          <div
+            className="flex-1 min-h-0 overflow-y-auto p-1.5 sm:p-2 md:p-4 flex flex-col gap-1 scrollbar-hide"
+            ref={chatMessagesRef}
+          >
             {chatMessages.map((msg, 
   idx) => {
               // Check if this message is from a successful generation
@@ -4041,7 +4046,7 @@ Focus on creating an enterprise-grade Angular application.`;
               )}
             </div>
           </div>
-          <div className="flex-1 relative overflow-hidden">
+          <div className="flex-1 relative min-h-[400px] xl:min-h-0 overflow-hidden">
             {renderMainContent()}
           </div>
         </div>
