@@ -8,25 +8,21 @@ import { useApiKeys } from '@/contexts/ApiKeysContext';
 export function useApiRequest() {
   const { apiKeys } = useApiKeys();
 
-  const makeRequest = async (url: string, options: RequestInit = {}) => {
+  const makeRequest = async (url: string, options: RequestInit = {}, model?: string) => {
     // Prepare headers with API keys
     const headers = new Headers(options.headers);
 
     // Add API keys to headers
-    if (apiKeys.groq) {
-      headers.set('x-groq-api-key', apiKeys.groq);
+    if (model === 'minimax/minimax-m2-official') {
+      if (apiKeys.minimax) {
+        headers.set('x-minimax-api-key', apiKeys.minimax);
+      }
+    } else if (apiKeys.openrouter) {
+      headers.set('x-openrouter-api-key', apiKeys.openrouter);
     }
+
     if (apiKeys.e2b) {
       headers.set('x-e2b-api-key', apiKeys.e2b);
-    }
-    if (apiKeys.anthropic) {
-      headers.set('x-anthropic-api-key', apiKeys.anthropic);
-    }
-    if (apiKeys.openai) {
-      headers.set('x-openai-api-key', apiKeys.openai);
-    }
-    if (apiKeys.gemini) {
-      headers.set('x-gemini-api-key', apiKeys.gemini);
     }
 
     // Make the request with updated headers
@@ -36,16 +32,18 @@ export function useApiRequest() {
     });
   };
 
-  const makeRequestWithBody = async (url: string, body: any, options: RequestInit = {}) => {
+  const makeRequestWithBody = async (url: string, body: any, options: RequestInit = {}, model?: string) => {
     // Add API keys to the request body as well for compatibility
-    const bodyWithKeys = {
+    const bodyWithKeys: any = {
       ...body,
-      groqApiKey: apiKeys.groq,
       e2bApiKey: apiKeys.e2b,
-      anthropicApiKey: apiKeys.anthropic,
-      openaiApiKey: apiKeys.openai,
-      geminiApiKey: apiKeys.gemini,
     };
+
+    if (model === 'minimax/minimax-m2-official') {
+      bodyWithKeys.minimaxApiKey = apiKeys.minimax;
+    } else {
+      bodyWithKeys.openrouterApiKey = apiKeys.openrouter;
+    }
 
     return makeRequest(url, {
       ...options,
@@ -55,12 +53,12 @@ export function useApiRequest() {
         ...options.headers,
       },
       body: JSON.stringify(bodyWithKeys)
-    });
+    }, model);
   };
 
   return {
     makeRequest,
     makeRequestWithBody,
-    hasRequiredKeys: !!(apiKeys.groq && apiKeys.e2b)
+    hasRequiredKeys: !!((apiKeys.openrouter || apiKeys.minimax) && apiKeys.e2b)
   };
 }

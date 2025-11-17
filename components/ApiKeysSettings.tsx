@@ -157,7 +157,7 @@ export function ApiKeysSettings({ onClose }: ApiKeysSettingsProps) {
       <CardHeader>
         <CardTitle>API Keys Configuration</CardTitle>
         <CardDescription>
-          Configure your API keys to use Open Lovable. All keys are stored locally in your browser.
+          Configure your API keys to use Youssef Ai. All keys are stored locally in your browser.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -175,15 +175,15 @@ export function ApiKeysSettings({ onClose }: ApiKeysSettingsProps) {
             <h3 className="text-lg font-semibold mb-3">Required API Keys</h3>
             <div className="space-y-4">
               <ApiKeyInput
-                label="Groq API Key"
+                label="Open Router API Key"
                 description="For AI inference and code generation"
-                placeholder="gsk_..."
-                value={localKeys.groq || ''}
-                onChange={(value) => handleKeyChange('groq', value)}
-                onValidate={() => handleValidateKey('groq')}
+                placeholder="sk-or-..."
+                value={localKeys.openrouter || ''}
+                onChange={(value) => handleKeyChange('openrouter', value)}
+                onValidate={() => handleValidateKey('openrouter')}
                 isValidating={isValidating}
-                validationResult={validationResults.groq}
-                getApiUrl="https://console.groq.com/keys"
+                validationResult={validationResults.openrouter}
+                getApiUrl="https://openrouter.ai/keys"
                 required
               />
 
@@ -199,51 +199,22 @@ export function ApiKeysSettings({ onClose }: ApiKeysSettingsProps) {
                 getApiUrl="https://e2b.dev/dashboard"
                 required
               />
-
-
             </div>
           </div>
 
           <div>
             <h3 className="text-lg font-semibold mb-3">Optional API Keys</h3>
-            <p className="text-sm text-gray-600 mb-3">
-              Add these for additional AI model options
-            </p>
             <div className="space-y-4">
               <ApiKeyInput
-                label="Anthropic API Key"
-                description="For Claude models"
-                placeholder="sk-ant-..."
-                value={localKeys.anthropic || ''}
-                onChange={(value) => handleKeyChange('anthropic', value)}
-                onValidate={() => handleValidateKey('anthropic')}
+                label="Minimax API Key"
+                description="For direct access to Minimax models if not using Open Router"
+                placeholder="Your Minimax API Key"
+                value={localKeys.minimax || ''}
+                onChange={(value) => handleKeyChange('minimax', value)}
+                onValidate={() => handleValidateKey('minimax')}
                 isValidating={isValidating}
-                validationResult={validationResults.anthropic}
-                getApiUrl="https://console.anthropic.com/keys"
-              />
-
-              <ApiKeyInput
-                label="OpenAI API Key"
-                description="For GPT models"
-                placeholder="sk-..."
-                value={localKeys.openai || ''}
-                onChange={(value) => handleKeyChange('openai', value)}
-                onValidate={() => handleValidateKey('openai')}
-                isValidating={isValidating}
-                validationResult={validationResults.openai}
-                getApiUrl="https://platform.openai.com/api-keys"
-              />
-
-              <ApiKeyInput
-                label="Google Gemini API Key"
-                description="For Gemini models"
-                placeholder="AI..."
-                value={localKeys.gemini || ''}
-                onChange={(value) => handleKeyChange('gemini', value)}
-                onValidate={() => handleValidateKey('gemini')}
-                isValidating={isValidating}
-                validationResult={validationResults.gemini}
-                getApiUrl="https://aistudio.google.com/app/apikey"
+                validationResult={validationResults.minimax}
+                getApiUrl="https://www.minimaxi.com/en-US/platform/introduction"
               />
             </div>
           </div>

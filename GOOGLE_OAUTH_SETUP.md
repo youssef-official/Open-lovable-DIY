@@ -1,6 +1,6 @@
 # Google OAuth Setup Guide
 
-This guide explains how to set up Google OAuth authentication for Open Lovable DIY.
+This guide explains how to set up Google OAuth authentication for Youssef Ai Website Builder.
 
 ## Prerequisites
 
