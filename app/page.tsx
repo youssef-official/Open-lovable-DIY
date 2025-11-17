@@ -1101,32 +1101,26 @@ Tip: I automatically detect and install npm packages from your code imports (lik
             {generationProgress.isGenerating && (generationProgress.isThinking || generationProgress.thinkingText) && (
               <div className="px-6 pb-6">
                 <div className="flex items-center gap-2 mb-2">
-      
                   <div className="text-purple-400 font-medium flex items-center gap-2">
                     {generationProgress.isThinking ? (
                       <>
                         <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
-         
                         AI is thinking...
                       </>
                     ) : (
                       <>
-                 
                         <span className="text-purple-400">✓</span>
-                        Thought for {generationProgress.thinkingDuration ||
-  0} seconds
+                        Thought for {generationProgress.thinkingDuration || 0} seconds
                       </>
                     )}
                   </div>
                 </div>
                 {generationProgress.thinkingText && (
-     
                   <div className={`bg-gray-900 border border-gray-700 rounded-lg p-4 max-h-48 overflow-y-auto scrollbar-hide`}>
                     <pre className="text-xs font-mono text-gray-300 whitespace-pre-wrap">
                       {generationProgress.thinkingText}
                     </pre>
-             
-  </div>
+                  </div>
                 )}
               </div>
             )}
@@ -1436,29 +1430,42 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       // Don't show loading overlay for edits
       if (loadingStage || (generationProgress.isGenerating && !generationProgress.isEdit)) {
         return (
-          <div className="relative w-full h-full bg-gray-900 flex items-center justify-center">
-            <div className="text-center">
-              <div className="mb-8">
- 
-                <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto"></div>
+          <div className="relative w-full h-full bg-gray-950 flex items-center justify-center overflow-hidden">
+            {/* Background from home screen */}
+            <div className="absolute inset-0 opacity-80" style={{
+              background: 'radial-gradient(circle at center, rgba(255, 0, 127, 0.2) 0%, rgba(0, 0, 0, 0.9) 70%)',
+            }} />
+            <div className="absolute inset-0" style={{
+              boxShadow: '0 0 100px 50px rgba(128, 0, 128, 0.5) inset, 0 0 100px 50px rgba(0, 0, 255, 0.3) inset',
+              mixBlendMode: 'screen',
+              opacity: 0.3,
+            }} />
+            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse" />
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-gray-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+
+            <div className="text-center z-10">
+               {/* New loading indicator */}
+              <div className="mb-8 relative w-24 h-24 mx-auto">
+                <div className="absolute inset-0 border-4 border-gray-800 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-purple-500 rounded-full animate-spin border-t-transparent"></div>
               </div>
               <h3 className="text-xl font-semibold text-white mb-2">
                 {loadingStage === 'planning' && 'Planning your design...'}
                 {(loadingStage === 'generating' || generationProgress.isGenerating) && (
-  <>
-    Generating <br /> your application...
-  </>
-)}
+                  <>
+                    Generating <br /> your application...
+                  </>
+                )}
               </h3>
               <p className="text-gray-400 text-sm">
                 {loadingStage === 'planning' && 'Creating the optimal React component architecture'}
                 {(loadingStage === 'generating' ||
-  generationProgress.isGenerating) && 'Writing clean, modern code for your app'}
+                  generationProgress.isGenerating) && 'Writing clean, modern code for your app'}
               </p>
             </div>
           </div>
         );
-  }
+      }
       
       // Show sandbox iframe only when not in any loading state
       if (sandboxData?.url && !loading) {
@@ -1469,7 +1476,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
               src={sandboxData.url}
       
               className="w-full h-full border-none"
-              title="Open Lovable Sandbox"
+              title="Youssef Ai Sandbox"
               allow="clipboard-write"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             />
@@ -2336,10 +2343,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
           <div className="absolute top-0 left-0 right-0 z-20 px-6 py-4 flex items-center justify-between animate-[fadeIn_0.8s_ease-out]">
          
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center border border-white/20">
-                <span className="text-white font-bold text-lg">❤️</span>
-              </div>
-              <span className="text-white font-semibold text-lg">Open-Lovable</span>
+              <img src="/logo.png" alt="Youssef Ai Logo" className="w-8 h-8" />
+              <span className="text-white font-semibold text-lg">Youssef Ai</span>
             </div>
          
             <div className="flex items-center gap-3 sm:gap-4">
@@ -2367,9 +2372,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
                 <h1 className="text-[2.5rem] sm:text-[3.5rem] lg:text-[4.2rem] text-center text-white font-bold tracking-tight leading-[1.1] animate-[fadeIn_0.8s_ease-out] px-4">
                   <span className="block sm:inline">Build something </span>
                   <span className="bg-gradient-to-r from-gray-300 via-white to-gray-400 bg-clip-text text-transparent whitespace-nowrap">
-                    ❤️ Open-Lovable
-     
-  </span>
+                    Youssef Ai
+                  </span>
                 </h1>
                 <motion.p
                   className="text-lg lg:text-xl max-w-2xl mx-auto mt-8 text-white/90 text-center text-balance px-4"
@@ -2483,11 +2487,8 @@ Focus on creating a beautiful, functional website that matches the user's vision
       <div className={`px-4 py-4 border-b ${theme.border_color} flex items-center justify-between ${theme.bg_card}`}>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} rounded-lg flex items-center justify-center border ${theme.border_color}`}>
-           
-              <span className={`font-bold text-lg ${theme.text_main}`}>❤️</span>
-            </div>
-            <span className={`font-semibold text-lg ${theme.text_main}`}>Open-Lovable</span>
+            <img src="/logo.png" alt="Youssef Ai Logo" className="w-8 h-8" />
+            <span className={`font-semibold text-lg ${theme.text_main}`}>Youssef Ai</span>
           </div>
         </div>
         <div className="flex items-center gap-2">

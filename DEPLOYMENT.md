@@ -1,6 +1,6 @@
-# 🚀 Deployment Guide for Open Lovable DIY
+# 🚀 Deployment Guide for Youssef Ai Website Builder
 
-This guide will help you deploy Open Lovable DIY to Vercel and configure it for the `openlovable.diy` domain.
+This guide will help you deploy Youssef Ai Website Builder to Vercel and configure it for the `youssef-ai.com` domain.
 
 ## 📋 Prerequisites
 
@@ -148,7 +148,7 @@ After deployment, verify these work:
 
 ## 🎉 Success!
 
-Once deployed, your Open Lovable DIY platform will be live at:
+Once deployed, your Youssef Ai Website Builder platform will be live at:
 - **Production**: https://openlovable.diy
 - **Vercel URL**: https://open-lovable-diy.vercel.app
 
