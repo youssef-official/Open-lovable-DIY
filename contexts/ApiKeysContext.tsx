@@ -8,8 +8,9 @@ import {
   clearStoredApiKeys,
   hasRequiredApiKeys,
   getMissingRequiredApiKeys,
-  validateGroqApiKey,
+  validateOpenRouterApiKey,
   validateE2bApiKey,
+  validateMinimaxApiKey,
   ApiKeyValidationResult
 } from '@/lib/api-keys';
 
@@ -52,7 +53,7 @@ export function ApiKeysProvider({ children }: ApiKeysProviderProps) {
   }, []);
 
   const updateRequiredKeysStatus = (keys: ApiKeys) => {
-    const hasRequired = !!(keys.groq && keys.e2b);
+    const hasRequired = !!(keys.openrouter && keys.e2b);
     const missing = getMissingRequiredApiKeys();
 
     setHasRequiredKeys(hasRequired);
@@ -87,11 +88,14 @@ export function ApiKeysProvider({ children }: ApiKeysProviderProps) {
       let result: ApiKeyValidationResult;
       
       switch (provider) {
-        case 'groq':
-          result = await validateGroqApiKey(key);
+        case 'openrouter':
+          result = await validateOpenRouterApiKey(key);
           break;
         case 'e2b':
           result = await validateE2bApiKey(key);
+          break;
+        case 'minimax':
+          result = await validateMinimaxApiKey(key);
           break;
         default:
           result = { isValid: true }; // For optional keys, assume valid if provided

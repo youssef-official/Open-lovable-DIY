@@ -13,20 +13,11 @@ export function useApiRequest() {
     const headers = new Headers(options.headers);
 
     // Add API keys to headers
-    if (apiKeys.groq) {
-      headers.set('x-groq-api-key', apiKeys.groq);
+    if (apiKeys.openrouter) {
+      headers.set('x-openrouter-api-key', apiKeys.openrouter);
     }
     if (apiKeys.e2b) {
       headers.set('x-e2b-api-key', apiKeys.e2b);
-    }
-    if (apiKeys.anthropic) {
-      headers.set('x-anthropic-api-key', apiKeys.anthropic);
-    }
-    if (apiKeys.openai) {
-      headers.set('x-openai-api-key', apiKeys.openai);
-    }
-    if (apiKeys.gemini) {
-      headers.set('x-gemini-api-key', apiKeys.gemini);
     }
 
     // Make the request with updated headers
@@ -40,11 +31,8 @@ export function useApiRequest() {
     // Add API keys to the request body as well for compatibility
     const bodyWithKeys = {
       ...body,
-      groqApiKey: apiKeys.groq,
+      openrouterApiKey: apiKeys.openrouter,
       e2bApiKey: apiKeys.e2b,
-      anthropicApiKey: apiKeys.anthropic,
-      openaiApiKey: apiKeys.openai,
-      geminiApiKey: apiKeys.gemini,
     };
 
     return makeRequest(url, {
@@ -61,6 +49,6 @@ export function useApiRequest() {
   return {
     makeRequest,
     makeRequestWithBody,
-    hasRequiredKeys: !!(apiKeys.groq && apiKeys.e2b)
+    hasRequiredKeys: !!(apiKeys.openrouter && apiKeys.e2b)
   };
 }
