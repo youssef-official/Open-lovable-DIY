@@ -124,7 +124,7 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center py-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600">Manage Open Lovable DIY users</p>
+              <p className="text-gray-600">Manage Youssef Ai Website Builder users</p>
             </div>
             <div className="flex items-center gap-4">
               <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm ${

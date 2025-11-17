@@ -1,6 +1,6 @@
-# Contributing to Open Lovable DIY
+# Contributing to Youssef Ai Website Builder
 
-Thank you for your interest in contributing to Open Lovable DIY! We welcome contributions from the community and are excited to see what you'll build.
+Thank you for your interest in contributing to Youssef Ai Website Builder! We welcome contributions from the community and are excited to see what you'll build.
 
 ## 🚀 Getting Started
 
@@ -90,4 +90,4 @@ We love new ideas! When suggesting features:
 - **GitHub Discussions**: For questions and community chat
 - **Email**: support@openlovable.diy
 
-Thank you for contributing to Open Lovable DIY! 🎉
+Thank you for contributing to Youssef Ai Website Builder! 🎉
