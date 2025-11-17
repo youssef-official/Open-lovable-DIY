@@ -28,6 +28,7 @@ import { UserButton } from '@/components/UserButton';
 import { useApiRequest } from '@/hooks/useApiRequest';
 import { motion } from 'framer-motion';
 import CodeApplicationProgress, { type CodeApplicationState } from '@/components/CodeApplicationProgress';
+import Preview from '@/components/Preview';
 
 
 
@@ -51,7 +52,6 @@ interface ChatMessage {
 
 function AISandboxPage() {
   const { makeRequest, makeRequestWithBody, hasRequiredKeys } = useApiRequest();
-  const [sandboxData, setSandboxData] = useState<SandboxData | null>(null);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ text: 'Not connected', active: false });
   const [responseArea, setResponseArea] = useState<string[]>([]);
@@ -151,92 +151,6 @@ function AISandboxPage() {
     code_bg: isDarkMode ? 'bg-gray-900' : 'bg-gray-800', // Code block background remains dark for better contrast
   }
 
-  // Clear old conversation data on component mount and create/restore sandbox
-  useEffect(() => {
-    let isMounted = true;
-
-    const initializePage = async () => {
-      // Clear old conversation
-      try {
-        await fetch('/api/conversation-state', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'clear-old' })
-    
-      });
-        console.log('[home] Cleared old conversation data on mount');
-      } catch (error) {
-        console.error('[ai-sandbox] Failed to clear old conversation:', error);
-        if (isMounted) {
-          addChatMessage('Failed to clear old conversation data.', 'error');
-        }
-      }
-      
-      if (!isMounted) return;
-
-     
-      // Check if sandbox ID is in URL
-      const sandboxIdParam = searchParams.get('sandbox');
-      
-      setLoading(true);
-      try {
-        if (sandboxIdParam) {
-          console.log('[home] Attempting to restore sandbox:', sandboxIdParam);
-          // For now, just create a new sandbox - you could enhance this to actually restore
-          // the specific sandbox 
-          // if your backend supports it
-          await createSandbox(true);
-      } else {
-          console.log('[home] No sandbox in URL, creating new sandbox automatically...');
-      await createSandbox(true);
-        }
-      } catch (error) {
-        console.error('[ai-sandbox] Failed to create or restore sandbox:', error);
-      if (isMounted) {
-          addChatMessage('Failed to create or restore sandbox.', 'error');
-      }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-      }
-      }
-    };
-    
-    initializePage();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-  // Run only on mount
-  
-  useEffect(() => {
-    // Handle Escape key for home screen
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showHomeScreen) {
-        setHomeScreenFading(true);
-        setTimeout(() => {
-          setShowHomeScreen(false);
-          setHomeScreenFading(false);
-        }, 500);
-      }
-    };
- 
-       
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showHomeScreen]);
-  useEffect(() => {
-    // Only check sandbox status on mount and when user navigates to the page
-    checkSandboxStatus();
-    
-    // Optional: Check status when window regains focus
-    const handleFocus = () => {
-      checkSandboxStatus();
-    };
-    
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
   // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -264,15 +178,6 @@ function AISandboxPage() {
        return [...prev, { content, type, timestamp: new Date(), metadata }];
     });
   };
-  const checkAndInstallPackages = async () => {
-    if (!sandboxData) {
-      addChatMessage('No active sandbox. Create a sandbox first!', 'system');
-      return;
-    }
-    
-    // Vite error checking removed - handled by template setup
-    addChatMessage('Sandbox is ready. Vite configuration is handled by the template.', 'system');
-  };
   
   const handleSurfaceError = (errors: any[]) => {
     // Function kept for compatibility but Vite errors are now handled by template
@@ -283,173 +188,7 @@ function AISandboxPage() {
       textarea.focus();
     }
   };
-  const installPackages = async (packages: string[]) => {
-    if (!sandboxData) {
-      addChatMessage('No active sandbox. Create a sandbox first!', 'system');
-      return;
-    }
-    
-    try {
-      const response = await fetch('/api/install-packages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packages })
-      });
-  if (!response.ok) {
-        throw new Error(`Failed to install packages: ${response.statusText}`);
-  }
-      
-      const reader = response.body?.getReader();
-  const decoder = new TextDecoder();
-      
-      while (reader) {
-        const { done, value } = await reader.read();
-  if (done) break;
-        
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-  for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-  switch (data.type) {
-                case 'command':
-                  // Don't show npm install commands - they're handled by info messages
-                  if (!data.command.includes('npm install')) {
-                    addChatMessage(data.command, 'command', { commandType: 'input' });
-  }
-                  break;
-  case 'output':
-                  addChatMessage(data.message, 'command', { commandType: 'output' });
-  break;
-                case 'error':
-                  if (data.message && data.message !== 'undefined') {
-                    addChatMessage(data.message, 'command', { commandType: 'error' });
-  }
-                  break;
-  case 'warning':
-                  addChatMessage(data.message, 'command', { commandType: 'output' });
-  break;
-                case 'success':
-                  addChatMessage(`${data.message}`, 'system');
-  break;
-                case 'status':
-                  addChatMessage(data.message, 'system');
-  break;
-              }
-            } catch (e) {
-              console.error('Failed to parse SSE data:', e);
-  }
-          }
-        }
-      }
-    } catch (error: any) {
-      addChatMessage(`Failed to install packages: ${error.message}`, 'system');
-  }
-  };
 
-  const checkSandboxStatus = async () => {
-    try {
-      const response = await fetch('/api/sandbox-status');
-  const data = await response.json();
-      
-      if (data.active && data.healthy && data.sandboxData) {
-        setSandboxData(data.sandboxData);
-  updateStatus('Sandbox active', true);
-      } else if (data.active && !data.healthy) {
-        // Sandbox exists but not responding
-        updateStatus('Sandbox not responding', false);
-  // Optionally try to create a new one
-      } else {
-        setSandboxData(null);
-  updateStatus('No sandbox', false);
-      }
-    } catch (error) {
-      console.error('Failed to check sandbox status:', error);
-  setSandboxData(null);
-      updateStatus('Error', false);
-    }
-  };
-
-  const createSandbox = async (fromHomeScreen = false) => {
-    console.log('[createSandbox] Starting sandbox creation...');
-  setLoading(true);
-    setShowLoadingBackground(true);
-    updateStatus('Creating sandbox...', false);
-    setResponseArea([]);
-    
-    try {
-      const response = await makeRequestWithBody('/api/create-ai-sandbox', {});
-  const data = await response.json();
-      console.log('[createSandbox] Response data:', data);
-      
-      if (data.success) {
-        setSandboxData(data);
-  updateStatus('Sandbox active', true);
-        log('Sandbox created successfully!');
-        log(`Sandbox ID: ${data.sandboxId}`);
-        log(`URL: ${data.url}`);
-  // Update URL with sandbox ID
-        const newParams = new URLSearchParams(searchParams.toString());
-        newParams.set('sandbox', data.sandboxId);
-  newParams.set('model', aiModel);
-        router.push(`/?${newParams.toString()}`, { scroll: false });
-        
-        // Fade out loading background after sandbox loads
-        setTimeout(() => {
-          setShowLoadingBackground(false);
-        }, 3000);
-  if (data.structure) {
-          displayStructure(data.structure);
-  }
-        
-        // Fetch sandbox files after creation
-        setTimeout(fetchSandboxFiles, 1000);
-  // Restart Vite server to ensure it's running
-        setTimeout(async () => {
-          try {
-            console.log('[createSandbox] Ensuring Vite server is running...');
-            const restartResponse = await fetch('/api/restart-vite', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' }
-    
-          });
-            
-            if (restartResponse.ok) {
-              const restartData = await restartResponse.json();
-              if (restartData.success) {
-                console.log('[createSandbox] Vite server started successfully');
-            
-  }
-            }
-          } catch (error) {
-            console.error('[createSandbox] Error starting Vite server:', error);
-          }
-        }, 2000);
-  // Only add welcome message if not coming from home screen
-        if (!fromHomeScreen) {
-          addChatMessage(`Sandbox created! ID: ${data.sandboxId}. I now have context of your sandbox and can help you build your app. Just ask me to create components and I'll automatically apply them!
-
-Tip: I automatically detect and install npm packages from your code imports (like react-router-dom, axios, etc.)`, 'system');
-  }
-        
-        setTimeout(() => {
-          if (iframeRef.current) {
-            iframeRef.current.src = data.url;
-          }
-        }, 100);
-  } else {
-        throw new Error(data.error || 'Unknown error');
-  }
-    } catch (error: any) {
-      console.error('[createSandbox] Error:', error);
-      updateStatus('Error', false);
-  log(`Failed to create sandbox: ${error.message}`, 'error');
-      addChatMessage(`Failed to create sandbox: ${error.message}`, 'system');
-  } finally {
-      setLoading(false);
-    }
-  };
   const displayStructure = (structure: any) => {
     if (typeof structure === 'object') {
       setStructureContent(JSON.stringify(structure, null, 2));
@@ -457,493 +196,7 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       setStructureContent(structure || 'No structure available');
     }
   };
-  const applyGeneratedCode = async (code: string, isEdit: boolean = false) => {
-    setLoading(true);
-    log('Applying AI-generated code...');
-  try {
-      // Show progress component instead of individual messages
-      setCodeApplicationState({ stage: 'analyzing' });
-  // Get pending packages from tool calls
-      const pendingPackages = ((window as any).pendingPackages || []).filter((pkg: any) => pkg && typeof pkg === 'string');
-  if (pendingPackages.length > 0) {
-        console.log('[applyGeneratedCode] Sending packages from tool calls:', pendingPackages);
-  // Clear pending packages after use
-        (window as any).pendingPackages = [];
-  }
-      
-      // Use streaming endpoint for real-time feedback
-      const response = await fetch('/api/apply-ai-code-stream', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          response: code,
-          isEdit: isEdit,
-          packages: pendingPackages,
-       
-          sandboxId: sandboxData?.sandboxId // Pass the sandbox ID to ensure proper connection
-        })
-      });
-  if (!response.ok) {
-        throw new Error(`Failed to apply code: ${response.statusText}`);
-  }
-      
-      // Handle streaming response
-      const reader = response.body?.getReader();
-  const decoder = new TextDecoder();
-      let finalData: any = null;
-  while (reader) {
-        const { done, value } = await reader.read();
-  if (done) break;
-        
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-  for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-  switch (data.type) {
-                case 'start':
-                  // Don't add as chat message, just update state
-                  setCodeApplicationState({ stage: 'analyzing' });
-  break;
-                  
-                case 'step':
-                  // Update progress state based on step
-                  if (data.message.includes('Installing') && data.packages) {
-                    setCodeApplicationState({ 
-                      stage: 'installing', 
-       
-                      packages: data.packages 
-                    });
-  } else if (data.message.includes('Creating files') || data.message.includes('Applying')) {
-                    setCodeApplicationState({
-                      stage: 'applying',
-                      filesGenerated: data.filesCreated || 0
-                    });
-  }
-                  break;
-  case 'package-progress':
-                  // Handle package installation progress
-                  if (data.installedPackages) {
-                    setCodeApplicationState(prev => ({ 
-                      ...prev,
-            
-                      installedPackages: data.installedPackages 
-                    }));
-  }
-                  break;
-  case 'command':
-                  // Don't show npm install commands - they're handled by info messages
-                  if (data.command && !data.command.includes('npm install')) {
-                    addChatMessage(data.command, 'command', { commandType: 'input' });
-  }
-                  break;
-  case 'success':
-                  if (data.installedPackages) {
-                    setCodeApplicationState(prev => ({ 
-                      ...prev,
-                      installedPackages: data.installedPackages 
-          
-                      }));
-  }
-                  break;
-  case 'file-progress':
-                  // Skip file progress messages, they're noisy
-                  break;
-  case 'file-complete':
-                  // Could add individual file completion messages if desired
-                  break;
-  case 'command-progress':
-                  addChatMessage(`${data.action} command: ${data.command}`, 'command', { commandType: 'input' });
-  break;
-                  
-                case 'command-output':
-                  addChatMessage(data.output, 'command', { 
-                    commandType: data.stream === 'stderr' ? 'error' : 'output' 
-                  });
-  break;
-                  
-                case 'command-complete':
-                  if (data.success) {
-                    addChatMessage(`Command completed successfully`, 'system');
-  } else {
-                    addChatMessage(`Command failed with exit code ${data.exitCode}`, 'system');
-  }
-                  break;
-  case 'complete':
-                  finalData = data;
-  setCodeApplicationState({ stage: 'complete' });
-                  // Clear the state after a delay
-                  setTimeout(() => {
-                    setCodeApplicationState({ stage: null });
-                  }, 3000);
-  break;
-                  
-                case 'error':
-                  addChatMessage(`Error: ${data.message || data.error || 'Unknown error'}`, 'system');
-  break;
-                  
-                case 'warning':
-                  addChatMessage(`${data.message}`, 'system');
-  break;
-                  
-                case 'info':
-                  // Show info messages, especially for package installation
-                  if (data.message) {
-                    addChatMessage(data.message, 'system');
-  }
-                  break;
-  }
-            } catch (e) {
-              // Ignore parse errors
-            }
-          }
-        }
-      }
-      
-      // Process final data
-      if (finalData && finalData.type === 'complete') {
-     
-          const data = {
-          success: true,
-          results: finalData.results,
-          explanation: finalData.explanation,
-          structure: finalData.structure,
-          message: finalData.message
-        };
-  if (data.success) {
-          const { results } = data;
-  // Log package installation results without duplicate messages
-        if (results.packagesInstalled?.length > 0) {
-          log(`Packages installed: ${results.packagesInstalled.join(', ')}`);
-  }
-        
-        if (results.filesCreated?.length > 0) {
-          log('Files created:');
-  results.filesCreated.forEach((file: string) => {
-            log(`  ${file}`, 'command');
-          });
-  // Verify files were actually created by refreshing the sandbox if needed
-          if (sandboxData?.sandboxId && results.filesCreated.length > 0) {
-            // Small delay to ensure files are written
-            setTimeout(() => {
-              // Force refresh the iframe to show new files
-              if (iframeRef.current) {
   
-                iframeRef.current.src = iframeRef.current.src;
-              }
-            }, 1000);
-  }
-        }
-        
-        if (results.filesUpdated?.length > 0) {
-          log('Files updated:');
-  results.filesUpdated.forEach((file: string) => {
-            log(`  ${file}`, 'command');
-          });
-  }
-        
-        // Update conversation context with applied code
-        setConversationContext(prev => ({
-          ...prev,
-          appliedCode: [...prev.appliedCode, {
-            files: [...(results.filesCreated || []), ...(results.filesUpdated || [])],
-            timestamp: new Date()
-          }]
-    
-      }));
-        
-        if (results.commandsExecuted?.length > 0) {
-          log('Commands executed:');
-  results.commandsExecuted.forEach((cmd: string) => {
-            log(`  $ ${cmd}`, 'command');
-          });
-  }
-        
-        if (results.errors?.length > 0) {
-          results.errors.forEach((err: string) => {
-            log(err, 'error');
-          });
-  }
-        
-        if (data.structure) {
-          displayStructure(data.structure);
-  }
-        
-        if (data.explanation) {
-          log(data.explanation);
-  }
-        
-        if ((data as any).autoCompleted) {
-          log('Auto-generating missing components...', 'command');
-  if ((data as any).autoCompletedComponents) {
-            setTimeout(() => {
-              log('Auto-generated missing components:', 'info');
-              (data as any).autoCompletedComponents.forEach((comp: string) => {
-                log(`  ${comp}`, 'command');
-              });
-            }, 
-  1000);
-          }
-        } else if ((data as any).warning) {
-          log((data as any).warning, 'error');
-  if ((data as any).missingImports && (data as any).missingImports.length > 0) {
-            const missingList = (data as any).missingImports.join(', ');
-  addChatMessage(
-              `Ask me to "create the missing components: ${missingList}" to fix these import errors.`,
-              'system'
-            );
-  }
-        }
-
-        log('Code applied successfully!');
-  console.log('[applyGeneratedCode] Response data:', data);
-        console.log('[applyGeneratedCode] Debug info:', (data as any).debug);
-        console.log('[applyGeneratedCode] Current sandboxData:', sandboxData);
-        console.log('[applyGeneratedCode] Current iframe element:', iframeRef.current);
-  console.log('[applyGeneratedCode] Current iframe src:', iframeRef.current?.src);
-        
-        if (results.filesCreated?.length > 0) {
-          setConversationContext(prev => ({
-            ...prev,
-            appliedCode: [...prev.appliedCode, {
-              files: results.filesCreated,
-              timestamp: new Date()
-            }]
-          
-  }));
-          
-          // Update the chat message to show success
-          // Only show file list if not in edit mode
-          if (isEdit) {
-            addChatMessage(`Edit applied successfully!`, 'system');
-  } else {
-            // Check if this is part of a generation flow (has recent AI recreation message)
-            const recentMessages = chatMessages.slice(-5);
-  const isPartOfGeneration = recentMessages.some(m => 
-              m.content.includes('AI recreation generated') || 
-              m.content.includes('Code generated')
-            );
-  // Don't show files if part of generation flow to avoid duplication
-            if (isPartOfGeneration) {
-              addChatMessage(`Applied ${results.filesCreated.length} files successfully!`, 'system');
-  } else {
-              addChatMessage(`Applied ${results.filesCreated.length} files successfully!`, 'system', {
-                appliedFiles: results.filesCreated
-              });
-  }
-          }
-          
-          // If there are failed packages, add a message about checking for errors
-          if (results.packagesFailed?.length > 0) {
-            addChatMessage(`⚠️ Some packages failed to install. Check the error banner above for details.`, 'system');
-  }
-          
-          // Fetch updated file structure
-          await fetchSandboxFiles();
-  // Automatically check and install any missing packages
-          await checkAndInstallPackages();
-  // Test build to ensure everything compiles correctly
-          // Skip build test for now - it's causing errors with undefined activeSandbox
-          // The build test was trying to access global.activeSandbox from the frontend,
-          // but that's only available in the backend API routes
-          console.log('[build-test] Skipping build test - would need API endpoint');
-  // Force iframe refresh after applying code
-          const refreshDelay = appConfig.codeApplication.defaultRefreshDelay;
-  // Allow Vite to process changes
-          
-          setTimeout(() => {
-            if (iframeRef.current && sandboxData?.url) {
-              console.log('[home] Refreshing iframe after code application...');
-              
-              // Method 1: Change src with timestamp
-    
-              const urlWithTimestamp = `${sandboxData.url}?t=${Date.now()}&applied=true`;
-              iframeRef.current.src = urlWithTimestamp;
-              
-              // Method 2: Force reload after a short delay
-              setTimeout(() => {
-                try {
-  
-                  if (iframeRef.current?.contentWindow) {
-                    iframeRef.current.contentWindow.location.reload();
-                    console.log('[home] Force reloaded iframe content');
-                  }
-                } catch (e) {
- 
-                  console.log('[home] Could not reload iframe (cross-origin):', e);
-                }
-              }, 1000);
-            }
-          }, refreshDelay);
-  // Vite error checking removed - handled by template setup
-        }
-        
-          // Give Vite HMR a moment to detect changes, then ensure refresh
-          if (iframeRef.current && sandboxData?.url) {
-            // Wait for Vite to process the file changes
-            // If packages were installed, wait longer for 
-  // Vite to restart
-            const packagesInstalled = results?.packagesInstalled?.length > 0 ||
-  data.results?.packagesInstalled?.length > 0;
-            const refreshDelay = packagesInstalled ? appConfig.codeApplication.packageInstallRefreshDelay : appConfig.codeApplication.defaultRefreshDelay;
-            console.log(`[applyGeneratedCode] Packages installed: ${packagesInstalled}, refresh delay: ${refreshDelay}ms`);
-  setTimeout(async () => {
-            if (iframeRef.current && sandboxData?.url) {
-              console.log('[applyGeneratedCode] Starting iframe refresh sequence...');
-              console.log('[applyGeneratedCode] Current iframe src:', iframeRef.current.src);
-              console.log('[applyGeneratedCode] Sandbox URL:', sandboxData.url);
-              
-              
-  // Method 1: Try direct navigation first
-              try {
-                const urlWithTimestamp = `${sandboxData.url}?t=${Date.now()}&force=true`;
-                console.log('[applyGeneratedCode] Attempting direct navigation to:', urlWithTimestamp);
-                
-                // Remove any existing onload handler
-  
-                iframeRef.current.onload = null;
-                
-                // Navigate directly
-                iframeRef.current.src = urlWithTimestamp;
-                
-                
-  // Wait a bit and check if it loaded
-                await new Promise(resolve => setTimeout(resolve, 2000));
-  // Try to access the iframe content to verify it loaded
-                try {
-                  const iframeDoc = iframeRef.current.contentDocument ||
-  iframeRef.current.contentWindow?.document;
-                  if (iframeDoc && iframeDoc.readyState === 'complete') {
-                    console.log('[applyGeneratedCode] Iframe loaded successfully');
-  return;
-                  }
-                } catch (e) {
-                  console.log('[applyGeneratedCode] Cannot access iframe content (CORS), assuming loaded');
-  return;
-                }
-              } catch (e) {
-                console.error('[applyGeneratedCode] Direct navigation failed:', e);
-  }
-              
-              // Method 2: Force complete iframe recreation if direct navigation failed
-              console.log('[applyGeneratedCode] Falling back to iframe recreation...');
-  const parent = iframeRef.current.parentElement;
-              const newIframe = document.createElement('iframe');
-              
-              // Copy attributes
-              newIframe.className = iframeRef.current.className;
-  newIframe.title = iframeRef.current.title;
-              newIframe.allow = iframeRef.current.allow;
-              // Copy sandbox attributes
-              const sandboxValue = iframeRef.current.getAttribute('sandbox');
-  if (sandboxValue) {
-                newIframe.setAttribute('sandbox', sandboxValue);
-  }
-              
-              // Remove old iframe
-              iframeRef.current.remove();
-  // Add new iframe
-              newIframe.src = `${sandboxData.url}?t=${Date.now()}&recreated=true`;
-  parent?.appendChild(newIframe);
-              
-              // Update ref
-              (iframeRef as any).current = newIframe;
-  console.log('[applyGeneratedCode] Iframe recreated with new content');
-            } else {
-              console.error('[applyGeneratedCode] No iframe or sandbox URL available for refresh');
-  }
-          }, refreshDelay);
-  // Dynamic delay based on whether packages were installed
-        }
-        
-        } else {
-          throw new Error(finalData?.error || 'Failed to apply code');
-  }
-      } else {
-        // If no final data was received, still close loading
-        addChatMessage('Code application may have partially succeeded. Check the preview.', 'system');
-  }
-    } catch (error: any) {
-      log(`Failed to apply code: ${error.message}`, 'error');
-  } finally {
-      setLoading(false);
-      // Clear isEdit flag after applying code
-      setGenerationProgress(prev => ({
-        ...prev,
-        isEdit: false
-      }));
-  }
-  };
-
-  const fetchSandboxFiles = async () => {
-    if (!sandboxData) return;
-  try {
-      const response = await fetch('/api/get-sandbox-files', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-  if (response.ok) {
-        const data = await response.json();
-  if (data.success) {
-          setSandboxFiles(data.files || {});
-          setFileStructure(data.structure || '');
-  console.log('[fetchSandboxFiles] Updated file list:', Object.keys(data.files || {}).length, 'files');
-        }
-      }
-    } catch (error) {
-      console.error('[fetchSandboxFiles] Error fetching files:', error);
-  }
-  };
-  
-  const restartViteServer = async () => {
-    try {
-      addChatMessage('Restarting Vite dev server...', 'system');
-  const response = await fetch('/api/restart-vite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-  if (response.ok) {
-        const data = await response.json();
-  if (data.success) {
-          addChatMessage('✓ Vite dev server restarted successfully!', 'system');
-  // Refresh the iframe after a short delay
-          setTimeout(() => {
-            if (iframeRef.current && sandboxData?.url) {
-              iframeRef.current.src = `${sandboxData.url}?t=${Date.now()}`;
-            }
-          }, 2000);
-  } else {
-          addChatMessage(`Failed to restart Vite: ${data.error}`, 'error');
-  }
-      } else {
-        addChatMessage('Failed to restart Vite server', 'error');
-  }
-    } catch (error) {
-      console.error('[restartViteServer] Error:', error);
-  addChatMessage(`Error restarting Vite: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
-    }
-  };
-  const applyCode = async () => {
-    const code = promptInput.trim();
-  if (!code) {
-      log('Please enter some code first', 'error');
-  addChatMessage('No code to apply. Please generate code first.', 'system');
-      return;
-  }
-    
-    // Prevent double clicks
-    if (loading) {
-      console.log('[applyCode] Already loading, skipping...');
-  return;
-    }
-    
-    // Determine if this is an edit based on whether we have applied code before
-    const isEdit = conversationContext.appliedCode.length > 0;
-  await applyGeneratedCode(code, isEdit);
-  };
 
   const renderMainContent = () => {
     if (activeTab === 'generation' && (generationProgress.isGenerating || generationProgress.files.length > 0)) {
@@ -1461,40 +714,11 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   }
       
       // Show sandbox iframe only when not in any loading state
-      if (sandboxData?.url && !loading) {
-        return (
-          <div className="relative w-full h-full">
-            <iframe
-              ref={iframeRef}
-              src={sandboxData.url}
-      
-              className="w-full h-full border-none"
-              title="Open Lovable Sandbox"
-              allow="clipboard-write"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
-            />
-            {/* Refresh button */}
-            <button
-   
-              onClick={() => {
-                if (iframeRef.current && sandboxData?.url) {
-                  console.log('[Manual Refresh] Forcing iframe reload...');
-                  const newSrc = `${sandboxData.url}?t=${Date.now()}&manual=true`;
-                  iframeRef.current.src = newSrc;
-    
-              }
-              }}
-              className="absolute bottom-4 right-4 bg-white/90 hover:bg-white text-gray-700 p-2 rounded-lg shadow-lg transition-all duration-200 hover:scale-105"
-              title="Refresh sandbox"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" 
-  stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-          </div>
-        );
-  }
+      return (
+        <div className="relative w-full h-full">
+          <Preview code={generationProgress.streamedCode} />
+        </div>
+      );
       
       // Default state when no sandbox
       return (
@@ -1527,30 +751,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
     
     addChatMessage(message, 'user');
     setAiChatInput('');
-  // Check for special commands
-    const lowerMessage = message.toLowerCase().trim();
-  if (lowerMessage === 'check packages' || lowerMessage === 'install packages' || lowerMessage === 'npm install') {
-      if (!sandboxData) {
-        addChatMessage('No active sandbox. Create a sandbox first!', 'system');
-  return;
-      }
-      await checkAndInstallPackages();
-      return;
-  }
-    
-    // Start sandbox creation in parallel if needed
-    let sandboxPromise: Promise<void> |
-  null = null;
-    let sandboxCreating = false;
-    
-    if (!sandboxData) {
-      sandboxCreating = true;
-  addChatMessage('Creating sandbox while I plan your app...', 'system');
-      sandboxPromise = createSandbox(true).catch((error: any) => {
-        addChatMessage(`Failed to create sandbox: ${error.message}`, 'system');
-        throw error;
-      });
-  }
     
     // Determine if this is an edit
     const isEdit = conversationContext.appliedCode.length > 0;
@@ -1578,18 +778,13 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   // Backend now manages file state - no need to fetch from frontend
       console.log('[chat] Using backend file cache for context');
   const fullContext = {
-        sandboxId: sandboxData?.sandboxId ||
-  (sandboxCreating ? 'pending' : null),
         structure: structureContent,
         recentMessages: chatMessages.slice(-20),
         conversationContext: conversationContext,
-        currentCode: promptInput,
-        sandboxUrl: sandboxData?.url,
-        sandboxCreating: sandboxCreating
+        currentCode: promptInput
       };
   // Debug what we're sending
       console.log('[chat] Sending context to AI:');
-      console.log('[chat] - sandboxId:', fullContext.sandboxId);
   console.log('[chat] - isEdit:', conversationContext.appliedCode.length > 0);
       
       const response = await makeRequestWithBody('/api/generate-ai-code-stream', {
@@ -1894,23 +1089,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
         setPromptInput(generatedCode);
   // Don't show the Generated Code panel by default
         // setLeftPanelVisible(true);
-  // Wait for sandbox creation if it's still in progress
-        if (sandboxPromise) {
-          addChatMessage('Waiting for sandbox to be ready...', 'system');
-  try {
-            await sandboxPromise;
-  // Remove the waiting message
-            setChatMessages(prev => prev.filter(msg => msg.content !== 'Waiting for sandbox to be ready...'));
-  } catch {
-            addChatMessage('Sandbox creation failed. Cannot apply code.', 'system');
-  return;
-          }
-        }
-        
-        if (sandboxData && generatedCode) {
-          // Use isEdit flag that was determined at the start
-          await applyGeneratedCode(generatedCode, isEdit);
-  }
       }
       
       // Show completion status briefly then switch to preview
@@ -1955,67 +1133,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
   };
 
 
-  const downloadZip = async () => {
-    if (!sandboxData) {
-      addChatMessage('No active sandbox to download. Create a sandbox first!', 'system');
-  return;
-    }
-    
-    setLoading(true);
-    log('Creating zip file...');
-  addChatMessage('Creating ZIP file of your Vite app...', 'system');
-    
-    try {
-      const response = await fetch('/api/create-zip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-  const data = await response.json();
-      
-      if (data.success) {
-        log('Zip file created!');
-  addChatMessage('ZIP file created! Download starting...', 'system');
-        
-        const link = document.createElement('a');
-        link.href = data.dataUrl;
-        link.download = data.fileName || 'e2b-project.zip';
-        document.body.appendChild(link);
-        link.click();
-  document.body.removeChild(link);
-        
-        addChatMessage(
-          'Your Vite app has been downloaded! To run it locally:\n' +
-          '1. Unzip the file\n' +
-          '2. Run: npm install\n' +
-          '3. Run: npm run dev\n' +
-          '4. Open http://localhost:5173',
-          'system'
-        );
-  } else {
-        throw new Error(data.error);
-  }
-    } catch (error: any) {
-      log(`Failed to create zip: ${error.message}`, 'error');
-  addChatMessage(`Failed to create ZIP: ${error.message}`, 'system');
-    } finally {
-      setLoading(false);
-    }
-  };
-  const reapplyLastGeneration = async () => {
-    if (!conversationContext.lastGeneratedCode) {
-      addChatMessage('No previous generation to re-apply', 'system');
-  return;
-    }
-    
-    if (!sandboxData) {
-      addChatMessage('Please create a sandbox first', 'system');
-  return;
-    }
-    
-    addChatMessage('Re-applying last generation...', 'system');
-    const isEdit = conversationContext.appliedCode.length > 0;
-  await applyGeneratedCode(conversationContext.lastGeneratedCode, isEdit);
-  };
 
   // Auto-scroll code display to bottom when streaming
   useEffect(() => {
@@ -2099,12 +1216,6 @@ Tip: I automatically detect and install npm packages from your code imports (lik
       ...prev,
       currentProject: `Website: ${description}`
     }));
-  // Start sandbox creation in parallel with code generation
-    let sandboxPromise: Promise<void> | null = null;
-  if (!sandboxData) {
-      addChatMessage('Creating sandbox while generating your React app...', 'system');
-      sandboxPromise = createSandbox(true);
-  }
 
     addChatMessage('Generating your custom React application...', 'system');
   const generatePrompt = `Create a complete, modern React application based on this description:
@@ -2162,7 +1273,6 @@ Focus on creating a beautiful, functional website that matches the user's vision
         prompt: generatePrompt,
         model: aiModel,
         context: {
-          sandboxId: sandboxData?.sandboxId,
           conversationContext: conversationContext
         },
         isEdit: false
@@ -2236,13 +1346,7 @@ Focus on creating a beautiful, functional website that matches the user's vision
   }
 
       if (generatedCode.trim()) {
-        // Wait for sandbox to be ready if it was being created
-        if (sandboxPromise) {
-          await sandboxPromise;
-  }
-
-        await applyGeneratedCode(generatedCode, false);
-  addChatMessage(
+        addChatMessage(
           `Successfully created your website! I've built a modern React application based on your description: "${description}". You can now ask me to modify specific sections, add features, or make any other changes.`,
           'ai',
           {
@@ -2458,9 +1562,6 @@ Focus on creating a beautiful, functional website that matches the user's vision
                     setAiModel(newModel);
                     const params = new URLSearchParams(searchParams);
                     params.set('model', newModel);
-  if (sandboxData?.sandboxId) {
-                      params.set('sandbox', sandboxData.sandboxId);
-  }
                     router.push(`/?${params.toString()}`);
   }}
                   className="px-6 py-3 text-sm bg-white/10 backdrop-blur-md text-white border border-white/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-white/50 transition-all duration-200 hover:bg-white/15 cursor-pointer"
@@ -2512,9 +1613,6 @@ Focus on creating a beautiful, functional website that matches the user's vision
   setAiModel(newModel);
               const params = new URLSearchParams(searchParams);
               params.set('model', newModel);
-              if (sandboxData?.sandboxId) {
-                params.set('sandbox', sandboxData.sandboxId);
-  }
               router.push(`/?${params.toString()}`);
   }}
             className={`px-3 py-1.5 text-sm ${isDarkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'} border rounded-[10px] focus:outline-none focus:ring-2 focus:ring-gray-400 focus:border-transparent transition-colors duration-200`}
@@ -2526,46 +1624,6 @@ Focus on creating a beautiful, functional website that matches the user's vision
     
           ))}
           </select>
-          <Button 
-            variant="code"
-            onClick={() => createSandbox()}
-            size="sm"
-            title="Create new sandbox"
-            className={`${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'} transition-colors duration-200`}
-          >
-         
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-          </Button>
-          <Button 
-            variant="code"
-            onClick={reapplyLastGeneration}
-            
-  size="sm"
-            title="Re-apply last generation"
-            disabled={!conversationContext.lastGeneratedCode ||
-  !sandboxData}
-            className={`${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700 disabled:bg-gray-900/50' : 'bg-gray-100 text-gray-800 hover:bg-gray-200 disabled:bg-gray-100/50'} transition-colors duration-200`}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </Button>
-          <Button 
-     
-            variant="code"
-            onClick={downloadZip}
-            disabled={!sandboxData}
-            size="sm"
-            title="Download your Vite app as ZIP"
-            className={`${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700 disabled:bg-gray-900/50' : 'bg-gray-100 text-gray-800 hover:bg-gray-200 disabled:bg-gray-100/50'} transition-colors duration-200`}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-            </svg>
-          </Button>
           <div className={`inline-flex items-center gap-2 ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-gray-200 text-gray-900'} px-3 py-1.5 rounded-[10px] text-sm font-medium [box-shadow:none]`}>
             <span id="status-text">{status.text}</span>
             <div className={`w-2 h-2 rounded-full ${status.active ?
@@ -2936,31 +1994,6 @@ Focus on creating a beautiful, functional website that matches the user's vision
                 </div>
               )}
        
-  {sandboxData && !generationProgress.isGenerating && (
-                <>
-                  <Button
-                    variant="code"
-                    size="sm"
-               
-                      asChild
-                    className={`${isDarkMode ? 'bg-gray-800 text-white hover:bg-gray-700' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'} transition-colors duration-200`}
-                  >
-                    <a 
-                      href={sandboxData.url} 
-                      target="_blank" 
-          
-                      rel="noopener noreferrer"
-                      title="Open in new tab"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  </Button>
-        
-  </>
-              )}
             </div>
           </div>
           <div className="flex-1 relative overflow-hidden">
